@@ -4,38 +4,29 @@ console.log("Loading routes from CMS...");
 let routes = [];
 let isLoaded = false;
 
-// Load routes from CMS API
+// At the top of routes.js, update the API URL detection
 async function loadRoutes() {
     try {
         console.log("Fetching routes from CMS API...");
-        const response = await fetch('http://localhost:3001/api/app/routes');
+        
+        // Try the current domain first (works on Render)
+        let apiUrl = `${window.location.origin}/api/app/routes`;
+        
+        // Fallback to localhost for development
+        if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+            apiUrl = 'http://localhost:3001/api/app/routes';
+        }
+        
+        const response = await fetch(apiUrl);
         
         if (!response.ok) {
             throw new Error(`HTTP ${response.status}: ${response.statusText}`);
         }
         
         const data = await response.json();
-        console.log("API Response:", data);
-        
-        routes = data;
-        isLoaded = true;
-        
-        console.log(`Successfully loaded ${routes.length} routes from CMS`);
-        
-        // Trigger custom event to notify other parts of the app
-        if (typeof window !== 'undefined') {
-            window.dispatchEvent(new CustomEvent('routesLoaded', { 
-                detail: { routes: routes }
-            }));
-        }
-        
-        return routes;
-        
+        // ... rest of your existing code
     } catch (error) {
-        console.error("Failed to load routes from CMS:", error);
-        routes = []; // Empty array on error
-        isLoaded = true;
-        return routes;
+        // ... rest of your existing code
     }
 }
 
