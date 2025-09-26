@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ICHE - Welcome</title>
+  <link rel="stylesheet" href="/css/welcome.css">
+</head>
+<body>
+
+<div class="startup-modal">
+  <div class="logo-container">
+    <div class="headphones-icon">🎧</div>
+    <h1 class="app-title">ICHE</h1>
+    <p class="app-subtitle">Audio City Tours</p>
+  </div>
+
+  <div class="welcome-form">
+    <div class="form-group">
+      <label class="form-label">Your Name</label>
+      <input type="text" id="userName" class="form-input" placeholder="Enter your name">
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">City</label>
+      <select id="userCity" class="form-input">
+        <option value="">Which city are you exploring?</option>
+      </select>
+    </div>
+
+    <button id="startApp" class="start-button">Start Tour</button>
+  </div>
+
+  <p class="app-description">
+    Discover your city through immersive audio stories
+  </p>
+</div>
+
+<!-- WICHTIG: cities.js MUSS vor welcome.js geladen werden -->
+<script src="/JS/cities.js"></script>
+<script src="/JS/welcome.js"></script>
+
+</body>
+</html>

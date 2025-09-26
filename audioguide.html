@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ICHE - Audio Guide</title>
+  <link rel="stylesheet" href="css/audioguide.css">
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+</head>
+<body>
+
+<div class="container">
+  <!-- Header -->
+  <div class="header">
+    <button class="back-button" onclick="goBack()">←</button>
+    <h1 class="route-title" id="routeTitle">Loading Route...</h1>
+  </div>
+
+  <!-- Map Container -->
+  <div class="map-container">
+    <div id="map" class="map"></div>
+    
+    <!-- Location Status -->
+    <div class="location-status" id="locationStatus">
+      <div class="status-icon">📍</div>
+      <span class="status-text">Locating...</span>
+    </div>
+  </div>
+
+  <!-- Swipeable Info Cards Container -->
+  <div class="info-cards-container" id="infoCardsContainer">
+    <div class="swipe-handle" id="swipeHandle"></div>
+    
+    <div class="info-cards-wrapper" id="infoCardsWrapper">
+      <!-- Info cards will be generated here by JavaScript -->
+    </div>
+  </div>
+
+  <!-- Audio Player -->
+  <div class="audio-player" id="audioPlayer">
+    <div class="audio-info">
+      <div class="audio-title" id="audioTitle">Welcome to Milan Audio Tour</div>
+      <div class="audio-location" id="audioLocation">Preparing your tour...</div>
+    </div>
+    
+    <div class="progress-bar-container">
+      <div class="progress-bar" id="progressBar">
+        <div class="progress-fill" id="progressFill"></div>
+      </div>
+      <div class="time-display">
+        <span id="currentTime">0:00</span>
+        <span id="totalTime">0:00</span>
+      </div>
+    </div>
+    
+    <div class="player-controls">
+      <button class="control-btn" id="rewindBtn" title="Rewind 10s">⏪</button>
+      <button class="control-btn" id="backwardBtn" title="Previous Point">⏮</button>
+      <button class="play-btn" id="playBtn">▶</button>
+      <button class="control-btn" id="forwardBtn" title="Next Point">⏭</button>
+      <button class="control-btn" id="refreshBtn" title="Refresh Location">🔄</button>
+    </div>
+  </div>
+</div>
+
+<!-- Audio element -->
+<audio id="audioElement" preload="auto"></audio>
+
+<!-- Scripts -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="JS/routes.js"></script>
+<script src="JS/audioguide.js"></script>
+
+</body>
+</html>

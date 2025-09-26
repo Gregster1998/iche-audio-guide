@@ -1,0 +1,647 @@
+/* audioguide.css - ICHE Audio Guide Interface - COMPLETE REWRITE */
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: linear-gradient(135deg, #2d5a3d 0%, #1a3d2a 100%);
+  color: white;
+  overflow: hidden;
+  height: 100vh;
+  position: fixed;
+  width: 100%;
+}
+
+.container {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+/* Header */
+.header {
+  background: rgba(0, 0, 0, 0.2);
+  backdrop-filter: blur(10px);
+  padding: 15px 20px;
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  z-index: 1000;
+  position: relative;
+  flex-shrink: 0;
+}
+
+.back-button {
+  background: transparent;
+  border: none;
+  color: white;
+  font-size: 24px;
+  cursor: pointer;
+  padding: 5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 0.3s ease;
+}
+
+.back-button:hover {
+  opacity: 0.7;
+}
+
+.route-title {
+  font-size: 18px;
+  font-weight: 500;
+  flex: 1;
+  text-align: center;
+  color: white;
+}
+
+/* Map Container */
+.map-container {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+  min-height: 0; /* Important for flex child */
+}
+
+.map {
+  width: 100%;
+  height: 100%;
+}
+
+/* Location Status */
+.location-status {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  background: rgba(0, 100, 200, 0.9);
+  backdrop-filter: blur(10px);
+  border-radius: 20px;
+  padding: 8px 14px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  z-index: 1000;
+  font-size: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: white;
+  font-weight: 500;
+}
+
+.location-status.active {
+  background: rgba(0, 150, 0, 0.9);
+}
+
+.location-status.searching {
+  background: rgba(255, 193, 7, 0.9);
+}
+
+.location-status.error {
+  background: rgba(244, 67, 54, 0.9);
+}
+
+/* FIXED: Info Cards Container - Always 90% screen width */
+.info-cards-container {
+  position: fixed;
+  bottom: 140px; /* Positioned directly above audio player */
+  left: 50%;
+  transform: translateX(-50%);
+  width: 90vw; /* Always 90% of viewport width */
+  height: auto;
+  z-index: 2000;
+  transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  overflow: hidden;
+}
+
+.info-cards-container.hidden {
+  transform: translateX(-50%) translateY(150%);
+  opacity: 0;
+}
+
+/* FIXED: Cards Wrapper - Proper horizontal layout */
+.info-cards-wrapper {
+  display: flex;
+  transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  touch-action: pan-x;
+  height: auto;
+  /* Width will be set dynamically based on number of cards */
+}
+
+/* FIXED: Individual Cards - Each takes exactly 90vw */
+.info-card {
+  width: 90vw; /* Each card is exactly 90% viewport width */
+  flex-shrink: 0;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* Card Content Container */
+.card-content {
+  width: 100%;
+  background: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(20px);
+  border-radius: 20px 20px 0 0;
+  padding: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-bottom: none;
+  box-sizing: border-box;
+  box-shadow: 0 -5px 25px rgba(0, 0, 0, 0.3);
+}
+
+/* Swipe Handle */
+.swipe-handle {
+  width: 40px;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.5);
+  border-radius: 2px;
+  margin: 0 auto 15px auto;
+  cursor: grab;
+}
+
+.swipe-handle:active {
+  cursor: grabbing;
+}
+
+/* Stop Header */
+.stop-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.stop-header h3 {
+  font-size: 18px;
+  font-weight: 600;
+  color: white;
+  flex: 1;
+  min-width: 0;
+}
+
+.stop-type {
+  background: rgba(255, 215, 0, 0.2);
+  color: #FFD700;
+  padding: 6px 12px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  flex-shrink: 0;
+}
+
+.stop-type.start {
+  background: rgba(76, 175, 80, 0.2);
+  color: #4CAF50;
+}
+
+.stop-type.end {
+  background: rgba(244, 67, 54, 0.2);
+  color: #FF6B6B;
+}
+
+.stop-type.major-stop {
+  background: rgba(156, 39, 176, 0.2);
+  color: #E91E63;
+}
+
+/* Stop Content */
+.stop-content {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.stop-location {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.location-icon {
+  color: #FFD700;
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+.location-name {
+  font-size: 18px;
+  font-weight: 600;
+  color: #FFD700;
+  line-height: 1.3;
+}
+
+.stop-description {
+  font-size: 15px;
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.9);
+  text-align: justify;
+}
+
+/* Stop Tips */
+.stop-tips {
+  background: rgba(255, 215, 0, 0.15);
+  border-left: 3px solid #FFD700;
+  padding: 12px 15px;
+  border-radius: 0 8px 8px 0;
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.9);
+  line-height: 1.5;
+}
+
+.stop-tips::before {
+  content: '💡 Tip: ';
+  font-weight: 600;
+  color: #FFD700;
+}
+
+/* Stop Progress */
+.stop-progress {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 10px;
+  padding-top: 15px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.stop-counter {
+  color: rgba(255, 255, 255, 0.7);
+  font-weight: 500;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.stop-counter::before {
+  content: '📍';
+  font-size: 14px;
+}
+
+.audio-duration {
+  color: rgba(255, 255, 255, 0.7);
+  font-weight: 500;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.audio-duration::before {
+  content: '🎧';
+  font-size: 14px;
+}
+
+/* Audio Player - Fixed positioning */
+.audio-player {
+  background: rgba(0, 0, 0, 0.95);
+  backdrop-filter: blur(20px);
+  padding: 20px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 1500;
+  min-height: 140px;
+  flex-shrink: 0;
+}
+
+.audio-info {
+  text-align: center;
+  margin-bottom: 15px;
+}
+
+.audio-title {
+  font-size: 16px;
+  font-weight: 500;
+  color: white;
+  margin-bottom: 4px;
+}
+
+.audio-location {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.7);
+  font-weight: 400;
+}
+
+/* Progress Bar */
+.progress-bar-container {
+  margin-bottom: 20px;
+}
+
+.progress-bar {
+  width: 100%;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 2px;
+  overflow: hidden;
+  margin-bottom: 8px;
+  cursor: pointer;
+}
+
+.progress-fill {
+  height: 100%;
+  background: #FFD700;
+  border-radius: 2px;
+  width: 0%;
+  transition: width 0.3s ease;
+}
+
+.time-display {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.7);
+  font-weight: 400;
+}
+
+/* Player Controls */
+.player-controls {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 20px;
+}
+
+.control-btn {
+  background: transparent;
+  border: none;
+  color: white;
+  font-size: 20px;
+  cursor: pointer;
+  padding: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  border-radius: 50%;
+  width: 44px;
+  height: 44px;
+}
+
+.control-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  transform: scale(1.1);
+}
+
+.control-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.play-btn {
+  background: #FFD700;
+  color: #000;
+  width: 56px;
+  height: 56px;
+  font-size: 22px;
+  border-radius: 50%;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(255, 215, 0, 0.3);
+}
+
+.play-btn:hover {
+  background: #FFC700;
+  transform: scale(1.05);
+  box-shadow: 0 6px 20px rgba(255, 215, 0, 0.4);
+}
+
+.play-btn.playing {
+  background: #FF6B6B;
+  color: white;
+  box-shadow: 0 4px 15px rgba(255, 107, 107, 0.3);
+}
+
+.play-btn.playing:hover {
+  background: #FF5252;
+  box-shadow: 0 6px 20px rgba(255, 107, 107, 0.4);
+}
+
+/* Leaflet Map Customization */
+.leaflet-popup-content-wrapper {
+  background: rgba(0, 0, 0, 0.9) !important;
+  color: white !important;
+  border-radius: 12px !important;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+}
+
+.leaflet-popup-content {
+  margin: 12px 16px !important;
+  font-family: inherit !important;
+}
+
+.leaflet-popup-tip {
+  background: rgba(0, 0, 0, 0.9) !important;
+}
+
+.leaflet-control-attribution {
+  display: none !important;
+}
+
+/* Custom Map Markers */
+.user-marker {
+  background: #4CAF50;
+  border: 3px solid white;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  box-shadow: 0 0 15px rgba(76, 175, 80, 0.6);
+  animation: pulse-user 2s infinite;
+}
+
+@keyframes pulse-user {
+  0% { box-shadow: 0 0 15px rgba(76, 175, 80, 0.6); }
+  50% { box-shadow: 0 0 25px rgba(76, 175, 80, 0.8); }
+  100% { box-shadow: 0 0 15px rgba(76, 175, 80, 0.6); }
+}
+
+.route-marker {
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  color: white;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.8);
+  box-shadow: 0 3px 15px rgba(0,0,0,0.3);
+  transition: all 0.3s ease;
+}
+
+.route-marker.start {
+  background: #4CAF50;
+  border: 3px solid white;
+}
+
+.route-marker.waypoint {
+  background: #FFD700;
+  color: #000;
+  border: 2px solid #000;
+}
+
+.route-marker.major-stop {
+  background: #E91E63;
+  border: 3px solid white;
+}
+
+.route-marker.end {
+  background: #FF6B6B;
+  border: 3px solid white;
+}
+
+.route-marker.active {
+  animation: pulse-active 2s infinite;
+  transform: scale(1.3);
+}
+
+.route-marker.completed {
+  background: #4CAF50 !important;
+  border-color: white !important;
+  color: white !important;
+}
+
+.route-marker.completed::after {
+  content: '✓';
+  position: absolute;
+  font-size: 12px;
+  font-weight: bold;
+}
+
+@keyframes pulse-active {
+  0% { box-shadow: 0 0 0 0 rgba(255, 215, 0, 0.7); }
+  70% { box-shadow: 0 0 0 15px rgba(255, 215, 0, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(255, 215, 0, 0); }
+}
+
+/* Loading States */
+.loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.loading::after {
+  content: '';
+  width: 20px;
+  height: 20px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top: 2px solid #FFD700;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-left: 10px;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Responsive Design */
+@media (max-width: 480px) {
+  .header {
+    padding: 12px 15px;
+  }
+  
+  .route-title {
+    font-size: 16px;
+  }
+  
+  .info-cards-container {
+    bottom: 125px; /* Adjusted for smaller audio player */
+  }
+  
+  .card-content {
+    padding: 18px;
+  }
+  
+  .audio-player {
+    padding: 15px;
+    min-height: 125px;
+  }
+  
+  .player-controls {
+    gap: 15px;
+  }
+  
+  .control-btn {
+    font-size: 18px;
+    width: 40px;
+    height: 40px;
+  }
+  
+  .play-btn {
+    width: 50px;
+    height: 50px;
+    font-size: 20px;
+  }
+  
+  .stop-header h3 {
+    font-size: 16px;
+  }
+  
+  .location-name {
+    font-size: 16px;
+  }
+  
+  .stop-description {
+    font-size: 14px;
+  }
+}
+
+@media (max-width: 375px) {
+  .card-content {
+    padding: 15px;
+  }
+  
+  .stop-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  
+  .stop-type {
+    align-self: flex-end;
+  }
+}
+
+/* Error and Success States */
+.error-message {
+  background: rgba(244, 67, 54, 0.15);
+  border: 1px solid rgba(244, 67, 54, 0.3);
+  border-radius: 12px;
+  padding: 15px;
+  margin: 10px 0;
+  color: #FF6B6B;
+  font-size: 14px;
+  text-align: center;
+}
+
+.success-message {
+  background: rgba(76, 175, 80, 0.15);
+  border: 1px solid rgba(76, 175, 80, 0.3);
+  border-radius: 12px;
+  padding: 15px;
+  margin: 10px 0;
+  color: #4CAF50;
+  font-size: 14px;
+  text-align: center;
+}

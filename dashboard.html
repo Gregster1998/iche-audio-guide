@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ICHE - Dashboard</title>
+  <link rel="stylesheet" href="css/dashboard.css">
+</head>
+<body>
+
+<div class="container">
+  <!-- Header Section -->
+  <div class="header">
+    <div class="welcome-section">
+      <h1 class="welcome-title" id="welcomeTitle">Welcome!</h1>
+      <div class="location">
+        <span class="location-icon">📍</span>
+        <span id="userCity">City</span>
+      </div>
+    </div>
+    <div class="user-avatar" id="userAvatar">U</div>
+  </div>
+
+  <!-- Tram Line Selection -->
+  <div class="tram-line-section">
+    <h3>Select Route</h3>
+    <div class="dropdown-container">
+      <select id="tramLineSelect" class="tram-line-dropdown">
+        <option value="">Choose a route</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- Progress Section -->
+  <div class="progress-section" id="progressSection">
+    <div class="progress-icon">🏆</div>
+    <div class="progress-info">
+      <h4>Your Progress</h4>
+      <p id="progressText">Loading...</p>
+    </div>
+    <div class="progress-percentage">
+      <span id="progressPercent">0%</span>
+      <span class="complete-text">Complete</span>
+    </div>
+  </div>
+
+  <!-- Detailed Route View (Hidden by default) -->
+  <div class="detailed-route-view" id="detailedRouteView" style="display: none;">
+    <div class="detailed-route-card">
+      <div class="detailed-route-image" id="detailedRouteImage"></div>
+      <div class="detailed-route-content">
+        <h2 class="detailed-route-name" id="detailedRouteName">Route Name</h2>
+        <p class="detailed-route-description" id="detailedRouteDescription">Route description goes here...</p>
+        
+        <div class="detailed-route-stats">
+          <div class="route-stat">
+            <span class="stat-icon">📏</span>
+            <span class="stat-text" id="detailedRouteDistance">-</span>
+          </div>
+          <div class="route-stat">
+            <span class="stat-icon">🕒</span>
+            <span class="stat-text" id="detailedRouteDuration">-</span>
+          </div>
+          <div class="route-stat">
+            <span class="stat-icon">🎯</span>
+            <span class="stat-text" id="detailedRouteDifficulty">-</span>
+          </div>
+          <div class="route-stat">
+            <span class="stat-icon">📍</span>
+            <span class="stat-text" id="detailedRouteStops">- points</span>
+          </div>
+        </div>
+
+        <div class="route-map-preview">
+          <div class="preview-container">
+            <div class="preview-points">
+              <div class="preview-point point-1"></div>
+              <div class="preview-point point-2"></div>
+              <div class="preview-point point-3"></div>
+              <div class="preview-point point-4"></div>
+            </div>
+            <div class="preview-arrow">✈️</div>
+          </div>
+          <p class="preview-text">Route Map Preview</p>
+        </div>
+
+        <button class="start-audio-button" id="startAudioButton">
+          🎧 Start Audio Tour
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Interactive Route Map -->
+  <div class="route-map-section" id="routeMapSection">
+    <div class="map-container">
+      <div class="map-points">
+        <div class="map-point point-1"></div>
+        <div class="map-point point-2"></div>
+        <div class="map-point point-3"></div>
+        <div class="map-point point-4"></div>
+        <div class="map-point point-5"></div>
+      </div>
+      <div class="map-arrow">✈️</div>
+    </div>
+    <div class="map-info">
+      <h3>Interactive Route Map</h3>
+      <p>View all stops and paths</p>
+    </div>
+  </div>
+
+  <!-- Available Routes -->
+  <div class="available-routes-section" id="availableRoutesSection">
+    <h3>Available Routes</h3>
+    <div class="routes-container" id="routesContainer">
+      <!-- Route cards will be inserted here by JavaScript -->
+    </div>
+  </div>
+
+</div>
+
+<!-- Scripts loaded in order: routes first, then dashboard -->
+<script src="JS/routes.js"></script>
+<script src="JS/dashboard.js"></script>
+
+</body>
+</html>

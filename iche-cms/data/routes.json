@@ -1,0 +1,171 @@
+{
+  "routes": [
+    {
+      "id": "m4-route",
+      "name": "M4 Metro Route",
+      "city": "Milan",
+      "category": "Modern",
+      "difficulty": "Easy",
+      "estimatedDuration": "2.5 hours",
+      "distance": "8.2 km",
+      "description": "Follow the modern M4 metro line from Argonne through the heart of Milan to the vibrant Navigli district",
+      "color": "#E31E24",
+      "imageUrl": "/uploads/images/m4-route.jpg",
+      "audioFolder": "/uploads/audio/m4-route/",
+      "createdAt": "2025-09-26T11:55:48.722Z",
+      "updatedAt": "2025-09-26T13:32:59.249Z",
+      "points": [
+        {
+          "id": "argonne",
+          "name": "Argonne Station",
+          "number": 1,
+          "coordinates": [
+            9.2394,
+            45.4642
+          ],
+          "activationRadius": 50,
+          "description": "Start your journey at the modern Argonne M4 metro station, a gateway to eastern Milan",
+          "imageUrl": "/uploads/images/argonne-station.jpg",
+          "audioUrl": "/uploads/audio/m4-route/argonne-intro.mp3",
+          "audioDuration": 180,
+          "type": "start",
+          "interests": [
+            "architecture",
+            "transport"
+          ],
+          "tips": "Look for the distinctive M4 blue signage and modern station design"
+        },
+        {
+          "id": "dateo",
+          "name": "Dateo District",
+          "number": 2,
+          "coordinates": [
+            9.2158,
+            45.4675
+          ],
+          "activationRadius": 75,
+          "description": "Dateo represents Milan's evolving urban landscape with modern residential and commercial developments",
+          "imageUrl": "/uploads/images/dateo-district.jpg",
+          "audioUrl": "/uploads/audio/m4-route/dateo-development.mp3",
+          "audioDuration": 240,
+          "type": "waypoint",
+          "interests": [
+            "urban-planning",
+            "modern-milan"
+          ],
+          "tips": "Notice the mix of traditional Milanese architecture with contemporary buildings"
+        },
+        {
+          "id": "san-babila-m4",
+          "name": "San Babila (M4)",
+          "number": 3,
+          "coordinates": [
+            9.1957,
+            45.4676
+          ],
+          "activationRadius": 60,
+          "description": "San Babila - Milan's luxury shopping heart and intersection of tradition and modernity",
+          "imageUrl": "/uploads/images/san-babila.jpg",
+          "audioUrl": "/uploads/audio/m4-route/san-babila-shopping.mp3",
+          "audioDuration": 300,
+          "type": "major-stop",
+          "interests": [
+            "shopping",
+            "luxury",
+            "culture"
+          ],
+          "tips": "Perfect spot for a coffee break at one of the historic cafés"
+        },
+        {
+          "id": "navigli",
+          "name": "Navigli District",
+          "number": 4,
+          "coordinates": [
+            9.1794,
+            45.4483
+          ],
+          "activationRadius": 100,
+          "description": "End at Milan's famous canal district - vibrant nightlife, restaurants, and Leonardo da Vinci's waterway engineering",
+          "imageUrl": "/uploads/images/navigli-canals.jpg",
+          "audioUrl": "/uploads/audio/m4-route/navigli-canals.mp3",
+          "audioDuration": 420,
+          "type": "end",
+          "interests": [
+            "history",
+            "nightlife",
+            "leonardo-da-vinci",
+            "dining"
+          ],
+          "tips": "Best visited in the evening when the aperitivo scene comes alive"
+        }
+      ],
+      "published": false
+    },
+    {
+      "id": "historic-route",
+      "name": "Historic Milan Route",
+      "city": "Milan",
+      "category": "Historical",
+      "difficulty": "Easy",
+      "estimatedDuration": "3 hours",
+      "distance": "4.1 km",
+      "description": "Walk through Milan's most iconic historical landmarks from the magnificent Duomo to the powerful Sforza Castle",
+      "color": "#8B4513",
+      "imageUrl": "/uploads/images/historic-milan.jpg",
+      "audioFolder": "/uploads/audio/historic-route/",
+      "createdAt": "2025-09-26T11:55:48.723Z",
+      "updatedAt": "2025-09-26T13:24:06.048Z",
+      "points": [
+        {
+          "id": "duomo",
+          "name": "Duomo di Milano",
+          "number": 1,
+          "coordinates": [
+            9.19,
+            45.4642
+          ],
+          "activationRadius": 80,
+          "description": "Milan's Gothic masterpiece - the world's largest Gothic cathedral with 135 spires and 3,400 statues",
+          "imageUrl": "/uploads/images/duomo-cathedral.jpg",
+          "audioUrl": "/uploads/audio/historic-route/duomo-cathedral.mp3",
+          "audioDuration": 480,
+          "type": "start",
+          "interests": [
+            "gothic-architecture",
+            "religion",
+            "art",
+            "history"
+          ],
+          "tips": "Book tickets in advance to access the rooftop terraces for stunning city views"
+        }
+      ],
+      "published": true
+    },
+    {
+      "id": "ergwesgr",
+      "name": "ergwesgr",
+      "city": "Milan",
+      "category": "Historical",
+      "difficulty": "Easy",
+      "distance": "",
+      "description": "this is a ta",
+      "color": "#FFD700",
+      "imageUrl": "",
+      "audioFolder": "/uploads/audio/ergwesgr/",
+      "createdAt": "2025-09-26T11:57:34.838Z",
+      "updatedAt": "2025-09-26T13:10:05.047Z",
+      "points": [],
+      "published": false
+    }
+  ],
+  "media": [],
+  "analytics": {
+    "activeUsers": 82,
+    "onToursNow": 34,
+    "totalCompletions": 1247,
+    "peakHour": "14:00-15:00",
+    "dailyActivity": [],
+    "usersByCity": {},
+    "routePerformance": []
+  }
+}

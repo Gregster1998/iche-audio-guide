@@ -1,0 +1,1303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ICHE CMS - Content Management System for Audio Tours</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #1B3A2E 0%, #0F1419 100%);
+            color: white;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* Header */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding: 20px 0;
+        }
+
+        .logo {
+            font-size: 32px;
+            font-weight: 700;
+            color: white;
+        }
+
+        .subtitle {
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.7);
+            margin-top: 5px;
+        }
+
+        .close-btn {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+        .close-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        /* Navigation */
+        .nav-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+        }
+
+        .nav-tab {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: rgba(255, 255, 255, 0.7);
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            text-decoration: none;
+        }
+
+        .nav-tab:hover {
+            color: white;
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .nav-tab.active {
+            background: #FFD700;
+            color: #1B3A2E;
+            border-color: #FFD700;
+        }
+
+        /* Main Content */
+        .main-content {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 30px;
+            backdrop-filter: blur(10px);
+            min-height: 70vh;
+        }
+
+        /* Debug Panel */
+        .debug-panel {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+            font-size: 12px;
+        }
+
+        .debug-panel h4 {
+            color: #FFD700;
+            margin-bottom: 10px;
+        }
+
+        .debug-status {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+        }
+
+        .status-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+
+        .status-dot.green {
+            background: #4CAF50;
+        }
+
+        .status-dot.red {
+            background: #ff6b6b;
+        }
+
+        .status-dot.yellow {
+            background: #FFC107;
+        }
+
+        /* Routes Section */
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        .section-title {
+            font-size: 24px;
+            font-weight: 600;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn-primary {
+            background: #FFD700;
+            color: #1B3A2E;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary:hover {
+            background: #FFC700;
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: 500;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        /* Route Card */
+        .route-card {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .route-card:hover {
+            background: rgba(255, 255, 255, 0.12);
+        }
+
+        .route-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 15px;
+        }
+
+        .route-name {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            cursor: pointer;
+        }
+
+        .route-name:hover {
+            color: #FFD700;
+        }
+
+        .route-tags {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 15px;
+            align-items: center;
+        }
+
+        .tag {
+            background: rgba(76, 175, 80, 0.2);
+            color: #4CAF50;
+            padding: 4px 12px;
+            border-radius: 16px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .tag.historical {
+            background: rgba(156, 39, 176, 0.2);
+            color: #E91E63;
+        }
+
+        .tag.modern {
+            background: rgba(33, 150, 243, 0.2);
+            color: #2196F3;
+        }
+
+        .tag.published {
+            background: rgba(76, 175, 80, 0.2);
+            color: #4CAF50;
+        }
+
+        .tag.draft {
+            background: rgba(255, 107, 107, 0.2);
+            color: #ff6b6b;
+        }
+
+        .route-description {
+            color: rgba(255, 255, 255, 0.8);
+            line-height: 1.5;
+            margin-bottom: 20px;
+        }
+
+        .route-stats {
+            display: flex;
+            gap: 30px;
+        }
+
+        .stat {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .stat-label {
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 4px;
+        }
+
+        .stat-value {
+            color: white;
+            font-weight: 600;
+            font-size: 16px;
+        }
+
+        .route-actions {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .btn-icon {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 8px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-icon:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .btn-delete {
+            color: #ff6b6b;
+            border-color: rgba(255, 107, 107, 0.3);
+        }
+
+        .btn-delete:hover {
+            background: rgba(255, 107, 107, 0.2);
+        }
+
+        /* Toggle Switch Styles */
+        .publish-toggle-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-right: 15px;
+        }
+
+        .publish-toggle-label {
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.7);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .toggle-switch {
+            position: relative;
+            width: 50px;
+            height: 24px;
+            background-color: rgba(255, 107, 107, 0.3);
+            border-radius: 12px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            border: 1px solid rgba(255, 107, 107, 0.5);
+        }
+
+        .toggle-switch.active {
+            background-color: rgba(76, 175, 80, 0.3);
+            border-color: rgba(76, 175, 80, 0.5);
+        }
+
+        .toggle-slider {
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 18px;
+            height: 18px;
+            background-color: #ff6b6b;
+            border-radius: 50%;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .toggle-switch.active .toggle-slider {
+            transform: translateX(26px);
+            background-color: #4CAF50;
+        }
+
+        .toggle-status {
+            font-size: 11px;
+            color: rgba(255, 255, 255, 0.6);
+            min-width: 45px;
+            text-align: center;
+        }
+
+        /* Forms */
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+        }
+
+        .form-section {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 24px;
+        }
+
+        .form-section h3 {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-label {
+            display: block;
+            color: rgba(255, 255, 255, 0.9);
+            font-weight: 500;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+
+        .form-input, .form-select, .form-textarea {
+            width: 100%;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            padding: 12px 16px;
+            color: white;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+        .form-input:focus, .form-select:focus, .form-textarea:focus {
+            outline: none;
+            border-color: #FFD700;
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .form-input::placeholder, .form-textarea::placeholder {
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        .form-textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(5px);
+            z-index: 1000;
+            padding: 40px;
+        }
+
+        .modal.active {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background: linear-gradient(135deg, #1B3A2E 0%, #0F1419 100%);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 16px;
+            padding: 30px;
+            max-width: 800px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        .modal-title {
+            font-size: 24px;
+            font-weight: 600;
+        }
+
+        /* Loading */
+        .loading {
+            text-align: center;
+            color: rgba(255, 255, 255, 0.6);
+            padding: 40px;
+        }
+
+        .loading::after {
+            content: '';
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-top: 2px solid #FFD700;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-left: 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        .empty-state h3 {
+            font-size: 20px;
+            margin-bottom: 10px;
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        .empty-state p {
+            margin-bottom: 20px;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                padding: 15px;
+            }
+
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .nav-tabs {
+                flex-wrap: wrap;
+            }
+
+            .route-stats {
+                flex-wrap: wrap;
+                gap: 20px;
+            }
+
+            .route-actions {
+                flex-wrap: wrap;
+            }
+
+            .publish-toggle-container {
+                margin-bottom: 10px;
+            }
+        }
+
+        .error-message {
+            background: rgba(255, 107, 107, 0.2);
+            border: 1px solid rgba(255, 107, 107, 0.3);
+            color: #ff6b6b;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .success-message {
+            background: rgba(76, 175, 80, 0.2);
+            border: 1px solid rgba(76, 175, 80, 0.3);
+            color: #4CAF50;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <div>
+                <div class="logo">ICHE CMS</div>
+                <div class="subtitle">Content Management System for Audio Tours</div>
+            </div>
+            <button class="close-btn" onclick="closeCMS()">
+                ✕ Close CMS
+            </button>
+        </div>
+
+        <!-- Debug Panel -->
+        <div class="debug-panel">
+            <h4>System Status</h4>
+            <div class="debug-status">
+                <div class="status-item">
+                    <div class="status-dot" id="server-status"></div>
+                    <span id="server-status-text">Checking server...</span>
+                </div>
+                <div class="status-item">
+                    <div class="status-dot" id="routes-status"></div>
+                    <span id="routes-status-text">Loading routes...</span>
+                </div>
+                <div class="status-item">
+                    <button class="btn-secondary" onclick="testConnection()">Test Connection</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Navigation -->
+        <div class="nav-tabs">
+            <a href="#" class="nav-tab active" data-tab="routes">Routes</a>
+            <a href="#" class="nav-tab" data-tab="analytics">Analytics</a>
+            <a href="#" class="nav-tab" data-tab="settings">Settings</a>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Routes Tab -->
+            <div id="routes-tab" class="tab-content">
+                <div class="section-header">
+                    <h2 class="section-title">Tour Routes</h2>
+                    <div class="header-actions">
+                        <button class="btn-secondary" onclick="testConnection()">Test Connection</button>
+                        <button class="btn-primary" onclick="regenerateRoutesFile()">
+                            🔄 Update App
+                        </button>
+                        <button class="btn-primary" onclick="createNewRoute()">
+                            + Create New Route
+                        </button>
+                    </div>
+                </div>
+                <div id="error-container"></div>
+                <div id="routes-list">
+                    <div class="loading">Loading routes...</div>
+                </div>
+            </div>
+
+            <!-- Analytics Tab -->
+            <div id="analytics-tab" class="tab-content" style="display: none;">
+                <div class="section-header">
+                    <h2 class="section-title">Analytics</h2>
+                </div>
+                <div id="analytics-content">
+                    <div class="loading">Loading analytics...</div>
+                </div>
+            </div>
+
+            <!-- Settings Tab -->
+            <div id="settings-tab" class="tab-content" style="display: none;">
+                <div class="section-header">
+                    <h2 class="section-title">Settings</h2>
+                </div>
+                <div class="form-section">
+                    <h3>🔧 Debug Tools</h3>
+                    <div class="form-group">
+                        <button class="btn-secondary" onclick="resetDatabase()">Reset Database</button>
+                        <button class="btn-secondary" onclick="importDefaultRoutes()">Import Default Routes</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal for Route Editor -->
+    <div id="route-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title" id="modal-title">New Route</h3>
+                <button class="close-btn" onclick="closeModal('route-modal')">✕</button>
+            </div>
+            <form id="route-form" class="form-grid">
+                <div class="form-section">
+                    <h3>📍 Route Details</h3>
+                    <div class="form-group">
+                        <label class="form-label">Route Name *</label>
+                        <input type="text" class="form-input" name="name" placeholder="Enter route name" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">City *</label>
+                        <input type="text" class="form-input" name="city" placeholder="Enter city name" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Category</label>
+                        <select class="form-select" name="category">
+                            <option value="Historical">Historical</option>
+                            <option value="Modern">Modern</option>
+                            <option value="Cultural">Cultural</option>
+                            <option value="Nature">Nature</option>
+                            <option value="Art">Art</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Difficulty</label>
+                        <select class="form-select" name="difficulty">
+                            <option value="Easy">Easy</option>
+                            <option value="Moderate">Moderate</option>
+                            <option value="Hard">Hard</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Duration</label>
+                        <input type="text" class="form-input" name="estimatedDuration" placeholder="e.g. 45 minutes">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Distance</label>
+                        <input type="text" class="form-input" name="distance" placeholder="e.g. 2.5 km">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Description</label>
+                        <textarea class="form-textarea" name="description" placeholder="Enter route description"></textarea>
+                    </div>
+                </div>
+                <div class="form-section">
+                    <h3>🎧 Tour Information</h3>
+                    <div class="form-group">
+                        <label class="form-label">Route Color</label>
+                        <input type="color" class="form-input" name="color" value="#FFD700">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Points Added</label>
+                        <span id="stops-count-display">0 stops</span>
+                        <p style="font-size: 12px; color: rgba(255,255,255,0.6);">Save route first, then edit to add stops</p>
+                    </div>
+                </div>
+            </form>
+            <div style="text-align: right; margin-top: 30px; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.1);">
+                <button type="button" class="btn-primary" onclick="saveRoute()">
+                    💾 Save Route
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global variables - use relative URL since CMS is served from same server
+        const API_BASES = [
+            '/api', // Relative URL - same server (PRIMARY)
+            'http://localhost:3001/api',
+            'http://127.0.0.1:3001/api'
+        ];
+        let API_BASE = API_BASES[0];
+        let currentRoutes = [];
+        let editingRoute = null;
+        let systemStatus = {
+            serverConnected: false,
+            routesLoaded: false
+        };
+
+        // Initialize CMS
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeCMS();
+            setupTabNavigation();
+        });
+
+        async function initializeCMS() {
+            await testConnection();
+            await loadRoutes();
+        }
+
+        // Connection Testing - try multiple server locations
+        async function testConnection() {
+            console.log('Testing connection to server...');
+            
+            const serverDot = document.getElementById('server-status');
+            const serverText = document.getElementById('server-status-text');
+            const routesDot = document.getElementById('routes-status');
+            const routesText = document.getElementById('routes-status-text');
+
+            let connected = false;
+            let workingBase = null;
+
+            // Try each possible API base URL
+            for (const baseUrl of API_BASES) {
+                try {
+                    serverText.textContent = `Testing ${baseUrl}...`;
+                    console.log(`Trying: ${baseUrl}/health`);
+                    
+                    const healthResponse = await fetch(`${baseUrl}/health`, { 
+                        method: 'GET',
+                        headers: { 'Content-Type': 'application/json' }
+                    });
+                    
+                    if (healthResponse.ok) {
+                        const healthData = await healthResponse.json();
+                        API_BASE = baseUrl; // Use this working URL
+                        workingBase = baseUrl;
+                        connected = true;
+                        
+                        serverDot.className = 'status-dot green';
+                        serverText.textContent = `Server Online (${healthData.routes} routes in DB) - ${baseUrl}`;
+                        systemStatus.serverConnected = true;
+                        
+                        console.log('✅ Server connected via:', baseUrl);
+                        break; // Stop trying other URLs
+                    }
+                } catch (error) {
+                    console.log(`❌ Failed ${baseUrl}:`, error.message);
+                    continue;
+                }
+            }
+
+            if (!connected) {
+                serverDot.className = 'status-dot red';
+                serverText.textContent = 'Server Offline - Tried all URLs';
+                routesDot.className = 'status-dot red';
+                routesText.textContent = 'Cannot connect to server';
+                systemStatus.serverConnected = false;
+                systemStatus.routesLoaded = false;
+
+                showError(`Server connection failed. Tried: ${API_BASES.join(', ')}. Make sure server is running on port 3001.`);
+                return;
+            }
+
+            // Test routes endpoint with working URL
+            try {
+                routesText.textContent = 'Testing routes...';
+                const routesResponse = await fetch(`${API_BASE}/routes`);
+                
+                if (routesResponse.ok) {
+                    const routes = await routesResponse.json();
+                    routesDot.className = 'status-dot green';
+                    routesText.textContent = `Routes API Working (${routes.length} routes)`;
+                    systemStatus.routesLoaded = true;
+                } else {
+                    throw new Error(`Routes API failed: ${routesResponse.status}`);
+                }
+            } catch (error) {
+                console.error('Routes test failed:', error);
+                routesDot.className = 'status-dot yellow';
+                routesText.textContent = 'Routes API issues';
+                systemStatus.routesLoaded = false;
+                showError(`Routes API failed: ${error.message}`);
+            }
+        }
+
+        // Tab Navigation
+        function setupTabNavigation() {
+            const tabs = document.querySelectorAll('.nav-tab');
+            tabs.forEach(tab => {
+                tab.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const tabId = tab.getAttribute('data-tab');
+                    switchTab(tabId);
+                });
+            });
+        }
+
+        function switchTab(tabId) {
+            document.querySelectorAll('.nav-tab').forEach(tab => tab.classList.remove('active'));
+            document.querySelector(`[data-tab="${tabId}"]`).classList.add('active');
+
+            document.querySelectorAll('.tab-content').forEach(content => content.style.display = 'none');
+            document.getElementById(`${tabId}-tab`).style.display = 'block';
+
+            switch(tabId) {
+                case 'routes':
+                    loadRoutes();
+                    break;
+                case 'analytics':
+                    loadAnalytics();
+                    break;
+            }
+        }
+
+        // Error/Success messaging
+        function showError(message) {
+            const container = document.getElementById('error-container');
+            container.innerHTML = `<div class="error-message">❌ ${message}</div>`;
+        }
+
+        function showSuccess(message) {
+            const container = document.getElementById('error-container');
+            container.innerHTML = `<div class="success-message">✅ ${message}</div>`;
+            setTimeout(() => {
+                container.innerHTML = '';
+            }, 5000);
+        }
+
+        function clearMessages() {
+            document.getElementById('error-container').innerHTML = '';
+        }
+
+        // Routes Management
+        async function loadRoutes() {
+            const routesList = document.getElementById('routes-list');
+            routesList.innerHTML = '<div class="loading">Loading routes...</div>';
+            clearMessages();
+
+            if (!systemStatus.serverConnected) {
+                showError('Cannot load routes - server connection failed');
+                routesList.innerHTML = `
+                    <div class="empty-state">
+                        <h3>Server Connection Failed</h3>
+                        <p>Make sure your server is running and try again.</p>
+                        <button class="btn-primary" onclick="testConnection()">Retry Connection</button>
+                    </div>
+                `;
+                return;
+            }
+
+            try {
+                console.log('Loading routes from:', `${API_BASE}/routes`);
+                const response = await fetch(`${API_BASE}/routes`, {
+                    method: 'GET',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                currentRoutes = await response.json();
+                console.log('Routes loaded:', currentRoutes);
+
+                if (currentRoutes.length === 0) {
+                    routesList.innerHTML = `
+                        <div class="empty-state">
+                            <h3>No routes found</h3>
+                            <p>Create your first audio tour route to get started.</p>
+                            <button class="btn-primary" onclick="createNewRoute()">+ Create First Route</button>
+                            <button class="btn-secondary" onclick="importDefaultRoutes()">Import Default Routes</button>
+                        </div>
+                    `;
+                    return;
+                }
+
+                routesList.innerHTML = currentRoutes.map(route => `
+                    <div class="route-card" data-route-id="${route.id}">
+                        <div class="route-header">
+                            <div>
+                                <div class="route-name" onclick="editRoute('${route.id}')">
+                                    ${route.name}
+                                </div>
+                                <div class="route-tags">
+                                    <span class="tag ${route.category?.toLowerCase() || 'modern'}">${route.category || 'Modern'}</span>
+                                    <span class="tag">${route.city || 'Unknown City'}</span>
+                                    <span class="tag ${route.published ? 'published' : 'draft'}" data-status-tag>
+                                        ${route.published ? 'Published' : 'Draft'}
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="route-actions">
+                                <div class="publish-toggle-container">
+                                    <span class="publish-toggle-label">Publish</span>
+                                    <div class="toggle-switch ${route.published ? 'active' : ''}" 
+                                         data-route-id="${route.id}"
+                                         data-current-status="${route.published}"
+                                         onclick="togglePublish('${route.id}', ${!route.published})">
+                                        <div class="toggle-slider"></div>
+                                    </div>
+                                    <span class="toggle-status" data-toggle-status>${route.published ? 'Live' : 'Draft'}</span>
+                                </div>
+                                <button class="btn-icon" onclick="editRoute('${route.id}')" title="Edit">✏️</button>
+                                <button class="btn-icon btn-delete" onclick="deleteRoute('${route.id}')" title="Delete">🗑️</button>
+                            </div>
+                        </div>
+                        <div class="route-description">${route.description || 'No description'}</div>
+                        <div class="route-stats">
+                            <div class="stat">
+                                <div class="stat-label">Total Stops</div>
+                                <div class="stat-value">${route.points?.length || 0}</div>
+                            </div>
+                            <div class="stat">
+                                <div class="stat-label">Duration</div>
+                                <div class="stat-value">${route.estimatedDuration || 'N/A'}</div>
+                            </div>
+                            <div class="stat">
+                                <div class="stat-label">Distance</div>
+                                <div class="stat-value">${route.distance || 'N/A'}</div>
+                            </div>
+                            <div class="stat">
+                                <div class="stat-label">Difficulty</div>
+                                <div class="stat-value">${route.difficulty || 'Easy'}</div>
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+
+                showSuccess(`Loaded ${currentRoutes.length} routes successfully`);
+
+            } catch (error) {
+                console.error('Error loading routes:', error);
+                showError(`Failed to load routes: ${error.message}`);
+                routesList.innerHTML = `
+                    <div class="empty-state">
+                        <h3>Error loading routes</h3>
+                        <p>${error.message}</p>
+                        <button class="btn-primary" onclick="loadRoutes()">Retry</button>
+                        <button class="btn-secondary" onclick="testConnection()">Test Connection</button>
+                    </div>
+                `;
+            }
+        }
+
+        // Toggle publish/unpublish with improved error handling
+        async function togglePublish(routeId, shouldPublish) {
+            // Disable the toggle switch to prevent double-clicks
+            const toggleSwitch = document.querySelector(`[data-route-id="${routeId}"]`);
+            if (toggleSwitch) {
+                toggleSwitch.style.pointerEvents = 'none';
+                toggleSwitch.style.opacity = '0.5';
+            }
+
+            try {
+                console.log(`${shouldPublish ? 'Publishing' : 'Unpublishing'} route:`, routeId);
+                
+                const response = await fetch(`${API_BASE}/routes/${routeId}/publish`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ published: shouldPublish })
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || `HTTP ${response.status}`);
+                }
+
+                const result = await response.json();
+                console.log('Toggle result:', result);
+                
+                // Update the route in our local data
+                const routeIndex = currentRoutes.findIndex(r => r.id === routeId);
+                if (routeIndex !== -1) {
+                    currentRoutes[routeIndex].published = shouldPublish;
+                }
+                
+                showSuccess(`Route ${shouldPublish ? 'published' : 'unpublished'} successfully! ${result.publishedRoutes} routes are now live.`);
+                
+                // Reload the routes list to ensure everything is in sync
+                setTimeout(() => {
+                    loadRoutes();
+                }, 1000);
+                
+            } catch (error) {
+                console.error(`Error ${shouldPublish ? 'publishing' : 'unpublishing'} route:`, error);
+                showError(`Failed to ${shouldPublish ? 'publish' : 'unpublish'} route: ${error.message}`);
+                
+                // Re-enable the toggle switch on error
+                if (toggleSwitch) {
+                    toggleSwitch.style.pointerEvents = 'auto';
+                    toggleSwitch.style.opacity = '1';
+                }
+            }
+        }
+
+        // Route CRUD operations
+        function createNewRoute() {
+            editingRoute = null;
+            document.getElementById('modal-title').textContent = 'Create New Route';
+            document.getElementById('route-form').reset();
+            document.getElementById('stops-count-display').textContent = '0 stops';
+            showModal('route-modal');
+        }
+
+        function editRoute(routeId) {
+            editingRoute = routeId;
+            const route = currentRoutes.find(r => r.id === routeId);
+            if (!route) {
+                showError('Route not found');
+                return;
+            }
+
+            document.getElementById('modal-title').textContent = `Edit Route: ${route.name}`;
+            
+            // Populate form
+            const form = document.getElementById('route-form');
+            const fields = ['name', 'city', 'category', 'difficulty', 'estimatedDuration', 'distance', 'description', 'color'];
+            
+            fields.forEach(field => {
+                const input = form.querySelector(`[name="${field}"]`);
+                if (input && route[field]) {
+                    input.value = route[field];
+                }
+            });
+
+            document.getElementById('stops-count-display').textContent = `${route.points?.length || 0} stops`;
+            showModal('route-modal');
+        }
+
+        async function saveRoute() {
+            const form = document.getElementById('route-form');
+            const formData = new FormData(form);
+            
+            // Convert FormData to object
+            const routeData = {};
+            for (let [key, value] of formData.entries()) {
+                routeData[key] = value;
+            }
+
+            // Validate required fields
+            if (!routeData.name || !routeData.city) {
+                showError('Name and City are required fields');
+                return;
+            }
+
+            try {
+                console.log('Saving route:', routeData);
+                
+                let response;
+                if (editingRoute) {
+                    // Update existing route
+                    response = await fetch(`${API_BASE}/routes/${editingRoute}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(routeData)
+                    });
+                } else {
+                    // Create new route
+                    response = await fetch(`${API_BASE}/routes`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(routeData)
+                    });
+                }
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || `HTTP ${response.status}`);
+                }
+
+                const savedRoute = await response.json();
+                console.log('Route saved:', savedRoute);
+
+                closeModal('route-modal');
+                showSuccess(`Route "${routeData.name}" saved successfully!`);
+                await loadRoutes();
+
+            } catch (error) {
+                console.error('Error saving route:', error);
+                showError(`Failed to save route: ${error.message}`);
+            }
+        }
+
+        async function deleteRoute(routeId) {
+            const route = currentRoutes.find(r => r.id === routeId);
+            if (!confirm(`Are you sure you want to delete "${route?.name || routeId}"? This action cannot be undone.`)) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/routes/${routeId}`, {
+                    method: 'DELETE'
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || `HTTP ${response.status}`);
+                }
+
+                showSuccess('Route deleted successfully');
+                await loadRoutes();
+
+            } catch (error) {
+                console.error('Error deleting route:', error);
+                showError(`Failed to delete route: ${error.message}`);
+            }
+        }
+
+        // Regenerate app routes
+        async function regenerateRoutesFile() {
+            try {
+                const response = await fetch(`${API_BASE}/regenerate-routes`, {
+                    method: 'POST'
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+
+                const result = await response.json();
+                showSuccess(`App updated! ${result.publishedRoutes} published routes are now live in your app.`);
+                
+            } catch (error) {
+                console.error('Error regenerating routes:', error);
+                showError(`Failed to update app: ${error.message}`);
+            }
+        }
+
+        // Import default routes
+        async function importDefaultRoutes() {
+            if (!confirm('This will add default Milan routes to your database. Continue?')) {
+                return;
+            }
+
+            const defaultRoutes = [
+                {
+                    name: 'Historic Milan Tour',
+                    city: 'Milan',
+                    category: 'Historical',
+                    difficulty: 'Easy',
+                    estimatedDuration: '2 hours',
+                    distance: '3.5 km',
+                    description: 'Walk through Milan\'s historic center visiting the Duomo, Galleria, and more iconic landmarks.',
+                    color: '#8B4513',
+                    published: true
+                },
+                {
+                    name: 'Modern Milan Route',
+                    city: 'Milan',
+                    category: 'Modern',
+                    difficulty: 'Easy',
+                    estimatedDuration: '1.5 hours',
+                    distance: '2.8 km',
+                    description: 'Explore Milan\'s modern districts and contemporary architecture.',
+                    color: '#E31E24',
+                    published: false
+                }
+            ];
+
+            try {
+                for (const route of defaultRoutes) {
+                    const response = await fetch(`${API_BASE}/routes`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(route)
+                    });
+                    
+                    if (!response.ok) {
+                        console.warn('Failed to create route:', route.name);
+                    }
+                }
+
+                showSuccess(`Imported ${defaultRoutes.length} default routes`);
+                await loadRoutes();
+
+            } catch (error) {
+                console.error('Error importing default routes:', error);
+                showError(`Failed to import routes: ${error.message}`);
+            }
+        }
+
+        // Analytics
+        async function loadAnalytics() {
+            const analyticsContent = document.getElementById('analytics-content');
+            analyticsContent.innerHTML = '<div class="loading">Loading analytics...</div>';
+
+            try {
+                const response = await fetch(`${API_BASE}/analytics`);
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                
+                const analytics = await response.json();
+
+                analyticsContent.innerHTML = `
+                    <div class="form-section">
+                        <h3>📊 Route Overview</h3>
+                        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px;">
+                            <div style="text-align: center; padding: 20px; background: rgba(255,255,255,0.05); border-radius: 8px;">
+                                <div style="font-size: 32px; font-weight: 700; color: #FFD700;">${analytics.totalRoutes || 0}</div>
+                                <div style="color: rgba(255,255,255,0.8);">Total Routes</div>
+                            </div>
+                            <div style="text-align: center; padding: 20px; background: rgba(255,255,255,0.05); border-radius: 8px;">
+                                <div style="font-size: 32px; font-weight: 700; color: #4CAF50;">${analytics.publishedRoutes || 0}</div>
+                                <div style="color: rgba(255,255,255,0.8);">Published</div>
+                            </div>
+                            <div style="text-align: center; padding: 20px; background: rgba(255,255,255,0.05); border-radius: 8px;">
+                                <div style="font-size: 32px; font-weight: 700; color: #ff6b6b;">${analytics.unpublishedRoutes || 0}</div>
+                                <div style="color: rgba(255,255,255,0.8);">Drafts</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+
+            } catch (error) {
+                console.error('Error loading analytics:', error);
+                analyticsContent.innerHTML = `
+                    <div class="empty-state">
+                        <h3>Error loading analytics</h3>
+                        <p>${error.message}</p>
+                        <button class="btn-primary" onclick="loadAnalytics()">Retry</button>
+                    </div>
+                `;
+            }
+        }
+
+        // Utility Functions
+        function showModal(modalId) {
+            document.getElementById(modalId).classList.add('active');
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.remove('active');
+        }
+
+        function closeCMS() {
+            if (confirm('Are you sure you want to close the CMS?')) {
+                window.close();
+            }
+        }
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', function(e) {
+            if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+                e.preventDefault();
+                if (document.getElementById('route-modal').classList.contains('active')) {
+                    saveRoute();
+                }
+            }
+            
+            if (e.key === 'Escape') {
+                document.querySelectorAll('.modal.active').forEach(modal => {
+                    modal.classList.remove('active');
+                });
+            }
+        });
+    </script>
+</body>
+</html>
