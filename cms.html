@@ -714,8 +714,11 @@
                     </div>
                     <div class="form-group">
                         <label class="form-label">Points Added</label>
-                        <span id="stops-count-display">0 stops</span>
-                        <p style="font-size: 12px; color: rgba(255,255,255,0.6);">Save route first, then edit to add stops</p>
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                            <span id="stops-count-display">0 stops</span>
+                            <button type="button" class="btn-primary" onclick="addNewStop()" style="padding: 8px 16px; font-size: 12px;">+ Add Stop</button>
+                        </div>
+                        <div id="stops-list-inline" style="max-height: 300px; overflow-y: auto;"></div>
                     </div>
                 </div>
             </form>
@@ -723,6 +726,59 @@
                 <button type="button" class="btn-primary" onclick="saveRoute()">
                     💾 Save Route
                 </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stop Editor Modal -->
+    <div id="stop-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title" id="stop-modal-title">Edit Stop</h3>
+                <button class="close-btn" onclick="closeModal('stop-modal')">✕</button>
+            </div>
+            <form id="stop-form" style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px;">
+                <div class="form-section">
+                    <h3>📍 Basic Information</h3>
+                    <div class="form-group">
+                        <label class="form-label">Stop Number</label>
+                        <input type="number" class="form-input" name="stopNumber" min="1" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Stop Name *</label>
+                        <input type="text" class="form-input" name="name" placeholder="Enter stop name" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Description *</label>
+                        <textarea class="form-textarea" name="description" placeholder="Enter detailed description" required></textarea>
+                    </div>
+                    <h3 style="margin-top: 30px;">📍 Location</h3>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                        <div class="form-group">
+                            <label class="form-label">Latitude</label>
+                            <input type="number" class="form-input" name="latitude" step="0.000001" placeholder="e.g. 45.4642" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Longitude</label>
+                            <input type="number" class="form-input" name="longitude" step="0.000001" placeholder="e.g. 9.1900" required>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-section">
+                    <h3>🎧 Audio Guide</h3>
+                    <div class="form-group">
+                        <label class="form-label">Audio File Name</label>
+                        <input type="text" class="form-input" name="audioFile" placeholder="e.g. stop1.mp3">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Audio Duration</label>
+                        <input type="text" class="form-input" name="audioDuration" placeholder="e.g. 2:30">
+                    </div>
+                </div>
+            </form>
+            <div style="text-align: right; margin-top: 30px; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.1);">
+                <button type="button" class="btn-secondary" onclick="closeModal('stop-modal')">Cancel</button>
+                <button type="button" class="btn-primary" onclick="saveStop()">💾 Save Stop</button>
             </div>
         </div>
     </div>
@@ -737,6 +793,8 @@
         let API_BASE = API_BASES[0];
         let currentRoutes = [];
         let editingRoute = null;
+        let editingRouteStops = [];
+        let editingStopIndex = -1;
         let systemStatus = {
             serverConnected: false,
             routesLoaded: false
@@ -1042,9 +1100,11 @@
         // Route CRUD operations
         function createNewRoute() {
             editingRoute = null;
+            editingRouteStops = [];
             document.getElementById('modal-title').textContent = 'Create New Route';
             document.getElementById('route-form').reset();
             document.getElementById('stops-count-display').textContent = '0 stops';
+            updateStopsListInline();
             showModal('route-modal');
         }
 
@@ -1070,6 +1130,8 @@
             });
 
             document.getElementById('stops-count-display').textContent = `${route.points?.length || 0} stops`;
+            editingRouteStops = route.points || [];
+            updateStopsListInline();
             showModal('route-modal');
         }
 
@@ -1082,6 +1144,9 @@
             for (let [key, value] of formData.entries()) {
                 routeData[key] = value;
             }
+
+            // Add stops data
+            routeData.points = editingRouteStops;
 
             // Validate required fields
             if (!routeData.name || !routeData.city) {
@@ -1149,6 +1214,103 @@
             } catch (error) {
                 console.error('Error deleting route:', error);
                 showError(`Failed to delete route: ${error.message}`);
+            }
+        }
+
+        // Stop Management Functions
+        function updateStopsListInline() {
+            const stopsList = document.getElementById('stops-list-inline');
+            const stopsCount = document.getElementById('stops-count-display');
+            
+            stopsCount.textContent = `${editingRouteStops.length} stops`;
+            
+            if (editingRouteStops.length === 0) {
+                stopsList.innerHTML = '<p style="color: rgba(255,255,255,0.6); font-size: 12px; text-align: center; padding: 20px;">No stops added yet</p>';
+                return;
+            }
+
+            stopsList.innerHTML = editingRouteStops.map((stop, index) => `
+                <div style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 12px; margin-bottom: 8px; cursor: pointer;" onclick="editStop(${index})">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <div style="font-weight: 600; color: white; font-size: 14px;">${index + 1}. ${stop.name || 'Unnamed Stop'}</div>
+                            <div style="font-size: 11px; color: rgba(255,255,255,0.6); margin-top: 4px;">
+                                ${stop.coordinates ? `📍 ${stop.coordinates[1]?.toFixed(4)}, ${stop.coordinates[0]?.toFixed(4)}` : '📍 No location'}
+                                ${stop.audioFile ? ' 🎧' : ' 🔇'}
+                            </div>
+                        </div>
+                        <button onclick="event.stopPropagation(); deleteStop(${index})" style="background: rgba(255,107,107,0.2); border: none; color: #ff6b6b; padding: 4px 8px; border-radius: 4px; cursor: pointer;">×</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function addNewStop() {
+            editingStopIndex = -1;
+            document.getElementById('stop-modal-title').textContent = `Add Stop ${editingRouteStops.length + 1}`;
+            document.getElementById('stop-form').reset();
+            document.getElementById('stop-form').querySelector('[name="stopNumber"]').value = editingRouteStops.length + 1;
+            showModal('stop-modal');
+        }
+
+        function editStop(index) {
+            editingStopIndex = index;
+            const stop = editingRouteStops[index];
+            document.getElementById('stop-modal-title').textContent = `Edit Stop ${index + 1}`;
+            
+            const form = document.getElementById('stop-form');
+            form.querySelector('[name="stopNumber"]').value = index + 1;
+            form.querySelector('[name="name"]').value = stop.name || '';
+            form.querySelector('[name="description"]').value = stop.description || '';
+            
+            if (stop.coordinates) {
+                form.querySelector('[name="latitude"]').value = stop.coordinates[1];
+                form.querySelector('[name="longitude"]').value = stop.coordinates[0];
+            }
+            
+            form.querySelector('[name="audioFile"]').value = stop.audioFile || '';
+            form.querySelector('[name="audioDuration"]').value = stop.audioDuration || '';
+            
+            showModal('stop-modal');
+        }
+
+        function saveStop() {
+            const form = document.getElementById('stop-form');
+            const formData = new FormData(form);
+            
+            const stopData = {};
+            for (let [key, value] of formData.entries()) {
+                stopData[key] = value;
+            }
+
+            if (!stopData.name || !stopData.description || !stopData.latitude || !stopData.longitude) {
+                alert('Stop name, description, and coordinates are required');
+                return;
+            }
+
+            const newStop = {
+                name: stopData.name,
+                description: stopData.description,
+                coordinates: [parseFloat(stopData.longitude), parseFloat(stopData.latitude)],
+                type: editingStopIndex === 0 ? 'start' : 'waypoint',
+                audioFile: stopData.audioFile || null,
+                audioDuration: stopData.audioDuration || null
+            };
+
+            if (editingStopIndex === -1) {
+                editingRouteStops.push(newStop);
+            } else {
+                editingRouteStops[editingStopIndex] = newStop;
+            }
+
+            updateStopsListInline();
+            closeModal('stop-modal');
+        }
+
+        function deleteStop(index) {
+            if (confirm(`Delete stop "${editingRouteStops[index].name}"?`)) {
+                editingRouteStops.splice(index, 1);
+                updateStopsListInline();
             }
         }
 
@@ -1289,6 +1451,8 @@
                 e.preventDefault();
                 if (document.getElementById('route-modal').classList.contains('active')) {
                     saveRoute();
+                } else if (document.getElementById('stop-modal').classList.contains('active')) {
+                    saveStop();
                 }
             }
             

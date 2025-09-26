@@ -4,9 +4,324 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ICHE - Audio Guide</title>
-  <link rel="stylesheet" href="css/audioguide.css">
-  <!-- Leaflet CSS -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #2d5a3d;
+      color: white;
+      overflow: hidden;
+      height: 100vh;
+    }
+
+    .container {
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+
+    /* Header */
+    .header {
+      background: #2d5a3d;
+      padding: 15px 20px;
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      position: relative;
+      z-index: 1000;
+    }
+
+    .back-button {
+      background: none;
+      border: none;
+      color: white;
+      font-size: 24px;
+      cursor: pointer;
+      padding: 5px;
+    }
+
+    .route-title {
+      color: white;
+      font-size: 20px;
+      font-weight: 500;
+    }
+
+    /* Map Container - 60% of remaining height */
+    .map-container {
+      height: 60vh;
+      position: relative;
+      background: #2d5a3d;
+    }
+
+    #map {
+      width: 100%;
+      height: 100%;
+    }
+
+    /* User location popup */
+    .user-location-popup {
+      position: absolute;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #4CAF50;
+      color: white;
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-size: 14px;
+      z-index: 1000;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+    }
+
+    /* Info Cards Container */
+    .info-cards-container {
+      position: absolute;
+      top: calc(40vh + 80px); /* Start from where map ends + header */
+      left: 0;
+      right: 0;
+      bottom: 120px; /* Leave space for audio player */
+      z-index: 500;
+      pointer-events: none;
+    }
+
+    .info-card {
+      position: absolute;
+      left: 5%;
+      width: 90%;
+      background: rgba(45, 90, 61, 0.95);
+      backdrop-filter: blur(10px);
+      border-radius: 16px;
+      padding: 24px;
+      transform: translateX(100vw);
+      transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      pointer-events: auto;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+    }
+
+    .info-card.active {
+      transform: translateX(0);
+    }
+
+    .info-card.prev {
+      transform: translateX(-100vw);
+    }
+
+    .current-stop-label {
+      color: #FFD700;
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .stop-icon {
+      width: 20px;
+      height: 20px;
+      background: #FFD700;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      color: #2d5a3d;
+      font-weight: bold;
+    }
+
+    .stop-title {
+      font-size: 24px;
+      font-weight: 600;
+      color: #FFD700;
+      margin-bottom: 16px;
+    }
+
+    .stop-description {
+      font-size: 16px;
+      line-height: 1.5;
+      color: rgba(255,255,255,0.9);
+      margin-bottom: 20px;
+    }
+
+    .stop-navigation {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      color: rgba(255,255,255,0.7);
+      font-size: 14px;
+    }
+
+    .stop-counter {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .next-stop {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    /* Bottom Section - Audio Player */
+    .audio-section {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 120px;
+      background: #2d5a3d;
+      border-top: 1px solid rgba(255,255,255,0.1);
+    }
+
+    /* Progress Bar */
+    .progress-container {
+      padding: 0 20px;
+      padding-top: 16px;
+    }
+
+    .progress-bar {
+      width: 100%;
+      height: 4px;
+      background: rgba(255,255,255,0.2);
+      border-radius: 2px;
+      overflow: hidden;
+      margin-bottom: 8px;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: #FFD700;
+      width: 0%;
+      transition: width 0.1s ease;
+    }
+
+    .time-display {
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+      color: rgba(255,255,255,0.7);
+    }
+
+    /* Audio Info */
+    .audio-info {
+      text-align: center;
+      padding: 8px 20px 0;
+    }
+
+    .audio-title {
+      font-size: 16px;
+      font-weight: 500;
+      color: white;
+      margin-bottom: 4px;
+    }
+
+    .audio-location {
+      font-size: 14px;
+      color: rgba(255,255,255,0.7);
+    }
+
+    /* Player Controls */
+    .player-controls {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 20px;
+      padding: 12px 20px 20px;
+    }
+
+    .control-btn {
+      background: none;
+      border: none;
+      color: rgba(255,255,255,0.8);
+      font-size: 20px;
+      cursor: pointer;
+      padding: 8px;
+      border-radius: 50%;
+      transition: all 0.2s ease;
+    }
+
+    .control-btn:hover {
+      color: white;
+      background: rgba(255,255,255,0.1);
+    }
+
+    .play-btn {
+      width: 56px;
+      height: 56px;
+      background: #FFD700;
+      border: none;
+      border-radius: 50%;
+      color: #2d5a3d;
+      font-size: 24px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s ease;
+    }
+
+    .play-btn:hover {
+      background: #FFC107;
+      transform: scale(1.05);
+    }
+
+    /* Map markers custom styles */
+    .route-marker {
+      background: #FFD700;
+      border: 3px solid white;
+      border-radius: 50%;
+      width: 20px;
+      height: 20px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    }
+
+    .user-marker {
+      background: #4CAF50;
+      border: 3px solid white;
+      border-radius: 50%;
+      width: 16px;
+      height: 16px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    }
+
+    /* Touch gestures */
+    .swipe-hint {
+      position: absolute;
+      bottom: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      color: rgba(255,255,255,0.5);
+      font-size: 12px;
+      pointer-events: none;
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+      .header {
+        padding: 12px 16px;
+      }
+      
+      .route-title {
+        font-size: 18px;
+      }
+      
+      .info-card {
+        padding: 20px;
+      }
+      
+      .stop-title {
+        font-size: 20px;
+      }
+    }
+  </style>
 </head>
 <body>
 
@@ -17,49 +332,46 @@
     <h1 class="route-title" id="routeTitle">Loading Route...</h1>
   </div>
 
-  <!-- Map Container -->
+  <!-- Map Container (60% of screen) -->
   <div class="map-container">
-    <div id="map" class="map"></div>
-    
-    <!-- Location Status -->
-    <div class="location-status" id="locationStatus">
-      <div class="status-icon">📍</div>
-      <span class="status-text">Locating...</span>
+    <div id="map"></div>
+    <!-- User location indicator -->
+    <div class="user-location-popup" id="userLocationPopup" style="display: none;">
+      You are here
     </div>
   </div>
 
-  <!-- Swipeable Info Cards Container -->
+  <!-- Swipeable Info Cards -->
   <div class="info-cards-container" id="infoCardsContainer">
-    <div class="swipe-handle" id="swipeHandle"></div>
-    
-    <div class="info-cards-wrapper" id="infoCardsWrapper">
-      <!-- Info cards will be generated here by JavaScript -->
-    </div>
+    <!-- Cards will be generated here -->
   </div>
 
-  <!-- Audio Player -->
-  <div class="audio-player" id="audioPlayer">
-    <div class="audio-info">
-      <div class="audio-title" id="audioTitle">Welcome to Milan Audio Tour</div>
-      <div class="audio-location" id="audioLocation">Preparing your tour...</div>
-    </div>
-    
-    <div class="progress-bar-container">
-      <div class="progress-bar" id="progressBar">
+  <!-- Audio Player Section -->
+  <div class="audio-section">
+    <!-- Progress Bar -->
+    <div class="progress-container">
+      <div class="progress-bar">
         <div class="progress-fill" id="progressFill"></div>
       </div>
       <div class="time-display">
         <span id="currentTime">0:00</span>
-        <span id="totalTime">0:00</span>
+        <span id="totalTime">2:30</span>
       </div>
     </div>
-    
+
+    <!-- Audio Info -->
+    <div class="audio-info">
+      <div class="audio-title" id="audioTitle">Welcome to Historic Downtown Line</div>
+      <div class="audio-location" id="audioLocation">Central Station</div>
+    </div>
+
+    <!-- Player Controls -->
     <div class="player-controls">
-      <button class="control-btn" id="rewindBtn" title="Rewind 10s">⏪</button>
-      <button class="control-btn" id="backwardBtn" title="Previous Point">⏮</button>
+      <button class="control-btn" id="rewindBtn">⟲</button>
+      <button class="control-btn" id="prevBtn">⏮</button>
       <button class="play-btn" id="playBtn">▶</button>
-      <button class="control-btn" id="forwardBtn" title="Next Point">⏭</button>
-      <button class="control-btn" id="refreshBtn" title="Refresh Location">🔄</button>
+      <button class="control-btn" id="nextBtn">⏭</button>
+      <button class="control-btn" id="refreshBtn">↻</button>
     </div>
   </div>
 </div>
@@ -70,7 +382,364 @@
 <!-- Scripts -->
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="JS/routes.js"></script>
-<script src="JS/audioguide.js"></script>
+
+<script>
+// Global variables
+let map;
+let currentRoute = null;
+let currentCardIndex = 0;
+let audioElement;
+let userLocation = null;
+let routeMarkers = [];
+
+// Utility functions
+function formatTime(seconds) {
+    if (isNaN(seconds) || seconds < 0) return "0:00";
+    const minutes = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60);
+    return `${minutes}:${secs.toString().padStart(2, '0')}`;
+}
+
+function getRouteIdFromURL() {
+    const urlParams = new URLSearchParams(window.location.search);
+    return urlParams.get('route');
+}
+
+// Initialize application
+document.addEventListener('DOMContentLoaded', function() {
+    initializeApp();
+});
+
+async function initializeApp() {
+    try {
+        // Get route ID
+        const routeId = getRouteIdFromURL();
+        if (!routeId) {
+            alert("No route selected");
+            goBack();
+            return;
+        }
+
+        // Wait for routes to load
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        // Get route data
+        if (typeof routes !== 'undefined' && routes.length > 0) {
+            currentRoute = routes.find(r => r.id === routeId);
+        }
+        
+        if (!currentRoute) {
+            await loadRouteFromAPI(routeId);
+        }
+        
+        if (!currentRoute) {
+            alert("Route not found");
+            goBack();
+            return;
+        }
+
+        console.log("Route loaded:", currentRoute.name);
+        
+        // Initialize components
+        setupUI();
+        initializeMap();
+        generateInfoCards();
+        initializeAudio();
+        setupSwipeGestures();
+        requestUserLocation();
+        
+    } catch (error) {
+        console.error("Initialization error:", error);
+        alert("Failed to load audio tour");
+    }
+}
+
+async function loadRouteFromAPI(routeId) {
+    try {
+        const response = await fetch('/api/app/routes');
+        const allRoutes = await response.json();
+        currentRoute = allRoutes.find(r => r.id === routeId);
+    } catch (error) {
+        console.error("API load error:", error);
+    }
+}
+
+function setupUI() {
+    document.getElementById('routeTitle').textContent = currentRoute.name;
+    document.getElementById('audioTitle').textContent = currentRoute.name;
+    document.getElementById('audioLocation').textContent = currentRoute.points?.[0]?.name || "Starting point";
+}
+
+function initializeMap() {
+    try {
+        if (!currentRoute.points || currentRoute.points.length === 0) {
+            console.error("No route points available");
+            return;
+        }
+
+        const firstPoint = currentRoute.points[0];
+        const lat = firstPoint.coordinates[1];
+        const lng = firstPoint.coordinates[0];
+
+        map = L.map('map', {
+            zoomControl: false,
+            attributionControl: false
+        }).setView([lat, lng], 15);
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+
+        // Add route markers
+        currentRoute.points.forEach((point, index) => {
+            const marker = L.marker([point.coordinates[1], point.coordinates[0]], {
+                icon: L.divIcon({
+                    className: 'route-marker',
+                    html: '',
+                    iconSize: [20, 20]
+                })
+            }).addTo(map);
+            
+            marker.bindPopup(`<strong>${point.name}</strong>`);
+            routeMarkers.push(marker);
+        });
+
+        // Fit bounds
+        if (currentRoute.points.length > 1) {
+            const bounds = L.latLngBounds(
+                currentRoute.points.map(p => [p.coordinates[1], p.coordinates[0]])
+            );
+            map.fitBounds(bounds, {padding: [50, 50]});
+        }
+
+    } catch (error) {
+        console.error("Map initialization error:", error);
+    }
+}
+
+function generateInfoCards() {
+    const container = document.getElementById('infoCardsContainer');
+    if (!container || !currentRoute.points) return;
+
+    container.innerHTML = currentRoute.points.map((point, index) => `
+        <div class="info-card ${index === 0 ? 'active' : ''}" data-index="${index}">
+            <div class="current-stop-label">
+                <div class="stop-icon">${index + 1}</div>
+                Current Stop
+            </div>
+            <h2 class="stop-title">${point.name}</h2>
+            <p class="stop-description">${point.description}</p>
+            <div class="stop-navigation">
+                <div class="stop-counter">
+                    <span>📍</span>
+                    Stop ${index + 1} of ${currentRoute.points.length}
+                </div>
+                <div class="next-stop">
+                    <span>👥</span>
+                    ${index + 1 < currentRoute.points.length ? `Next: ${currentRoute.points[index + 1].name}` : 'Tour Complete'}
+                </div>
+            </div>
+            <div class="swipe-hint">Swipe left/right to navigate</div>
+        </div>
+    `).join('');
+}
+
+function showCard(index) {
+    const cards = document.querySelectorAll('.info-card');
+    cards.forEach((card, i) => {
+        card.classList.remove('active', 'prev');
+        if (i === index) {
+            card.classList.add('active');
+        } else if (i < index) {
+            card.classList.add('prev');
+        }
+    });
+    
+    currentCardIndex = index;
+    updateAudioForPoint(index);
+    focusMapOnPoint(index);
+}
+
+function updateAudioForPoint(index) {
+    const point = currentRoute.points[index];
+    if (!point) return;
+    
+    document.getElementById('audioTitle').textContent = currentRoute.name;
+    document.getElementById('audioLocation').textContent = point.name;
+    
+    // Load audio if available
+    if (audioElement && point.audioFile) {
+        const audioUrl = currentRoute.audioFolder + point.audioFile;
+        audioElement.src = audioUrl;
+        audioElement.load();
+    }
+}
+
+function focusMapOnPoint(index) {
+    const point = currentRoute.points[index];
+    if (map && point) {
+        map.setView([point.coordinates[1], point.coordinates[0]], 16, {
+            animate: true,
+            duration: 0.5
+        });
+        
+        // Open popup for current marker
+        if (routeMarkers[index]) {
+            routeMarkers[index].openPopup();
+        }
+    }
+}
+
+function setupSwipeGestures() {
+    const container = document.getElementById('infoCardsContainer');
+    let startX = 0;
+    let startTime = 0;
+
+    container.addEventListener('touchstart', (e) => {
+        startX = e.touches[0].clientX;
+        startTime = Date.now();
+    }, { passive: true });
+
+    container.addEventListener('touchend', (e) => {
+        const endX = e.changedTouches[0].clientX;
+        const endTime = Date.now();
+        const deltaX = endX - startX;
+        const deltaTime = endTime - startTime;
+
+        // Swipe detection (minimum distance and maximum time)
+        if (Math.abs(deltaX) > 50 && deltaTime < 500) {
+            if (deltaX > 0) {
+                // Swipe right - previous card
+                previousCard();
+            } else {
+                // Swipe left - next card
+                nextCard();
+            }
+        }
+    }, { passive: true });
+
+    // Keyboard navigation
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'ArrowLeft') previousCard();
+        if (e.key === 'ArrowRight') nextCard();
+    });
+}
+
+function nextCard() {
+    if (currentCardIndex < currentRoute.points.length - 1) {
+        showCard(currentCardIndex + 1);
+    }
+}
+
+function previousCard() {
+    if (currentCardIndex > 0) {
+        showCard(currentCardIndex - 1);
+    }
+}
+
+function initializeAudio() {
+    audioElement = document.getElementById('audioElement');
+    if (!audioElement) return;
+
+    // Audio event listeners
+    audioElement.addEventListener('loadedmetadata', updateTimeDisplay);
+    audioElement.addEventListener('timeupdate', () => {
+        updateTimeDisplay();
+        updateProgressBar();
+    });
+    audioElement.addEventListener('ended', handleAudioEnd);
+
+    // Control buttons
+    document.getElementById('playBtn').onclick = togglePlayPause;
+    document.getElementById('prevBtn').onclick = previousCard;
+    document.getElementById('nextBtn').onclick = nextCard;
+    document.getElementById('rewindBtn').onclick = () => {
+        if (audioElement) audioElement.currentTime = Math.max(0, audioElement.currentTime - 10);
+    };
+    document.getElementById('refreshBtn').onclick = requestUserLocation;
+
+    // Load first audio
+    if (currentRoute.points && currentRoute.points.length > 0) {
+        updateAudioForPoint(0);
+    }
+}
+
+function togglePlayPause() {
+    if (!audioElement) return;
+    
+    const playBtn = document.getElementById('playBtn');
+    
+    if (audioElement.paused) {
+        audioElement.play();
+        playBtn.textContent = '⏸';
+    } else {
+        audioElement.pause();
+        playBtn.textContent = '▶';
+    }
+}
+
+function updateTimeDisplay() {
+    if (!audioElement) return;
+    
+    document.getElementById('currentTime').textContent = formatTime(audioElement.currentTime);
+    document.getElementById('totalTime').textContent = formatTime(audioElement.duration || 0);
+}
+
+function updateProgressBar() {
+    if (!audioElement || !audioElement.duration) return;
+    
+    const progress = (audioElement.currentTime / audioElement.duration) * 100;
+    document.getElementById('progressFill').style.width = progress + '%';
+}
+
+function handleAudioEnd() {
+    // Auto-advance to next card
+    setTimeout(() => {
+        if (currentCardIndex < currentRoute.points.length - 1) {
+            nextCard();
+        }
+    }, 1500);
+}
+
+function requestUserLocation() {
+    if (!navigator.geolocation) return;
+    
+    navigator.geolocation.getCurrentPosition(
+        (position) => {
+            userLocation = {
+                lat: position.coords.latitude,
+                lng: position.coords.longitude
+            };
+            
+            // Show user location popup
+            const popup = document.getElementById('userLocationPopup');
+            popup.style.display = 'block';
+            setTimeout(() => popup.style.display = 'none', 3000);
+            
+            // Add user marker to map
+            if (map) {
+                if (window.userMarker) {
+                    map.removeLayer(window.userMarker);
+                }
+                
+                window.userMarker = L.marker([userLocation.lat, userLocation.lng], {
+                    icon: L.divIcon({
+                        className: 'user-marker',
+                        html: '',
+                        iconSize: [16, 16]
+                    })
+                }).addTo(map);
+            }
+        },
+        (error) => console.error("Location error:", error),
+        { enableHighAccuracy: true, timeout: 10000 }
+    );
+}
+
+function goBack() {
+    window.location.href = 'dashboard.html';
+}
+
+console.log("Audio guide interface loaded");
+</script>
 
 </body>
 </html>

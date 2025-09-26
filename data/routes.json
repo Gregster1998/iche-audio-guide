@@ -9,12 +9,12 @@
       "estimatedDuration": "2.5 hours",
       "distance": "8.2 km",
       "description": "Follow the modern M4 metro line from Argonne through the heart of Milan to the vibrant Navigli district",
-      "color": "#E31E24",
+      "color": "#e31e24",
       "imageUrl": "/uploads/images/m4-route.jpg",
       "audioFolder": "/uploads/audio/m4-route/",
       "published": true,
       "createdAt": "2025-09-26T13:40:59.037Z",
-      "updatedAt": "2025-09-26T13:53:57.728Z",
+      "updatedAt": "2025-09-26T17:27:38.440Z",
       "points": [
         {
           "id": "argonne",
@@ -110,12 +110,12 @@
       "estimatedDuration": "3 hours",
       "distance": "4.1 km",
       "description": "Walk through Milan's most iconic historical landmarks from the magnificent Duomo to the powerful Sforza Castle",
-      "color": "#8B4513",
+      "color": "#8b4513",
       "imageUrl": "/uploads/images/historic-milan.jpg",
       "audioFolder": "/uploads/audio/historic-route/",
       "published": true,
       "createdAt": "2025-09-26T13:40:59.038Z",
-      "updatedAt": "2025-09-26T13:54:00.110Z",
+      "updatedAt": "2025-09-26T16:23:15.961Z",
       "points": [
         {
           "id": "duomo",
@@ -149,13 +149,42 @@
       "difficulty": "Easy",
       "estimatedDuration": "",
       "distance": "",
-      "description": "",
+      "description": "efgefg",
       "color": "#ffd700",
       "imageUrl": "",
       "audioFolder": "/uploads/audio/ergewrgsergs/",
       "published": true,
       "createdAt": "2025-09-26T14:03:54.636Z",
-      "updatedAt": "2025-09-26T14:03:58.336Z",
+      "updatedAt": "2025-09-26T18:00:35.616Z",
+      "points": [
+        {
+          "name": "sdgsdg",
+          "description": "sdgsdg",
+          "coordinates": [
+            322,
+            34
+          ],
+          "type": "waypoint",
+          "audioFile": null,
+          "audioDuration": null
+        }
+      ]
+    },
+    {
+      "id": "sgsedg",
+      "name": "sgsedg",
+      "city": "Milan",
+      "category": "Historical",
+      "difficulty": "Easy",
+      "estimatedDuration": "",
+      "distance": "",
+      "description": "efgefg",
+      "color": "#ffd700",
+      "imageUrl": "",
+      "audioFolder": "/uploads/audio/sgsedg/",
+      "published": true,
+      "createdAt": "2025-09-26T17:48:14.124Z",
+      "updatedAt": "2025-09-26T18:00:40.095Z",
       "points": []
     }
   ],
