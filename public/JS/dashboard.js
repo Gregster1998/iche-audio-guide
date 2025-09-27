@@ -1,5 +1,8 @@
-// Dashboard.js - Fixed with enhanced debugging
+// Dashboard.js - Fixed with proper route storage
 console.log("Dashboard loading...");
+
+// Global route storage
+let globalRoutesData = [];
 
 // Wait for routes to load, then populate the interface
 document.addEventListener('DOMContentLoaded', async function() {
@@ -74,8 +77,13 @@ document.addEventListener('DOMContentLoaded', async function() {
             console.log('Routes.js not available, using direct API data');
         }
         
+        // IMPORTANT: Store routes globally for selectRoute function
+        globalRoutesData = finalRoutes;
+        window.currentRoutesData = finalRoutes; // For backwards compatibility
+        
         console.log("Dashboard final routes:", finalRoutes);
         console.log("Routes count:", finalRoutes.length);
+        console.log("Global routes stored:", globalRoutesData.length);
         
         // Populate the interface
         populateRouteDropdown(finalRoutes);
@@ -167,7 +175,7 @@ function populateAvailableRoutes(routes) {
     
     // Create route cards with images and custom positioning
     container.innerHTML = routes.map(route => {
-        console.log(`Creating card for route: ${route.name}`);
+        console.log(`Creating card for route: ${route.name} (ID: ${route.id})`);
         
         // Determine the background image or fallback
         const backgroundImage = route.imageUrl 
@@ -180,7 +188,7 @@ function populateAvailableRoutes(routes) {
         console.log(`Route ${route.name}: using position "${backgroundPosition}"`);
         
         return `
-            <div class="route-card" onclick="selectRoute('${route.id}')">
+            <div class="route-card" onclick="selectRoute('${route.id}')" data-route-id="${route.id}">
                 <div class="route-image" style="
                     background-image: ${backgroundImage}; 
                     background-size: cover; 
@@ -216,30 +224,59 @@ function populateAvailableRoutes(routes) {
     console.log(`✅ Added ${routes.length} route cards with custom image positioning`);
 }
 
-// Handle route selection
+// FIXED: Handle route selection with proper route lookup
 function selectRoute(routeId) {
     console.log('Route selected:', routeId);
+    console.log('Available routes in globalRoutesData:', globalRoutesData.length);
+    console.log('Route IDs available:', globalRoutesData.map(r => r.id));
     
-    // For compatibility, try to get route from multiple sources
+    // Look for route in multiple places
     let route = null;
     
-    // Try window.getRoute if available
-    if (typeof window.getRoute === 'function') {
-        route = window.getRoute(routeId);
+    // First try: globalRoutesData
+    if (globalRoutesData && globalRoutesData.length > 0) {
+        route = globalRoutesData.find(r => r.id === routeId);
+        if (route) {
+            console.log('✅ Found route in globalRoutesData:', route.name);
+        }
     }
     
-    // If not found, look in the current data
+    // Second try: window.getRoute if available
+    if (!route && typeof window.getRoute === 'function') {
+        route = window.getRoute(routeId);
+        if (route) {
+            console.log('✅ Found route via window.getRoute:', route.name);
+        }
+    }
+    
+    // Third try: window.currentRoutesData
     if (!route && window.currentRoutesData) {
         route = window.currentRoutesData.find(r => r.id === routeId);
+        if (route) {
+            console.log('✅ Found route in window.currentRoutesData:', route.name);
+        }
+    }
+    
+    // Fourth try: window.routes
+    if (!route && window.routes) {
+        route = window.routes.find(r => r.id === routeId);
+        if (route) {
+            console.log('✅ Found route in window.routes:', route.name);
+        }
     }
     
     if (!route) {
-        console.error('Selected route not found:', routeId);
-        alert('Route not found. Please try reloading the page.');
+        console.error('❌ Selected route not found:', routeId);
+        console.error('Debug info:');
+        console.error('- globalRoutesData length:', globalRoutesData?.length || 0);
+        console.error('- window.currentRoutesData length:', window.currentRoutesData?.length || 0);
+        console.error('- window.routes length:', window.routes?.length || 0);
+        
+        alert(`Route not found (ID: ${routeId}). Please try reloading the page.`);
         return;
     }
     
-    console.log('Found route:', route);
+    console.log('✅ Found route:', route.name);
     
     // Update the dropdown to show selected route
     const dropdown = document.getElementById('tramLineSelect');
@@ -256,8 +293,12 @@ function selectRoute(routeId) {
 
 // Show detailed route information with image and custom positioning
 function showDetailedRoute(route) {
+    console.log('Showing detailed route:', route.name);
     const detailedView = document.getElementById('detailedRouteView');
-    if (!detailedView) return;
+    if (!detailedView) {
+        console.error('Detailed route view element not found');
+        return;
+    }
     
     // Update detailed route image with custom positioning
     const detailedRouteImage = document.getElementById('detailedRouteImage');
@@ -274,15 +315,23 @@ function showDetailedRoute(route) {
     }
     
     // Populate detailed route information
-    document.getElementById('detailedRouteName').textContent = route.name;
-    document.getElementById('detailedRouteDescription').textContent = route.description || 'No description available';
-    document.getElementById('detailedRouteDistance').textContent = route.distance || 'N/A';
-    document.getElementById('detailedRouteDuration').textContent = route.estimatedDuration || 'N/A';
-    document.getElementById('detailedRouteDifficulty').textContent = route.difficulty || 'Easy';
-    document.getElementById('detailedRouteStops').textContent = `${route.points?.length || 0} points`;
+    const nameEl = document.getElementById('detailedRouteName');
+    const descEl = document.getElementById('detailedRouteDescription');
+    const distEl = document.getElementById('detailedRouteDistance');
+    const durEl = document.getElementById('detailedRouteDuration');
+    const diffEl = document.getElementById('detailedRouteDifficulty');
+    const stopsEl = document.getElementById('detailedRouteStops');
+    
+    if (nameEl) nameEl.textContent = route.name;
+    if (descEl) descEl.textContent = route.description || 'No description available';
+    if (distEl) distEl.textContent = route.distance || 'N/A';
+    if (durEl) durEl.textContent = route.estimatedDuration || 'N/A';
+    if (diffEl) diffEl.textContent = route.difficulty || 'Easy';
+    if (stopsEl) stopsEl.textContent = `${route.points?.length || 0} points`;
     
     // Show the detailed view
     detailedView.style.display = 'block';
+    console.log('✅ Detailed route view shown');
 }
 
 // Set up event listeners
@@ -321,6 +370,7 @@ function testRouteConnection() {
     const endpoints = [
         `${window.location.origin}/api/app/routes`,
         `${window.location.origin}/api/routes`,
+        `${window.location.origin}/api/debug/routes`,
         'http://localhost:3001/api/app/routes',
         'http://localhost:3001/api/routes'
     ];
@@ -334,15 +384,19 @@ function testRouteConnection() {
             if (response.ok) {
                 const data = await response.json();
                 console.log(`${endpoint} - Data:`, data);
-                console.log(`${endpoint} - Count: ${data.length}`);
+                console.log(`${endpoint} - Count: ${data.length || 'N/A'}`);
                 
-                if (data.length > 0) {
+                if (data && (Array.isArray(data) ? data.length > 0 : true)) {
                     console.log(`✅ ${endpoint} is working!`);
-                    // Store working data for later use
-                    window.currentRoutesData = data;
-                    // Try to repopulate
-                    populateRouteDropdown(data);
-                    populateAvailableRoutes(data);
+                    
+                    if (Array.isArray(data) && data.length > 0) {
+                        // Store working data for later use
+                        globalRoutesData = data;
+                        window.currentRoutesData = data;
+                        // Try to repopulate
+                        populateRouteDropdown(data);
+                        populateAvailableRoutes(data);
+                    }
                 }
             }
         } catch (error) {
@@ -352,14 +406,16 @@ function testRouteConnection() {
     
     // Test routes.js functions
     console.log('Routes.js functions available:');
-    console.log('- window.routes:', window.routes);
+    console.log('- window.routes:', window.routes?.length || 'undefined');
     console.log('- window.loadRoutes:', typeof window.loadRoutes);
     console.log('- window.getRoute:', typeof window.getRoute);
     console.log('- window.waitForRoutes:', typeof window.waitForRoutes);
+    console.log('- globalRoutesData:', globalRoutesData.length);
 }
 
-// Make test function available globally
+// Make functions available globally
 if (typeof window !== 'undefined') {
     window.testRouteConnection = testRouteConnection;
     window.selectRoute = selectRoute;
+    window.globalRoutesData = globalRoutesData;
 }
