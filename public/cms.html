@@ -4,6 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ICHE CMS - Content Management System for Audio Tours</title>
+    
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    
     <style>
         * {
             margin: 0;
@@ -483,22 +487,6 @@
             font-size: 12px;
         }
 
-        .upload-progress {
-            width: 100%;
-            height: 4px;
-            background: rgba(255, 255, 255, 0.2);
-            border-radius: 2px;
-            margin-top: 10px;
-            overflow: hidden;
-        }
-
-        .upload-progress-bar {
-            height: 100%;
-            background: #FFD700;
-            width: 0%;
-            transition: width 0.3s ease;
-        }
-
         /* Modal */
         .modal {
             display: none;
@@ -524,7 +512,7 @@
             border: 1px solid rgba(255, 255, 255, 0.2);
             border-radius: 16px;
             padding: 30px;
-            max-width: 1000px;
+            max-width: 1200px;
             width: 100%;
             max-height: 90vh;
             overflow-y: auto;
@@ -567,6 +555,106 @@
         .route-image-placeholder {
             color: rgba(255, 255, 255, 0.5);
             font-size: 14px;
+        }
+
+        /* Image Position Preview */
+        .image-position-preview {
+            margin-top: 15px;
+        }
+
+        .position-preview-box {
+            width: 100%;
+            height: 80px;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
+            font-size: 20px;
+        }
+
+        /* Map Styles */
+        .map-container {
+            width: 100%;
+            height: 400px;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            margin-top: 10px;
+            overflow: hidden;
+        }
+
+        .map-container .leaflet-container {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .location-controls {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            margin-top: 15px;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .radius-control {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .radius-slider {
+            width: 120px;
+            appearance: none;
+            -webkit-appearance: none;
+            height: 6px;
+            border-radius: 3px;
+            background: rgba(255, 255, 255, 0.2);
+            outline: none;
+        }
+
+        .radius-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #FFD700;
+            cursor: pointer;
+        }
+
+        .radius-slider::-moz-range-thumb {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #FFD700;
+            cursor: pointer;
+            border: none;
+        }
+
+        .coordinates-display {
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.7);
+            background: rgba(255, 255, 255, 0.05);
+            padding: 8px 12px;
+            border-radius: 6px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        /* Route Overview Map */
+        .route-overview-map {
+            width: 100%;
+            height: 300px;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            margin-top: 15px;
+            overflow: hidden;
         }
 
         /* Loading */
@@ -636,6 +724,11 @@
             .publish-toggle-container {
                 margin-bottom: 10px;
             }
+
+            .location-controls {
+                flex-direction: column;
+                align-items: stretch;
+            }
         }
 
         .error-message {
@@ -654,6 +747,28 @@
             padding: 15px;
             border-radius: 8px;
             margin-bottom: 20px;
+        }
+
+        /* Custom Leaflet marker styles */
+        .custom-marker {
+            background-color: #FFD700;
+            border: 3px solid #fff;
+            border-radius: 50%;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+        }
+
+        .stop-marker {
+            background-color: #4CAF50;
+            border: 3px solid #fff;
+            border-radius: 50%;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+        }
+
+        .start-marker {
+            background-color: #FF5722;
+            border: 3px solid #fff;
+            border-radius: 50%;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.4);
         }
     </style>
 </head>
@@ -752,7 +867,7 @@
             </div>
             <form id="route-form" class="form-grid">
                 <div class="form-section">
-                    <h3>📍 Route Details</h3>
+                    <h3>📝 Route Details</h3>
                     <div class="form-group">
                         <label class="form-label">Route Name *</label>
                         <input type="text" class="form-input" name="name" placeholder="Enter route name" required>
@@ -812,12 +927,41 @@
                         </div>
                     </div>
                     <div class="form-group">
+                        <label class="form-label">Image Position</label>
+                        <select class="form-select" name="imagePosition">
+                            <option value="center">Center</option>
+                            <option value="top">Top</option>
+                            <option value="bottom">Bottom</option>
+                            <option value="left">Left</option>
+                            <option value="right">Right</option>
+                            <option value="top left">Top Left</option>
+                            <option value="top right">Top Right</option>
+                            <option value="bottom left">Bottom Left</option>
+                            <option value="bottom right">Bottom Right</option>
+                        </select>
+                        <div style="font-size: 12px; color: rgba(255,255,255,0.6); margin-top: 5px;">
+                            Choose which part of the image to display in route cards
+                        </div>
+                    </div>
+                    <div class="image-position-preview" id="imagePositionPreview" style="display: none;">
+                        <div style="font-size: 12px; color: rgba(255,255,255,0.8); margin-bottom: 8px;">Preview in route card:</div>
+                        <div class="position-preview-box" id="positionPreviewBox">
+                            🎧
+                        </div>
+                    </div>
+                    <div class="form-group">
                         <label class="form-label">Points Added</label>
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
                             <span id="stops-count-display">0 stops</span>
                             <button type="button" class="btn-primary" onclick="addNewStop()" style="padding: 8px 16px; font-size: 12px;">+ Add Stop</button>
                         </div>
                         <div id="stops-list-inline" style="max-height: 300px; overflow-y: auto;"></div>
+                        
+                        <!-- Route Overview Map -->
+                        <div id="route-overview-container" style="display: none; margin-top: 20px;">
+                            <h4 style="color: rgba(255,255,255,0.9); margin-bottom: 10px;">Route Overview</h4>
+                            <div class="route-overview-map" id="routeOverviewMap"></div>
+                        </div>
                     </div>
                 </div>
             </form>
@@ -838,7 +982,7 @@
             </div>
             <form id="stop-form" style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px;">
                 <div class="form-section">
-                    <h3>📍 Basic Information</h3>
+                    <h3>📝 Basic Information</h3>
                     <div class="form-group">
                         <label class="form-label">Stop Number</label>
                         <input type="number" class="form-input" name="stopNumber" min="1" readonly>
@@ -850,30 +994,6 @@
                     <div class="form-group">
                         <label class="form-label">Description *</label>
                         <textarea class="form-textarea" name="description" placeholder="Enter detailed description" required></textarea>
-                    </div>
-                    <h3 style="margin-top: 30px;">📍 Location</h3>
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-                        <div class="form-group">
-                            <label class="form-label">Latitude</label>
-                            <input type="number" class="form-input" name="latitude" step="0.000001" placeholder="e.g. 45.4642" required>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Longitude</label>
-                            <input type="number" class="form-input" name="longitude" step="0.000001" placeholder="e.g. 9.1900" required>
-                        </div>
-                    </div>
-                </div>
-                <div class="form-section">
-                    <h3>🖼️ Stop Image</h3>
-                    <div class="form-group">
-                        <label class="form-label">Image URL</label>
-                        <input type="url" class="form-input" name="imageUrl" placeholder="Enter image URL or upload below">
-                        <div class="file-upload-area" id="stop-image-upload" onclick="document.getElementById('stop-image-file').click()">
-                            <div class="upload-icon">🖼️</div>
-                            <div class="upload-text">Click to upload image</div>
-                            <div class="upload-subtext">JPG, PNG up to 10MB</div>
-                        </div>
-                        <input type="file" id="stop-image-file" accept="image/*" style="display: none;" onchange="handleStopImageUpload(event)">
                     </div>
                     
                     <h3 style="margin-top: 30px;">🎧 Audio Guide</h3>
@@ -892,6 +1012,52 @@
                         <input type="text" class="form-input" name="audioDuration" placeholder="e.g. 2:30">
                     </div>
                 </div>
+                <div class="form-section">
+                    <h3>🖼️ Stop Image</h3>
+                    <div class="form-group">
+                        <label class="form-label">Image URL</label>
+                        <input type="url" class="form-input" name="imageUrl" placeholder="Enter image URL or upload below">
+                        <div class="file-upload-area" id="stop-image-upload" onclick="document.getElementById('stop-image-file').click()">
+                            <div class="upload-icon">🖼️</div>
+                            <div class="upload-text">Click to upload image</div>
+                            <div class="upload-subtext">JPG, PNG up to 10MB</div>
+                        </div>
+                        <input type="file" id="stop-image-file" accept="image/*" style="display: none;" onchange="handleStopImageUpload(event)">
+                    </div>
+                    
+                    <h3 style="margin-top: 30px;">📍 Location & Trigger Area</h3>
+                    <div class="form-group">
+                        <label class="form-label">Choose Location on Map</label>
+                        <button type="button" class="btn-secondary" onclick="openLocationPicker()" style="width: 100%; margin-bottom: 10px;">
+                            🗺️ Select Location on Map
+                        </button>
+                        
+                        <!-- Hidden coordinate inputs (populated by map) -->
+                        <input type="hidden" name="latitude" id="stop-latitude">
+                        <input type="hidden" name="longitude" id="stop-longitude">
+                        <input type="hidden" name="radius" id="stop-radius" value="50">
+                        
+                        <!-- Location display -->
+                        <div class="coordinates-display" id="coordinates-display">
+                            📍 Click "Select Location on Map" to choose coordinates
+                        </div>
+                        
+                        <!-- Interactive Map -->
+                        <div class="map-container" id="stopLocationMap" style="display: none;"></div>
+                        
+                        <!-- Location Controls -->
+                        <div class="location-controls" id="location-controls" style="display: none;">
+                            <div class="radius-control">
+                                <label style="font-size: 12px; color: rgba(255,255,255,0.8);">Audio Trigger Radius:</label>
+                                <input type="range" class="radius-slider" id="radius-slider" min="10" max="200" value="50" oninput="updateRadius(this.value)">
+                                <span id="radius-value" style="font-size: 12px; color: #FFD700; min-width: 40px;">50m</span>
+                            </div>
+                            <button type="button" class="btn-secondary" onclick="getCurrentLocation()" style="padding: 8px 16px; font-size: 12px;">
+                                📍 Use My Location
+                            </button>
+                        </div>
+                    </div>
+                </div>
             </form>
             <div style="text-align: right; margin-top: 30px; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.1);">
                 <button type="button" class="btn-secondary" onclick="closeModal('stop-modal')">Cancel</button>
@@ -900,6 +1066,9 @@
         </div>
     </div>
 
+    <!-- Leaflet JavaScript -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    
     <script>
         // Global variables
         const API_BASES = [
@@ -917,6 +1086,14 @@
             routesLoaded: false
         };
 
+        // Map variables
+        let stopLocationMap = null;
+        let routeOverviewMap = null;
+        let currentMarker = null;
+        let currentCircle = null;
+        let routePolyline = null;
+        let routeMarkers = [];
+
         // Initialize CMS
         document.addEventListener('DOMContentLoaded', function() {
             initializeCMS();
@@ -926,6 +1103,7 @@
         async function initializeCMS() {
             await testConnection();
             await loadRoutes();
+            setupImagePositionPreview();
         }
 
         // Connection Testing
@@ -1044,6 +1222,267 @@
             document.getElementById('error-container').innerHTML = '';
         }
 
+        // Map Functions
+        function initializeStopLocationMap() {
+            if (stopLocationMap) {
+                stopLocationMap.remove();
+            }
+
+            stopLocationMap = L.map('stopLocationMap').setView([45.4642, 9.1900], 13); // Default to Milan
+
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap contributors'
+            }).addTo(stopLocationMap);
+
+            // Add click handler
+            stopLocationMap.on('click', function(e) {
+                selectLocationOnMap(e.latlng);
+            });
+        }
+
+        function initializeRouteOverviewMap() {
+            if (routeOverviewMap) {
+                routeOverviewMap.remove();
+            }
+
+            if (editingRouteStops.length === 0) {
+                document.getElementById('route-overview-container').style.display = 'none';
+                return;
+            }
+
+            document.getElementById('route-overview-container').style.display = 'block';
+            
+            setTimeout(() => {
+                routeOverviewMap = L.map('routeOverviewMap').setView([45.4642, 9.1900], 13);
+
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    attribution: '© OpenStreetMap contributors'
+                }).addTo(routeOverviewMap);
+
+                updateRouteOverviewMap();
+            }, 100);
+        }
+
+        function updateRouteOverviewMap() {
+            if (!routeOverviewMap || editingRouteStops.length === 0) return;
+
+            // Clear existing markers and lines
+            routeMarkers.forEach(marker => routeOverviewMap.removeLayer(marker));
+            routeMarkers = [];
+            if (routePolyline) {
+                routeOverviewMap.removeLayer(routePolyline);
+            }
+
+            const validStops = editingRouteStops.filter(stop => stop.coordinates);
+            if (validStops.length === 0) return;
+
+            // Add markers for each stop
+            validStops.forEach((stop, index) => {
+                const [lng, lat] = stop.coordinates;
+                const isStart = index === 0;
+                
+                const marker = L.circleMarker([lat, lng], {
+                    radius: 8,
+                    fillColor: isStart ? '#FF5722' : '#4CAF50',
+                    color: '#fff',
+                    weight: 2,
+                    opacity: 1,
+                    fillOpacity: 0.8
+                }).addTo(routeOverviewMap);
+
+                // Add radius circle
+                if (stop.radius) {
+                    L.circle([lat, lng], {
+                        radius: stop.radius,
+                        fillColor: isStart ? '#FF5722' : '#4CAF50',
+                        fillOpacity: 0.1,
+                        color: isStart ? '#FF5722' : '#4CAF50',
+                        weight: 1
+                    }).addTo(routeOverviewMap);
+                }
+
+                marker.bindPopup(`
+                    <div style="color: #333;">
+                        <strong>${stop.name || `Stop ${index + 1}`}</strong><br>
+                        ${stop.description || 'No description'}<br>
+                        <small>Radius: ${stop.radius || 50}m</small>
+                    </div>
+                `);
+
+                routeMarkers.push(marker);
+            });
+
+            // Add connection lines between stops
+            if (validStops.length > 1) {
+                const latlngs = validStops.map(stop => [stop.coordinates[1], stop.coordinates[0]]);
+                routePolyline = L.polyline(latlngs, {
+                    color: '#FFD700',
+                    weight: 3,
+                    opacity: 0.7
+                }).addTo(routeOverviewMap);
+            }
+
+            // Fit map to show all stops
+            const group = new L.featureGroup(routeMarkers);
+            routeOverviewMap.fitBounds(group.getBounds().pad(0.1));
+        }
+
+        function openLocationPicker() {
+            const mapContainer = document.getElementById('stopLocationMap');
+            const controls = document.getElementById('location-controls');
+            
+            if (mapContainer.style.display === 'none') {
+                mapContainer.style.display = 'block';
+                controls.style.display = 'flex';
+                
+                setTimeout(() => {
+                    initializeStopLocationMap();
+                    
+                    // If editing existing stop with coordinates, show them
+                    const latInput = document.getElementById('stop-latitude');
+                    const lngInput = document.getElementById('stop-longitude');
+                    const radiusInput = document.getElementById('stop-radius');
+                    
+                    if (latInput.value && lngInput.value) {
+                        const lat = parseFloat(latInput.value);
+                        const lng = parseFloat(lngInput.value);
+                        const radius = parseFloat(radiusInput.value) || 50;
+                        
+                        selectLocationOnMap({ lat, lng });
+                        updateRadius(radius);
+                        document.getElementById('radius-slider').value = radius;
+                    }
+                }, 100);
+            } else {
+                mapContainer.style.display = 'none';
+                controls.style.display = 'none';
+            }
+        }
+
+        function selectLocationOnMap(latlng) {
+            const { lat, lng } = latlng;
+            
+            // Update hidden inputs
+            document.getElementById('stop-latitude').value = lat.toFixed(6);
+            document.getElementById('stop-longitude').value = lng.toFixed(6);
+            
+            // Update coordinates display
+            document.getElementById('coordinates-display').innerHTML = 
+                `📍 Selected: ${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+            
+            // Remove existing marker and circle
+            if (currentMarker) {
+                stopLocationMap.removeLayer(currentMarker);
+            }
+            if (currentCircle) {
+                stopLocationMap.removeLayer(currentCircle);
+            }
+            
+            // Add new marker
+            currentMarker = L.circleMarker([lat, lng], {
+                radius: 10,
+                fillColor: '#FFD700',
+                color: '#fff',
+                weight: 3,
+                opacity: 1,
+                fillOpacity: 0.8
+            }).addTo(stopLocationMap);
+            
+            // Add radius circle
+            const radius = parseFloat(document.getElementById('stop-radius').value) || 50;
+            currentCircle = L.circle([lat, lng], {
+                radius: radius,
+                fillColor: '#FFD700',
+                fillOpacity: 0.1,
+                color: '#FFD700',
+                weight: 2
+            }).addTo(stopLocationMap);
+            
+            // Center map on selected location
+            stopLocationMap.setView([lat, lng], 16);
+        }
+
+        function updateRadius(value) {
+            document.getElementById('stop-radius').value = value;
+            document.getElementById('radius-value').textContent = value + 'm';
+            
+            // Update circle on map if exists
+            if (currentCircle && stopLocationMap) {
+                const center = currentCircle.getLatLng();
+                stopLocationMap.removeLayer(currentCircle);
+                
+                currentCircle = L.circle(center, {
+                    radius: parseFloat(value),
+                    fillColor: '#FFD700',
+                    fillOpacity: 0.1,
+                    color: '#FFD700',
+                    weight: 2
+                }).addTo(stopLocationMap);
+            }
+        }
+
+        function getCurrentLocation() {
+            if (!navigator.geolocation) {
+                alert('Geolocation is not supported by this browser.');
+                return;
+            }
+
+            navigator.geolocation.getCurrentPosition(
+                function(position) {
+                    const lat = position.coords.latitude;
+                    const lng = position.coords.longitude;
+                    selectLocationOnMap({ lat, lng });
+                },
+                function(error) {
+                    alert('Unable to get your location: ' + error.message);
+                }
+            );
+        }
+
+        // Image Position Preview Functions
+        function setupImagePositionPreview() {
+            const positionSelect = document.querySelector('[name="imagePosition"]');
+            const imageUrlInput = document.querySelector('[name="imageUrl"]');
+            
+            if (positionSelect) {
+                positionSelect.addEventListener('change', function() {
+                    const currentImageUrl = imageUrlInput.value;
+                    if (currentImageUrl) {
+                        showImagePositionPreview(currentImageUrl, this.value);
+                    }
+                });
+            }
+            
+            if (imageUrlInput) {
+                imageUrlInput.addEventListener('input', function() {
+                    if (this.value) {
+                        const currentPosition = positionSelect.value || 'center';
+                        showImagePositionPreview(this.value, currentPosition);
+                    } else {
+                        hideImagePositionPreview();
+                    }
+                });
+            }
+        }
+
+        function showImagePositionPreview(imageUrl, position) {
+            const previewContainer = document.getElementById('imagePositionPreview');
+            const previewBox = document.getElementById('positionPreviewBox');
+            
+            if (previewContainer && previewBox && imageUrl) {
+                previewBox.style.backgroundImage = `url('${imageUrl}')`;
+                previewBox.style.backgroundPosition = position || 'center';
+                previewContainer.style.display = 'block';
+            }
+        }
+
+        function hideImagePositionPreview() {
+            const previewContainer = document.getElementById('imagePositionPreview');
+            if (previewContainer) {
+                previewContainer.style.display = 'none';
+            }
+        }
+
         // File Upload Functions
         async function handleRouteImageUpload(event) {
             const file = event.target.files[0];
@@ -1070,17 +1509,17 @@
 
                 const result = await response.json();
                 
-                // Update form field
                 document.querySelector('[name="imageUrl"]').value = result.url;
                 
-                // Update upload area
                 uploadArea.classList.remove('uploading');
                 uploadArea.classList.add('has-file');
                 uploadArea.querySelector('.upload-text').textContent = result.originalName;
                 uploadArea.querySelector('.upload-subtext').textContent = `${(result.size / 1024 / 1024).toFixed(2)} MB`;
                 
-                // Update preview
                 preview.innerHTML = `<img src="${result.url}" alt="Route preview">`;
+                
+                const currentPosition = document.querySelector('[name="imagePosition"]').value || 'center';
+                showImagePositionPreview(result.url, currentPosition);
                 
                 showSuccess('Route image uploaded successfully');
                 
@@ -1307,10 +1746,13 @@
             document.getElementById('route-form').reset();
             document.getElementById('stops-count-display').textContent = '0 stops';
             
-            // Reset image preview
             document.getElementById('route-image-preview').innerHTML = '<div class="route-image-placeholder">No image selected</div>';
+            hideImagePositionPreview();
+            
+            document.querySelector('[name="imagePosition"]').value = 'center';
             
             updateStopsListInline();
+            document.getElementById('route-overview-container').style.display = 'none';
             showModal('route-modal');
         }
 
@@ -1324,9 +1766,8 @@
 
             document.getElementById('modal-title').textContent = `Edit Route: ${route.name}`;
             
-            // Populate form
             const form = document.getElementById('route-form');
-            const fields = ['name', 'city', 'category', 'difficulty', 'estimatedDuration', 'distance', 'description', 'color', 'imageUrl'];
+            const fields = ['name', 'city', 'category', 'difficulty', 'estimatedDuration', 'distance', 'description', 'color', 'imageUrl', 'imagePosition'];
             
             fields.forEach(field => {
                 const input = form.querySelector(`[name="${field}"]`);
@@ -1335,17 +1776,23 @@
                 }
             });
 
-            // Update image preview
+            if (!route.imagePosition) {
+                form.querySelector('[name="imagePosition"]').value = 'center';
+            }
+
             const preview = document.getElementById('route-image-preview');
             if (route.imageUrl) {
                 preview.innerHTML = `<img src="${route.imageUrl}" alt="Route preview">`;
+                showImagePositionPreview(route.imageUrl, route.imagePosition || 'center');
             } else {
                 preview.innerHTML = '<div class="route-image-placeholder">No image selected</div>';
+                hideImagePositionPreview();
             }
 
             editingRouteStops = route.points || [];
             document.getElementById('stops-count-display').textContent = `${editingRouteStops.length} stops`;
             updateStopsListInline();
+            initializeRouteOverviewMap();
             showModal('route-modal');
         }
 
@@ -1442,6 +1889,7 @@
                             <div style="font-weight: 600; color: white; font-size: 14px;">${index + 1}. ${stop.name || 'Unnamed Stop'}</div>
                             <div style="font-size: 11px; color: rgba(255,255,255,0.6); margin-top: 4px;">
                                 ${stop.coordinates ? `📍 ${stop.coordinates[1]?.toFixed(4)}, ${stop.coordinates[0]?.toFixed(4)}` : '📍 No location'}
+                                ${stop.radius ? ` • ${stop.radius}m radius` : ''}
                                 ${stop.audioFile ? ' 🎧' : ' 🔇'}
                                 ${stop.imageUrl ? ' 🖼️' : ''}
                             </div>
@@ -1450,6 +1898,11 @@
                     </div>
                 </div>
             `).join('');
+
+            // Update route overview map
+            if (editingRouteStops.length > 0) {
+                initializeRouteOverviewMap();
+            }
         }
 
         function addNewStop() {
@@ -1458,9 +1911,15 @@
             document.getElementById('stop-form').reset();
             document.getElementById('stop-form').querySelector('[name="stopNumber"]').value = editingRouteStops.length + 1;
             
-            // Reset upload areas
-            resetUploadAreas();
+            // Reset map and location controls
+            document.getElementById('stopLocationMap').style.display = 'none';
+            document.getElementById('location-controls').style.display = 'none';
+            document.getElementById('coordinates-display').innerHTML = '📍 Click "Select Location on Map" to choose coordinates';
+            document.getElementById('stop-radius').value = '50';
+            document.getElementById('radius-slider').value = '50';
+            document.getElementById('radius-value').textContent = '50m';
             
+            resetUploadAreas();
             showModal('stop-modal');
         }
 
@@ -1474,16 +1933,27 @@
             form.querySelector('[name="name"]').value = stop.name || '';
             form.querySelector('[name="description"]').value = stop.description || '';
             
+            // Set coordinates and radius
             if (stop.coordinates) {
-                form.querySelector('[name="latitude"]').value = stop.coordinates[1];
-                form.querySelector('[name="longitude"]').value = stop.coordinates[0];
+                document.getElementById('stop-latitude').value = stop.coordinates[1];
+                document.getElementById('stop-longitude').value = stop.coordinates[0];
+                document.getElementById('coordinates-display').innerHTML = 
+                    `📍 Selected: ${stop.coordinates[1]?.toFixed(6)}, ${stop.coordinates[0]?.toFixed(6)}`;
             }
+            
+            const radius = stop.radius || 50;
+            document.getElementById('stop-radius').value = radius;
+            document.getElementById('radius-slider').value = radius;
+            document.getElementById('radius-value').textContent = radius + 'm';
             
             form.querySelector('[name="imageUrl"]').value = stop.imageUrl || '';
             form.querySelector('[name="audioFile"]').value = stop.audioFile || '';
             form.querySelector('[name="audioDuration"]').value = stop.audioDuration || '';
             
-            // Reset upload areas but show current files
+            // Reset map display
+            document.getElementById('stopLocationMap').style.display = 'none';
+            document.getElementById('location-controls').style.display = 'none';
+            
             resetUploadAreas();
             if (stop.audioFile) {
                 const audioUpload = document.getElementById('stop-audio-upload');
@@ -1508,15 +1978,26 @@
                 stopData[key] = value;
             }
 
-            if (!stopData.name || !stopData.description || !stopData.latitude || !stopData.longitude) {
-                alert('Stop name, description, and coordinates are required');
+            // Get data from hidden inputs
+            const lat = parseFloat(document.getElementById('stop-latitude').value);
+            const lng = parseFloat(document.getElementById('stop-longitude').value);
+            const radius = parseFloat(document.getElementById('stop-radius').value) || 50;
+
+            if (!stopData.name || !stopData.description) {
+                alert('Stop name and description are required');
+                return;
+            }
+
+            if (!lat || !lng) {
+                alert('Please select a location on the map');
                 return;
             }
 
             const newStop = {
                 name: stopData.name,
                 description: stopData.description,
-                coordinates: [parseFloat(stopData.longitude), parseFloat(stopData.latitude)],
+                coordinates: [lng, lat],
+                radius: radius,
                 type: editingStopIndex === 0 ? 'start' : 'waypoint',
                 audioFile: stopData.audioFile || null,
                 audioDuration: stopData.audioDuration || null,
@@ -1541,7 +2022,6 @@
         }
 
         function resetUploadAreas() {
-            // Reset route image upload
             const routeImageUpload = document.getElementById('route-image-upload');
             if (routeImageUpload) {
                 routeImageUpload.classList.remove('has-file', 'uploading');
@@ -1549,7 +2029,6 @@
                 routeImageUpload.querySelector('.upload-subtext').textContent = 'JPG, PNG up to 10MB';
             }
 
-            // Reset stop uploads
             const stopImageUpload = document.getElementById('stop-image-upload');
             if (stopImageUpload) {
                 stopImageUpload.classList.remove('has-file', 'uploading');
@@ -1633,6 +2112,25 @@
 
         function closeModal(modalId) {
             document.getElementById(modalId).classList.remove('active');
+            
+            // Clean up maps when closing modals
+            if (modalId === 'stop-modal') {
+                if (stopLocationMap) {
+                    stopLocationMap.remove();
+                    stopLocationMap = null;
+                }
+                currentMarker = null;
+                currentCircle = null;
+            }
+            
+            if (modalId === 'route-modal') {
+                if (routeOverviewMap) {
+                    routeOverviewMap.remove();
+                    routeOverviewMap = null;
+                }
+                routePolyline = null;
+                routeMarkers = [];
+            }
         }
 
         function closeCMS() {
@@ -1654,11 +2152,11 @@
             
             if (e.key === 'Escape') {
                 document.querySelectorAll('.modal.active').forEach(modal => {
-                    modal.classList.remove('active');
+                    closeModal(modal.id);
                 });
             }
         });
     </script>
 
 </body>
-</html> 
+</html>
