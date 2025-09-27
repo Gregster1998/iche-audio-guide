@@ -105,55 +105,59 @@ body {
   background: rgba(244, 67, 54, 0.9);
 }
 
-/* FIXED: Info Cards Container - Always 90% screen width */
-.info-cards-container {
+/* FIXED: Bottom Content Container - Combined info cards and audio player */
+.bottom-content {
   position: fixed;
-  bottom: 140px; /* Positioned directly above audio player */
-  left: 50%;
-  transform: translateX(-50%);
-  width: 90vw; /* Always 90% of viewport width */
-  height: auto;
+  bottom: 0;
+  left: 0;
+  right: 0;
   z-index: 2000;
-  transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  background: rgba(0, 0, 0, 0.95);
+  backdrop-filter: blur(20px);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  flex-direction: column;
+  max-height: 70vh; /* Prevent from taking too much screen */
+  min-height: 200px;
+}
+
+/* FIXED: Info Cards Container - Now properly positioned */
+.info-cards-container {
+  width: 100%;
+  flex: 1;
   overflow: hidden;
+  padding: 20px 0;
 }
 
-.info-cards-container.hidden {
-  transform: translateX(-50%) translateY(150%);
-  opacity: 0;
-}
-
-/* FIXED: Cards Wrapper - Proper horizontal layout */
+/* FIXED: Cards Wrapper - Proper horizontal scrolling */
 .info-cards-wrapper {
   display: flex;
   transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
   touch-action: pan-x;
-  height: auto;
-  /* Width will be set dynamically based on number of cards */
+  height: 100%;
+  width: fit-content;
 }
 
 /* FIXED: Individual Cards - Each takes exactly 90vw */
 .info-card {
-  width: 90vw; /* Each card is exactly 90% viewport width */
+  width: 90vw;
   flex-shrink: 0;
   display: flex;
   justify-content: center;
   align-items: flex-start;
-  padding: 0;
+  padding: 0 5vw; /* Center the content within the 90vw */
   box-sizing: border-box;
 }
 
 /* Card Content Container */
 .card-content {
   width: 100%;
-  background: rgba(0, 0, 0, 0.85);
-  backdrop-filter: blur(20px);
-  border-radius: 20px 20px 0 0;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 16px;
   padding: 20px;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-bottom: none;
+  border: 1px solid rgba(255, 255, 255, 0.1);
   box-sizing: border-box;
-  box-shadow: 0 -5px 25px rgba(0, 0, 0, 0.3);
+  max-width: 100%;
 }
 
 /* Swipe Handle */
@@ -303,19 +307,13 @@ body {
   font-size: 14px;
 }
 
-/* Audio Player - Fixed positioning */
+/* FIXED: Audio Player - Now part of bottom content */
 .audio-player {
-  background: rgba(0, 0, 0, 0.95);
-  backdrop-filter: blur(20px);
+  background: rgba(0, 0, 0, 0.3);
   padding: 20px;
   border-top: 1px solid rgba(255, 255, 255, 0.1);
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  z-index: 1500;
-  min-height: 140px;
   flex-shrink: 0;
+  min-height: 140px;
 }
 
 .audio-info {
@@ -432,6 +430,32 @@ body {
 .play-btn.playing:hover {
   background: #FF5252;
   box-shadow: 0 6px 20px rgba(255, 107, 107, 0.4);
+}
+
+/* Card Indicators */
+.card-indicators {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 0;
+  background: rgba(0, 0, 0, 0.3);
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.card-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.3);
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.card-dot.active {
+  background: #FFD700;
+  width: 20px;
+  border-radius: 10px;
 }
 
 /* Leaflet Map Customization */
@@ -565,10 +589,6 @@ body {
     font-size: 16px;
   }
   
-  .info-cards-container {
-    bottom: 125px; /* Adjusted for smaller audio player */
-  }
-  
   .card-content {
     padding: 18px;
   }
@@ -621,6 +641,10 @@ body {
   .stop-type {
     align-self: flex-end;
   }
+  
+  .info-card {
+    padding: 0 2.5vw; /* Reduce padding on very small screens */
+  }
 }
 
 /* Error and Success States */
@@ -630,7 +654,7 @@ body {
   border-radius: 12px;
   padding: 15px;
   margin: 10px 0;
-  color: #631414;
+  color: #FF6B6B;
   font-size: 14px;
   text-align: center;
 }
