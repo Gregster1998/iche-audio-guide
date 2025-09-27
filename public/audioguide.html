@@ -7,11 +7,407 @@
     
     <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-
-    <!-- Your custom CSS -->
-    <link rel="stylesheet" href="css/audioguide.css">
     
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #2D5A3D;
+            color: white;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* Full screen map */
+        .map-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            z-index: 1;
+        }
+
+        .map-container .leaflet-container {
+            height: 100vh;
+            width: 100vw;
+            background: #2D5A3D;
+        }
+
+        /* Header overlay */
+        .header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+            background: linear-gradient(to bottom, rgba(45, 90, 61, 0.9), transparent);
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .back-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: white;
+            font-size: 18px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(10px);
+        }
+
+        .route-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: white;
+        }
+
+        /* Location status indicator */
+        .location-indicator {
+            position: fixed;
+            top: 80px;
+            right: 20px;
+            z-index: 1000;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 8px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            backdrop-filter: blur(10px);
+            cursor: pointer;
+        }
+
+        .location-indicator.active {
+            background: rgba(76, 175, 80, 0.8);
+        }
+
+        .location-indicator.disabled {
+            background: rgba(255, 107, 107, 0.8);
+        }
+
+        /* FIXED: Bottom Content Container */
+        .cards-container {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            z-index: 999;
+            background: rgba(0, 0, 0, 0.95);
+            backdrop-filter: blur(20px);
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            flex-direction: column;
+            max-height: 70vh;
+            min-height: 200px;
+        }
+
+        /* FIXED: Cards wrapper - Full width, no padding */
+        .cards-wrapper {
+            width: 100vw;
+            flex: 1;
+            overflow: hidden;
+            padding: 0;
+            margin: 0;
+        }
+
+        /* FIXED: Cards track - Proper horizontal layout */
+        .cards-track {
+            display: flex;
+            transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            touch-action: pan-x;
+            height: 100%;
+            width: 100%;
+            margin: 0;
+            padding: 0;
+        }
+
+        /* FIXED: Stop card - Each takes exactly 90vw */
+        .stop-card {
+            width: 90vw;
+            flex-shrink: 0;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            padding: 20px 5vw;
+            margin: 0;
+            box-sizing: border-box;
+        }
+
+        /* Card content */
+        .stop-card-content {
+            width: 100%;
+            background: rgba(45, 90, 61, 0.95);
+            border-radius: 20px;
+            padding: 24px;
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            position: relative;
+        }
+
+        .current-stop-header {
+            color: #FFD700;
+            font-size: 14px;
+            font-weight: 500;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .stop-name {
+            font-size: 24px;
+            font-weight: 600;
+            color: #FFD700;
+            margin-bottom: 12px;
+        }
+
+        .stop-description {
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 16px;
+            line-height: 1.4;
+            margin-bottom: 20px;
+        }
+
+        .stop-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .stop-progress {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .next-stop {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* FIXED: Audio player - Part of bottom content */
+        .audio-player {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 16px;
+            padding: 16px;
+            margin-top: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            flex-shrink: 0;
+        }
+
+        .audio-title {
+            text-align: center;
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .audio-subtitle {
+            text-align: center;
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.7);
+            margin-bottom: 16px;
+        }
+
+        .audio-controls {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+        }
+
+        .control-btn {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: white;
+            font-size: 16px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+        }
+
+        .control-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: scale(1.05);
+        }
+
+        .play-btn {
+            width: 64px;
+            height: 64px;
+            background: #FFD700;
+            color: #1B3A2E;
+            font-size: 24px;
+        }
+
+        .play-btn:hover {
+            background: #FFC700;
+        }
+
+        /* Progress bar */
+        .progress-section {
+            margin-top: 16px;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 2px;
+            overflow: hidden;
+            margin-bottom: 8px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: #FFD700;
+            width: 0%;
+            transition: width 0.1s ease;
+        }
+
+        .time-display {
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        /* Auto-play indicator */
+        .auto-play-indicator {
+            position: absolute;
+            top: -40px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(76, 175, 80, 0.9);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+            opacity: 0;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        .auto-play-indicator.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(-10px);
+        }
+
+        /* Distance badge */
+        .distance-badge {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 6px 12px;
+            border-radius: 16px;
+            font-size: 12px;
+            font-weight: 500;
+            backdrop-filter: blur(10px);
+        }
+
+        .distance-badge.in-range {
+            background: rgba(76, 175, 80, 0.8);
+        }
+
+        /* Loading state */
+        .loading-card {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 200px;
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        .loading-spinner {
+            width: 20px;
+            height: 20px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-top: 2px solid #FFD700;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 480px) {
+            .stop-card {
+                width: 85vw;
+                padding: 20px 7.5vw;
+            }
+            
+            .header {
+                padding: 15px;
+            }
+            
+            .route-title {
+                font-size: 18px;
+            }
+            
+            .stop-card-content {
+                padding: 20px;
+            }
+        }
+
+        /* Custom Leaflet marker styles */
+        .user-location-marker {
+            background: #2196F3;
+            border: 3px solid white;
+            border-radius: 50%;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        }
+
+        .stop-marker {
+            border: 3px solid white;
+            border-radius: 50%;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        }
+
+        .stop-marker.start {
+            background: #FF5722;
+        }
+
+        .stop-marker.regular {
+            background: #4CAF50;
+        }
+
+        .stop-marker.current {
+            background: #FFD700;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(255, 215, 0, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(255, 215, 0, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(255, 215, 0, 0); }
+        }
+    </style>
+</head>
 <body>
     <!-- Full screen map -->
     <div class="map-container">
@@ -29,20 +425,21 @@
         📍 Enable Location
     </div>
 
-    <!-- Swipeable cards -->
+    <!-- FIXED: Cards container with proper structure -->
     <div class="cards-container">
         <div class="cards-wrapper" id="cards-wrapper">
             <div class="cards-track" id="cards-track">
                 <!-- Loading card -->
                 <div class="stop-card">
-                    <div class="loading-card">
-                        <div class="loading-spinner"></div>
-                        Loading stops...
+                    <div class="stop-card-content">
+                        <div class="loading-card">
+                            <div class="loading-spinner"></div>
+                            Loading stops...
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
-        <div class="card-indicators" id="card-indicators"></div>
     </div>
 
     <!-- Hidden audio element -->
@@ -234,19 +631,17 @@
 
         function setupCards() {
             const cardsTrack = document.getElementById('cards-track');
-            const indicators = document.getElementById('card-indicators');
             
             if (currentStops.length === 0) {
                 cardsTrack.innerHTML = `
                     <div class="stop-card">
-                        <div class="loading-card">No stops found in this route</div>
+                        <div class="stop-card-content">
+                            <div class="loading-card">No stops found in this route</div>
+                        </div>
                     </div>
                 `;
                 return;
             }
-
-            // Set CSS variable for total cards
-            document.documentElement.style.setProperty('--total-cards', currentStops.length);
 
             // Create cards for each stop
             cardsTrack.innerHTML = currentStops.map((stop, index) => {
@@ -255,73 +650,70 @@
                 
                 return `
                     <div class="stop-card" data-stop-index="${index}">
-                        <div class="distance-badge" id="distance-${index}">--</div>
-                        <div class="auto-play-indicator" id="auto-indicator-${index}">
-                            Audio started automatically - you're in range!
-                        </div>
-                        
-                        <div class="current-stop-header">
-                            📍 Current Stop
-                        </div>
-                        
-                        <div class="stop-name">${stop.name || `Stop ${index + 1}`}</div>
-                        
-                        <div class="stop-description">
-                            ${stop.description || 'No description available'}
-                        </div>
-                        
-                        <div class="stop-meta">
-                            <div class="stop-progress">
-                                📍 Stop ${index + 1} of ${currentStops.length}
-                            </div>
-                            <div class="next-stop">
-                                ${nextStop ? `👥 Next: ${nextStop.name || `Stop ${index + 2}`}` : '🏁 Final Stop'}
-                            </div>
-                        </div>
-                        
-                        ${stop.audioFile ? `
-                        <div class="audio-player">
-                            <div class="audio-title">Welcome to ${currentRoute.name}</div>
-                            <div class="audio-subtitle">${stop.name || `Stop ${index + 1}`}</div>
-                            
-                            <div class="audio-controls">
-                                <button class="control-btn" onclick="rewind()">⏪</button>
-                                <button class="control-btn" onclick="previousTrack()">⏮</button>
-                                <button class="control-btn play-btn" onclick="togglePlayback(${index})">▶</button>
-                                <button class="control-btn" onclick="nextTrack()">⏭</button>
-                                <button class="control-btn" onclick="forward()">⏩</button>
+                        <div class="stop-card-content">
+                            <div class="distance-badge" id="distance-${index}">--</div>
+                            <div class="auto-play-indicator" id="auto-indicator-${index}">
+                                Audio started automatically - you're in range!
                             </div>
                             
-                            <div class="progress-section">
-                                <div class="progress-bar">
-                                    <div class="progress-fill" id="progress-${index}"></div>
+                            <div class="current-stop-header">
+                                📍 Current Stop
+                            </div>
+                            
+                            <div class="stop-name">${stop.name || `Stop ${index + 1}`}</div>
+                            
+                            <div class="stop-description">
+                                ${stop.description || 'No description available'}
+                            </div>
+                            
+                            <div class="stop-meta">
+                                <div class="stop-progress">
+                                    📍 Stop ${index + 1} of ${currentStops.length}
                                 </div>
-                                <div class="time-display">
-                                    <span id="current-time-${index}">0:00</span>
-                                    <span id="total-time-${index}">2:30</span>
+                                <div class="next-stop">
+                                    ${nextStop ? `👥 Next: ${nextStop.name || `Stop ${index + 2}`}` : '🏁 Final Stop'}
                                 </div>
                             </div>
+                            
+                            ${stop.audioFile ? `
+                            <div class="audio-player">
+                                <div class="audio-title">Welcome to ${currentRoute.name}</div>
+                                <div class="audio-subtitle">${stop.name || `Stop ${index + 1}`}</div>
+                                
+                                <div class="audio-controls">
+                                    <button class="control-btn" onclick="previousTrack()">⮮️</button>
+                                    <button class="control-btn" onclick="rewind()">⏪</button>
+                                    <button class="control-btn play-btn" onclick="togglePlayback(${index})">▶️</button>
+                                    <button class="control-btn" onclick="forward()">⏩</button>
+                                    <button class="control-btn" onclick="nextTrack()">⭐️</button>
+                                </div>
+                                
+                                <div class="progress-section">
+                                    <div class="progress-bar">
+                                        <div class="progress-fill" id="progress-${index}"></div>
+                                    </div>
+                                    <div class="time-display">
+                                        <span id="current-time-${index}">0:00</span>
+                                        <span id="total-time-${index}">2:30</span>
+                                    </div>
+                                </div>
+                            </div>
+                            ` : `
+                            <div class="audio-player">
+                                <div class="audio-title">No Audio Available</div>
+                                <div class="audio-subtitle">This stop has no audio guide</div>
+                            </div>
+                            `}
                         </div>
-                        ` : `
-                        <div class="audio-player">
-                            <div class="audio-title">No Audio Available</div>
-                            <div class="audio-subtitle">This stop has no audio guide</div>
-                        </div>
-                        `}
                     </div>
                 `;
             }).join('');
-
-            // Create indicators
-            totalCards = currentStops.length;
-            indicators.innerHTML = Array.from({length: totalCards}, (_, i) => 
-                `<div class="card-dot ${i === 0 ? 'active' : ''}" data-index="${i}" onclick="goToCard(${i})"></div>`
-            ).join('');
 
             // Setup swipe functionality
             setupSwipeNavigation();
             
             // Load first stop
+            totalCards = currentStops.length;
             if (currentStops.length > 0) {
                 selectStop(0);
             }
@@ -395,14 +787,8 @@
             currentStopIndex = index;
             
             const track = document.getElementById('cards-track');
-            // Calculate the exact offset for each card
-            const offsetX = index * 100; // 100vw per card
-            track.style.transform = `translateX(-${offsetX}vw)`;
-            
-            // Update indicators
-            document.querySelectorAll('.card-dot').forEach((dot, i) => {
-                dot.classList.toggle('active', i === index);
-            });
+            const cardWidth = 90; // 90vw per card
+            track.style.transform = `translateX(-${index * cardWidth}vw)`;
             
             // Select the stop
             selectStop(index);
@@ -470,7 +856,7 @@
         function updatePlayButton(stopIndex) {
             const playBtn = document.querySelector(`[data-stop-index="${stopIndex}"] .play-btn`);
             if (playBtn) {
-                playBtn.innerHTML = isPlaying ? '⏸' : '▶';
+                playBtn.innerHTML = isPlaying ? '⏸️' : '▶️';
             }
         }
 
@@ -773,10 +1159,12 @@
             const cardsTrack = document.getElementById('cards-track');
             cardsTrack.innerHTML = `
                 <div class="stop-card">
-                    <div class="loading-card">
-                        <div style="color: #ff6b6b; text-align: center;">
-                            <h3>Error</h3>
-                            <p>${message}</p>
+                    <div class="stop-card-content">
+                        <div class="loading-card">
+                            <div style="color: #ff6b6b; text-align: center;">
+                                <h3>Error</h3>
+                                <p>${message}</p>
+                            </div>
                         </div>
                     </div>
                 </div>
