@@ -96,29 +96,38 @@
             background: rgba(255, 107, 107, 0.8);
         }
 
-        /* FIXED: Cards container - proper bottom positioning */
+        /* FIXED: Grid overlay system for centering cards */
         .cards-container {
             position: fixed;
-            bottom: 0;
+            top: 0;
             left: 0;
             right: 0;
+            bottom: 0;
             z-index: 999;
-            background: rgba(0, 0, 0, 0.95);
-            backdrop-filter: blur(20px);
-            border-top: 1px solid rgba(255, 255, 255, 0.1);
-            height: auto;
-            max-height: 70vh;
-            min-height: 200px;
+            display: grid;
+            grid-template-columns: 5vw 90vw 5vw;
+            grid-template-rows: 1fr auto;
+            align-items: end;
+            pointer-events: none;
         }
 
-        /* FIXED: Cards wrapper - enable horizontal scrolling */
+        /* FIXED: Cards wrapper - centered in grid column 2 */
         .cards-wrapper {
-            width: 100vw;
+            grid-column: 2;
+            grid-row: 2;
+            width: 90vw;
             overflow: hidden;
             padding: 20px 0;
+            pointer-events: auto;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 20px 20px 0 0;
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-bottom: none;
+            margin-bottom: 0;
         }
 
-        /* FIXED: Cards track - proper flex layout for swiping */
+        /* FIXED: Cards track - horizontal flex layout */
         .cards-track {
             display: flex;
             transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
@@ -126,7 +135,7 @@
             height: 100%;
         }
 
-        /* FIXED: Stop card - exactly 90vw each with proper spacing */
+        /* FIXED: Stop card - full width, no margins */
         .stop-card {
             width: 90vw;
             flex-shrink: 0;
@@ -137,11 +146,7 @@
             border: 1px solid rgba(255, 255, 255, 0.1);
             position: relative;
             box-sizing: border-box;
-            margin-right: 10vw;
-        }
-
-        .stop-card:last-child {
-            margin-right: 0;
+            margin: 0;
         }
 
         .current-stop-header {
@@ -407,7 +412,7 @@
         📍 Enable Location
     </div>
 
-    <!-- Swipeable cards -->
+    <!-- FIXED: Grid overlay cards container -->
     <div class="cards-container">
         <div class="cards-wrapper" id="cards-wrapper">
             <div class="cards-track" id="cards-track">
@@ -712,7 +717,7 @@
             wrapper.addEventListener('touchmove', (e) => {
                 if (!isDragging) return;
                 currentX = e.touches[0].clientX;
-                e.preventDefault(); // Prevent scrolling
+                e.preventDefault();
             });
 
             wrapper.addEventListener('touchend', () => {
@@ -760,7 +765,7 @@
             });
         }
 
-        // FIXED: Proper swipe calculation
+        // FIXED: Swipe calculation for grid layout
         function goToCard(index) {
             if (index < 0 || index >= totalCards) return;
             
@@ -768,8 +773,8 @@
             currentStopIndex = index;
             
             const track = document.getElementById('cards-track');
-            // Each card is 90vw + 10vw margin = 100vw total
-            const offsetX = index * 100;
+            // Each card takes exactly 90vw in the centered grid layout
+            const offsetX = index * 90;
             track.style.transform = `translateX(-${offsetX}vw)`;
             
             // Select the stop
@@ -919,7 +924,6 @@
             }
 
             if (locationEnabled) {
-                // Disable location
                 if (geolocationWatcher) {
                     navigator.geolocation.clearWatch(geolocationWatcher);
                     geolocationWatcher = null;
@@ -931,7 +935,6 @@
                 locationEnabled = false;
                 updateLocationIndicator('disabled');
             } else {
-                // Enable location
                 requestLocation();
             }
         }
@@ -1001,7 +1004,6 @@
                     className: 'user-location-marker'
                 }).addTo(audioguideMap);
 
-                // Add accuracy circle
                 L.circle([latitude, longitude], {
                     radius: Math.min(accuracy, 100),
                     fillColor: '#2196F3',
@@ -1011,12 +1013,10 @@
                 }).addTo(audioguideMap);
             }
 
-            // Check proximity and update distances
             checkStopProximity();
             updateStopDistances();
         }
 
-        // FIXED: Auto-play when in range
         function checkStopProximity() {
             if (!userLocation) return;
 
@@ -1031,25 +1031,19 @@
                 const radius = stop.radius || 50;
                 const isInRange = distance <= radius;
                 
-                // Update distance badge
                 const badge = document.getElementById(`distance-${index}`);
                 if (badge) {
                     badge.classList.toggle('in-range', isInRange);
                 }
 
-                // FIXED: Auto-play logic with proper checks
                 if (isInRange && !autoPlayTriggered[index]) {
                     console.log(`Entering range of stop ${index + 1}: ${stop.name}`);
                     autoPlayTriggered[index] = true;
                     lastTriggeredStop = index;
                     
-                    // Show auto-play indicator
                     showAutoPlayIndicator(index);
-                    
-                    // Go to this card
                     goToCard(index);
                     
-                    // Play audio if available and not already playing
                     if (stop.audioFile && !isPlaying) {
                         setTimeout(() => {
                             loadAudio(stop.audioFile, index);
@@ -1057,7 +1051,6 @@
                         }, 1000);
                     }
                     
-                    // Reset other triggers
                     Object.keys(autoPlayTriggered).forEach(key => {
                         if (parseInt(key) !== index) {
                             autoPlayTriggered[key] = false;
@@ -1065,7 +1058,6 @@
                     });
                 }
                 
-                // Reset trigger when leaving range
                 if (!isInRange && distance > radius + 20) {
                     autoPlayTriggered[index] = false;
                 }
@@ -1170,7 +1162,6 @@
             `;
         }
 
-        // Cleanup when page unloads
         window.addEventListener('beforeunload', () => {
             if (geolocationWatcher) {
                 navigator.geolocation.clearWatch(geolocationWatcher);
