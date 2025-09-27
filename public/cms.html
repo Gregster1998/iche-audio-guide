@@ -91,6 +91,155 @@
             border-color: #FFD700;
         }
 
+/* Add this CSS to your existing CMS styles */
+/* Image Position Control Styles - Add these to your existing CMS CSS */
+.image-position-control {
+    margin-top: 15px;
+    padding: 15px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.image-position-control h4 {
+    font-size: 14px;
+    margin-bottom: 10px;
+    color: #FFD700;
+}
+
+.position-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 5px;
+    margin-bottom: 15px;
+}
+
+.position-btn {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: white;
+    padding: 8px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+    text-align: center;
+    transition: all 0.3s ease;
+}
+
+.position-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.position-btn.active {
+    background: #FFD700;
+    color: #000;
+    border-color: #FFD700;
+}
+
+.custom-position {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.position-slider {
+    width: 100%;
+    height: 4px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 2px;
+    outline: none;
+    cursor: pointer;
+}
+
+.position-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 16px;
+    height: 16px;
+    background: #FFD700;
+    border-radius: 50%;
+    cursor: pointer;
+}
+
+.position-slider::-moz-range-thumb {
+    width: 16px;
+    height: 16px;
+    background: #FFD700;
+    border-radius: 50%;
+    cursor: pointer;
+    border: none;
+}
+
+.position-preview {
+    width: 100%;
+    height: 80px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 8px;
+    background-size: cover;
+    background-repeat: no-repeat;
+    margin-top: 10px;
+    position: relative;
+}
+
+.position-preview::after {
+    content: 'Preview';
+    position: absolute;
+    bottom: 5px;
+    right: 5px;
+    background: rgba(0, 0, 0, 0.7);
+    color: white;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 10px;
+}
+</style>
+
+<!-- Replace the route image upload section in your CMS with this enhanced version -->
+<div class="form-group">
+    <label class="form-label">Route Image</label>
+    <input type="url" class="form-input" name="imageUrl" placeholder="Enter image URL or upload below">
+    <input type="hidden" name="imagePosition" value="center">
+    
+    <div class="file-upload-area" id="route-image-upload" onclick="document.getElementById('route-image-file').click()">
+        <div class="upload-icon">🖼️</div>
+        <div class="upload-text">Click to upload route image</div>
+        <div class="upload-subtext">JPG, PNG up to 10MB</div>
+    </div>
+    <input type="file" id="route-image-file" accept="image/*" style="display: none;" onchange="handleRouteImageUpload(event)">
+    
+    <div class="route-image-preview" id="route-image-preview">
+        <div class="route-image-placeholder">No image selected</div>
+    </div>
+    
+    <!-- Image Position Controls -->
+    <div class="image-position-control" id="image-position-control" style="display: none;">
+        <h4>🎯 Adjust Image Position</h4>
+        <div class="position-grid">
+            <button type="button" class="position-btn" data-position="top left">↖️ Top Left</button>
+            <button type="button" class="position-btn" data-position="top center">⬆️ Top</button>
+            <button type="button" class="position-btn" data-position="top right">↗️ Top Right</button>
+            <button type="button" class="position-btn" data-position="center left">⬅️ Left</button>
+            <button type="button" class="position-btn active" data-position="center">🎯 Center</button>
+            <button type="button" class="position-btn" data-position="center right">➡️ Right</button>
+            <button type="button" class="position-btn" data-position="bottom left">↙️ Bottom Left</button>
+            <button type="button" class="position-btn" data-position="bottom center">⬇️ Bottom</button>
+            <button type="button" class="position-btn" data-position="bottom right">↘️ Bottom Right</button>
+        </div>
+        
+        <div class="custom-position">
+            <div>
+                <label style="font-size: 12px; color: rgba(255,255,255,0.8);">Horizontal: <span id="h-pos-value">50%</span></label>
+                <input type="range" class="position-slider" id="horizontal-slider" min="0" max="100" value="50">
+            </div>
+            <div>
+                <label style="font-size: 12px; color: rgba(255,255,255,0.8);">Vertical: <span id="v-pos-value">50%</span></label>
+                <input type="range" class="position-slider" id="vertical-slider" min="0" max="100" value="50">
+            </div>
+        </div>
+        
+        <div class="position-preview" id="position-preview"></div>
+    </div>
+</div>
         /* Main Content */
         .main-content {
             background: rgba(255, 255, 255, 0.05);
@@ -1659,5 +1808,203 @@
             }
         });
     </script>
+<script>
+// Add these functions to your existing CMS JavaScript
+
+function handleRouteImageUpload(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const uploadArea = document.getElementById('route-image-upload');
+    const preview = document.getElementById('route-image-preview');
+    const positionControl = document.getElementById('image-position-control');
+    
+    uploadArea.classList.add('uploading');
+    uploadArea.querySelector('.upload-text').textContent = 'Uploading...';
+
+    const formData = new FormData();
+    formData.append('image', file);
+
+    fetch(`${API_BASE}/upload/image`, {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => {
+        if (!response.ok) throw new Error('Upload failed');
+        return response.json();
+    })
+    .then(result => {
+        // Update form field
+        document.querySelector('[name="imageUrl"]').value = result.url;
+        
+        // Update upload area
+        uploadArea.classList.remove('uploading');
+        uploadArea.classList.add('has-file');
+        uploadArea.querySelector('.upload-text').textContent = result.originalName;
+        uploadArea.querySelector('.upload-subtext').textContent = `${(result.size / 1024 / 1024).toFixed(2)} MB`;
+        
+        // Update preview and show position controls
+        preview.innerHTML = `<img src="${result.url}" alt="Route preview" style="width: 100%; height: 100%; object-fit: cover; border-radius: 8px;">`;
+        positionControl.style.display = 'block';
+        
+        // Initialize position preview
+        updatePositionPreview(result.url);
+        
+        showSuccess('Route image uploaded successfully');
+        
+    })
+    .catch(error => {
+        console.error('Upload error:', error);
+        showError('Failed to upload route image');
+        
+        uploadArea.classList.remove('uploading');
+        uploadArea.querySelector('.upload-text').textContent = 'Click to upload route image';
+    });
+}
+
+function updatePositionPreview(imageUrl) {
+    const preview = document.getElementById('position-preview');
+    const horizontalSlider = document.getElementById('horizontal-slider');
+    const verticalSlider = document.getElementById('vertical-slider');
+    const hPosValue = document.getElementById('h-pos-value');
+    const vPosValue = document.getElementById('v-pos-value');
+    
+    if (!preview || !imageUrl) return;
+    
+    const updatePreview = () => {
+        const h = horizontalSlider.value;
+        const v = verticalSlider.value;
+        
+        preview.style.backgroundImage = `url('${imageUrl}')`;
+        preview.style.backgroundPosition = `${h}% ${v}%`;
+        
+        hPosValue.textContent = `${h}%`;
+        vPosValue.textContent = `${v}%`;
+        
+        // Update hidden form field
+        document.querySelector('[name="imagePosition"]').value = `${h}% ${v}%`;
+        
+        // Update position button states
+        updatePositionButtons(`${h}% ${v}%`);
+    };
+    
+    // Add event listeners
+    horizontalSlider.addEventListener('input', updatePreview);
+    verticalSlider.addEventListener('input', updatePreview);
+    
+    // Initial preview
+    updatePreview();
+    
+    // Position button listeners
+    document.querySelectorAll('.position-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const position = btn.dataset.position;
+            setPositionFromButton(position);
+        });
+    });
+}
+
+function setPositionFromButton(position) {
+    const horizontalSlider = document.getElementById('horizontal-slider');
+    const verticalSlider = document.getElementById('vertical-slider');
+    
+    const positions = {
+        'top left': [0, 0],
+        'top center': [50, 0],
+        'top right': [100, 0],
+        'center left': [0, 50],
+        'center': [50, 50],
+        'center right': [100, 50],
+        'bottom left': [0, 100],
+        'bottom center': [50, 100],
+        'bottom right': [100, 100]
+    };
+    
+    if (positions[position]) {
+        horizontalSlider.value = positions[position][0];
+        verticalSlider.value = positions[position][1];
+        
+        // Trigger update
+        horizontalSlider.dispatchEvent(new Event('input'));
+        verticalSlider.dispatchEvent(new Event('input'));
+    }
+}
+
+function updatePositionButtons(currentPosition) {
+    const buttons = document.querySelectorAll('.position-btn');
+    
+    buttons.forEach(btn => btn.classList.remove('active'));
+    
+    const positions = {
+        '0% 0%': 'top left',
+        '50% 0%': 'top center',
+        '100% 0%': 'top right',
+        '0% 50%': 'center left',
+        '50% 50%': 'center',
+        '100% 50%': 'center right',
+        '0% 100%': 'bottom left',
+        '50% 100%': 'bottom center',
+        '100% 100%': 'bottom right'
+    };
+    
+    const matchingPosition = positions[currentPosition];
+    if (matchingPosition) {
+        const matchingBtn = document.querySelector(`[data-position="${matchingPosition}"]`);
+        if (matchingBtn) {
+            matchingBtn.classList.add('active');
+        }
+    }
+}
+
+// Update your existing editRoute function to load image position
+function editRoute(routeId) {
+    editingRoute = routeId;
+    const route = currentRoutes.find(r => r.id === routeId);
+    if (!route) {
+        showError('Route not found');
+        return;
+    }
+
+    document.getElementById('modal-title').textContent = `Edit Route: ${route.name}`;
+    
+    // Populate form
+    const form = document.getElementById('route-form');
+    const fields = ['name', 'city', 'category', 'difficulty', 'estimatedDuration', 'distance', 'description', 'color', 'imageUrl', 'imagePosition'];
+    
+    fields.forEach(field => {
+        const input = form.querySelector(`[name="${field}"]`);
+        if (input && route[field]) {
+            input.value = route[field];
+        }
+    });
+
+    // Update image preview and position controls
+    const preview = document.getElementById('route-image-preview');
+    const positionControl = document.getElementById('image-position-control');
+    
+    if (route.imageUrl) {
+        preview.innerHTML = `<img src="${route.imageUrl}" alt="Route preview" style="width: 100%; height: 100%; object-fit: cover; border-radius: 8px;">`;
+        positionControl.style.display = 'block';
+        updatePositionPreview(route.imageUrl);
+        
+        // Set position sliders to saved values
+        if (route.imagePosition) {
+            const [h, v] = route.imagePosition.replace(/%/g, '').split(' ');
+            document.getElementById('horizontal-slider').value = h || 50;
+            document.getElementById('vertical-slider').value = v || 50;
+            document.getElementById('horizontal-slider').dispatchEvent(new Event('input'));
+        }
+    } else {
+        preview.innerHTML = '<div class="route-image-placeholder">No image selected</div>';
+        positionControl.style.display = 'none';
+    }
+
+    editingRouteStops = route.points || [];
+    document.getElementById('stops-count-display').textContent = `${editingRouteStops.length} stops`;
+    updateStopsListInline();
+    showModal('route-modal');
+}
+</script>
+
 </body>
 </html> 

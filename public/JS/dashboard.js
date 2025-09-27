@@ -73,20 +73,17 @@ function populateAvailableRoutes(routes) {
             ? `url('${route.imageUrl}')` 
             : `linear-gradient(135deg, ${route.color || '#4a7c59'} 0%, #3d6b4a 100%)`;
         
-        // Create the image overlay for better text readability
-        const imageOverlay = route.imageUrl 
-            ? 'background: linear-gradient(135deg, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0.6) 100%);' 
-            : '';
+        // Use background position from route data or default to center
+        const backgroundPosition = route.imagePosition || 'center';
         
         return `
             <div class="route-card" onclick="selectRoute('${route.id}')">
-                <div class="route-image" style="background-image: ${backgroundImage}; background-size: cover; background-position: center;">
-                    ${route.imageUrl ? `<div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; ${imageOverlay}"></div>` : ''}
+                <div class="route-image" style="background-image: ${backgroundImage}; background-size: cover; background-position: ${backgroundPosition};">
                     <div style="position: relative; z-index: 1;">
                         <span style="font-size: 32px; color: white; text-shadow: 0 2px 4px rgba(0,0,0,0.8);">🎧</span>
                     </div>
                 </div>
-                <div class="route-content">
+                <div class="route-content" style="padding: 15px; margin: 10%;">
                     <h3>${route.name}</h3>
                     <p class="route-description">${route.description || 'No description available'}</p>
                     <div class="route-stats">
