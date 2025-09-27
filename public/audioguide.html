@@ -7,9 +7,6 @@
     
     <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-
-    <!-- Your custom CSS -->
-    <link rel="stylesheet" href="css/audioguide.css">
     
     <style>
         * {
@@ -99,30 +96,37 @@
             background: rgba(255, 107, 107, 0.8);
         }
 
-        /* Swipeable cards container - FIXED */
+        /* FIXED: Cards container - proper bottom positioning */
         .cards-container {
             position: fixed;
             bottom: 0;
             left: 0;
             right: 0;
             z-index: 999;
-            padding: 0;
+            background: rgba(0, 0, 0, 0.95);
+            backdrop-filter: blur(20px);
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
             height: auto;
+            max-height: 70vh;
+            min-height: 200px;
         }
 
+        /* FIXED: Cards wrapper - enable horizontal scrolling */
         .cards-wrapper {
             width: 100vw;
             overflow: hidden;
-            padding: 20px 0 0px 0;
+            padding: 20px 0;
         }
 
+        /* FIXED: Cards track - proper flex layout for swiping */
         .cards-track {
             display: flex;
-            transition: transform 0.3s ease;
-            width: calc(100vw * var(--total-cards, 1));
+            transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            width: calc(90vw * var(--total-cards, 1));
+            height: 100%;
         }
 
-        /* Stop card - FIXED */
+        /* FIXED: Stop card - exactly 90vw each with proper spacing */
         .stop-card {
             width: 90vw;
             flex-shrink: 0;
@@ -133,7 +137,11 @@
             border: 1px solid rgba(255, 255, 255, 0.1);
             position: relative;
             box-sizing: border-box;
-            margin: 0 5vw;
+            margin-right: 10vw;
+        }
+
+        .stop-card:last-child {
+            margin-right: 0;
         }
 
         .current-stop-header {
@@ -253,6 +261,7 @@
             border-radius: 2px;
             overflow: hidden;
             margin-bottom: 8px;
+            cursor: pointer;
         }
 
         .progress-fill {
@@ -289,31 +298,6 @@
         .auto-play-indicator.show {
             opacity: 1;
             transform: translateX(-50%) translateY(-10px);
-        }
-
-        /* Card indicators */
-        .card-indicators {
-            display: flex;
-            justify-content: center;
-            gap: 8px;
-            margin-top: 16px;
-            margin-bottom: 20px;
-            padding: 0 20px;
-        }
-
-        .card-dot {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            background: rgba(255, 255, 255, 0.3);
-            transition: all 0.3s ease;
-            cursor: pointer;
-        }
-
-        .card-dot.active {
-            background: #FFD700;
-            width: 20px;
-            border-radius: 10px;
         }
 
         /* Distance badge */
@@ -365,6 +349,10 @@
             
             .route-title {
                 font-size: 18px;
+            }
+            
+            .stop-card {
+                padding: 20px;
             }
         }
 
@@ -674,14 +662,14 @@
                             
                             <div class="audio-controls">
                                 <button class="control-btn" onclick="rewind()">⏪</button>
-                                <button class="control-btn" onclick="previousTrack()">⏮</button>
+                                <button class="control-btn" onclick="previousTrack()">⮮</button>
                                 <button class="control-btn play-btn" onclick="togglePlayback(${index})">▶</button>
-                                <button class="control-btn" onclick="nextTrack()">⏭</button>
+                                <button class="control-btn" onclick="nextTrack()">⭮</button>
                                 <button class="control-btn" onclick="forward()">⏩</button>
                             </div>
                             
                             <div class="progress-section">
-                                <div class="progress-bar">
+                                <div class="progress-bar" onclick="seekAudio(event, ${index})">
                                     <div class="progress-fill" id="progress-${index}"></div>
                                 </div>
                                 <div class="time-display">
@@ -703,7 +691,8 @@
             // Setup swipe functionality
             setupSwipeNavigation();
             
-            // Load first stop
+            // Set total cards and load first stop
+            totalCards = currentStops.length;
             if (currentStops.length > 0) {
                 selectStop(0);
             }
@@ -723,6 +712,7 @@
             wrapper.addEventListener('touchmove', (e) => {
                 if (!isDragging) return;
                 currentX = e.touches[0].clientX;
+                e.preventDefault(); // Prevent scrolling
             });
 
             wrapper.addEventListener('touchend', () => {
@@ -770,6 +760,7 @@
             });
         }
 
+        // FIXED: Proper swipe calculation
         function goToCard(index) {
             if (index < 0 || index >= totalCards) return;
             
@@ -777,10 +768,9 @@
             currentStopIndex = index;
             
             const track = document.getElementById('cards-track');
-            // Calculate the exact offset for each card
-            const offsetX = index * 100; // 100vw per card
+            // Each card is 90vw + 10vw margin = 100vw total
+            const offsetX = index * 100;
             track.style.transform = `translateX(-${offsetX}vw)`;
-        
             
             // Select the stop
             selectStop(index);
@@ -881,6 +871,19 @@
             const minutes = Math.floor(seconds / 60);
             const remainingSeconds = Math.floor(seconds % 60);
             return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+        }
+
+        // Progress bar click to seek
+        function seekAudio(event, stopIndex) {
+            if (!currentAudio) return;
+            
+            const progressBar = event.currentTarget;
+            const rect = progressBar.getBoundingClientRect();
+            const clickX = event.clientX - rect.left;
+            const width = rect.width;
+            const clickRatio = clickX / width;
+            
+            currentAudio.currentTime = clickRatio * currentAudio.duration;
         }
 
         // Audio control functions
@@ -1013,6 +1016,7 @@
             updateStopDistances();
         }
 
+        // FIXED: Auto-play when in range
         function checkStopProximity() {
             if (!userLocation) return;
 
@@ -1033,7 +1037,7 @@
                     badge.classList.toggle('in-range', isInRange);
                 }
 
-                // Auto-play logic
+                // FIXED: Auto-play logic with proper checks
                 if (isInRange && !autoPlayTriggered[index]) {
                     console.log(`Entering range of stop ${index + 1}: ${stop.name}`);
                     autoPlayTriggered[index] = true;
@@ -1042,10 +1046,15 @@
                     // Show auto-play indicator
                     showAutoPlayIndicator(index);
                     
-                    // Go to this card and play
+                    // Go to this card
                     goToCard(index);
-                    if (stop.audioFile) {
-                        setTimeout(() => togglePlayback(index), 500);
+                    
+                    // Play audio if available and not already playing
+                    if (stop.audioFile && !isPlaying) {
+                        setTimeout(() => {
+                            loadAudio(stop.audioFile, index);
+                            setTimeout(() => togglePlayback(index), 500);
+                        }, 1000);
                     }
                     
                     // Reset other triggers
