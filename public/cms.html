@@ -440,6 +440,65 @@
             resize: vertical;
         }
 
+        /* File Upload Areas */
+        .file-upload-area {
+            border: 2px dashed rgba(255, 255, 255, 0.3);
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 10px;
+        }
+
+        .file-upload-area:hover {
+            border-color: #FFD700;
+            background: rgba(255, 215, 0, 0.05);
+        }
+
+        .file-upload-area.has-file {
+            border-color: #4CAF50;
+            background: rgba(76, 175, 80, 0.05);
+        }
+
+        .file-upload-area.uploading {
+            border-color: #FFC107;
+            background: rgba(255, 193, 7, 0.05);
+        }
+
+        .upload-icon {
+            font-size: 24px;
+            margin-bottom: 10px;
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        .upload-text {
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 14px;
+            margin-bottom: 5px;
+        }
+
+        .upload-subtext {
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 12px;
+        }
+
+        .upload-progress {
+            width: 100%;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 2px;
+            margin-top: 10px;
+            overflow: hidden;
+        }
+
+        .upload-progress-bar {
+            height: 100%;
+            background: #FFD700;
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
         /* Modal */
         .modal {
             display: none;
@@ -465,7 +524,7 @@
             border: 1px solid rgba(255, 255, 255, 0.2);
             border-radius: 16px;
             padding: 30px;
-            max-width: 800px;
+            max-width: 1000px;
             width: 100%;
             max-height: 90vh;
             overflow-y: auto;
@@ -481,6 +540,33 @@
         .modal-title {
             font-size: 24px;
             font-weight: 600;
+        }
+
+        /* Route Image Preview */
+        .route-image-preview {
+            width: 100%;
+            height: 120px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-top: 10px;
+            background-size: cover;
+            background-position: center;
+            position: relative;
+        }
+
+        .route-image-preview img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 8px;
+        }
+
+        .route-image-placeholder {
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 14px;
         }
 
         /* Loading */
@@ -577,7 +663,7 @@
         <div class="header">
             <div>
                 <div class="logo">ICHE CMS</div>
-                <div class="subtitle">Content Management System for Audio Tours</div>
+                <div class="subtitle">Enhanced Content Management System for Audio Tours</div>
             </div>
             <button class="close-btn" onclick="closeCMS()">
                 ✕ Close CMS
@@ -713,6 +799,19 @@
                         <input type="color" class="form-input" name="color" value="#FFD700">
                     </div>
                     <div class="form-group">
+                        <label class="form-label">Route Image</label>
+                        <input type="url" class="form-input" name="imageUrl" placeholder="Enter image URL or upload below">
+                        <div class="file-upload-area" id="route-image-upload" onclick="document.getElementById('route-image-file').click()">
+                            <div class="upload-icon">🖼️</div>
+                            <div class="upload-text">Click to upload route image</div>
+                            <div class="upload-subtext">JPG, PNG up to 10MB</div>
+                        </div>
+                        <input type="file" id="route-image-file" accept="image/*" style="display: none;" onchange="handleRouteImageUpload(event)">
+                        <div class="route-image-preview" id="route-image-preview">
+                            <div class="route-image-placeholder">No image selected</div>
+                        </div>
+                    </div>
+                    <div class="form-group">
                         <label class="form-label">Points Added</label>
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
                             <span id="stops-count-display">0 stops</span>
@@ -765,10 +864,28 @@
                     </div>
                 </div>
                 <div class="form-section">
-                    <h3>🎧 Audio Guide</h3>
+                    <h3>🖼️ Stop Image</h3>
                     <div class="form-group">
-                        <label class="form-label">Audio File Name</label>
-                        <input type="text" class="form-input" name="audioFile" placeholder="e.g. stop1.mp3">
+                        <label class="form-label">Image URL</label>
+                        <input type="url" class="form-input" name="imageUrl" placeholder="Enter image URL or upload below">
+                        <div class="file-upload-area" id="stop-image-upload" onclick="document.getElementById('stop-image-file').click()">
+                            <div class="upload-icon">🖼️</div>
+                            <div class="upload-text">Click to upload image</div>
+                            <div class="upload-subtext">JPG, PNG up to 10MB</div>
+                        </div>
+                        <input type="file" id="stop-image-file" accept="image/*" style="display: none;" onchange="handleStopImageUpload(event)">
+                    </div>
+                    
+                    <h3 style="margin-top: 30px;">🎧 Audio Guide</h3>
+                    <div class="form-group">
+                        <label class="form-label">Audio File</label>
+                        <input type="text" class="form-input" name="audioFile" placeholder="e.g. stop1.mp3 or upload below" readonly>
+                        <div class="file-upload-area" id="stop-audio-upload" onclick="document.getElementById('stop-audio-file').click()">
+                            <div class="upload-icon">🎵</div>
+                            <div class="upload-text">Click to upload audio</div>
+                            <div class="upload-subtext">MP3, WAV up to 50MB</div>
+                        </div>
+                        <input type="file" id="stop-audio-file" accept="audio/*" style="display: none;" onchange="handleStopAudioUpload(event)">
                     </div>
                     <div class="form-group">
                         <label class="form-label">Audio Duration</label>
@@ -784,11 +901,11 @@
     </div>
 
     <script>
-        // Global variables - use relative URL since CMS is served from same server
+        // Global variables
         const API_BASES = [
-            '/api', // Relative URL - same server (PRIMARY)
-            'http://localhost:3001/api',
-            'http://127.0.0.1:3001/api'
+            '/api',
+            `${window.location.origin}/api`,
+            'http://localhost:3001/api'
         ];
         let API_BASE = API_BASES[0];
         let currentRoutes = [];
@@ -811,7 +928,7 @@
             await loadRoutes();
         }
 
-        // Connection Testing - try multiple server locations
+        // Connection Testing
         async function testConnection() {
             console.log('Testing connection to server...');
             
@@ -821,13 +938,10 @@
             const routesText = document.getElementById('routes-status-text');
 
             let connected = false;
-            let workingBase = null;
 
-            // Try each possible API base URL
             for (const baseUrl of API_BASES) {
                 try {
                     serverText.textContent = `Testing ${baseUrl}...`;
-                    console.log(`Trying: ${baseUrl}/health`);
                     
                     const healthResponse = await fetch(`${baseUrl}/health`, { 
                         method: 'GET',
@@ -836,16 +950,15 @@
                     
                     if (healthResponse.ok) {
                         const healthData = await healthResponse.json();
-                        API_BASE = baseUrl; // Use this working URL
-                        workingBase = baseUrl;
+                        API_BASE = baseUrl;
                         connected = true;
                         
                         serverDot.className = 'status-dot green';
-                        serverText.textContent = `Server Online (${healthData.routes} routes in DB) - ${baseUrl}`;
+                        serverText.textContent = `Server Online (${healthData.routes} routes) - ${baseUrl}`;
                         systemStatus.serverConnected = true;
                         
                         console.log('✅ Server connected via:', baseUrl);
-                        break; // Stop trying other URLs
+                        break;
                     }
                 } catch (error) {
                     console.log(`❌ Failed ${baseUrl}:`, error.message);
@@ -855,17 +968,16 @@
 
             if (!connected) {
                 serverDot.className = 'status-dot red';
-                serverText.textContent = 'Server Offline - Tried all URLs';
+                serverText.textContent = 'Server Offline - All URLs failed';
                 routesDot.className = 'status-dot red';
                 routesText.textContent = 'Cannot connect to server';
                 systemStatus.serverConnected = false;
                 systemStatus.routesLoaded = false;
-
-                showError(`Server connection failed. Tried: ${API_BASES.join(', ')}. Make sure server is running on port 3001.`);
+                showError('Server connection failed. Make sure server is running.');
                 return;
             }
 
-            // Test routes endpoint with working URL
+            // Test routes endpoint
             try {
                 routesText.textContent = 'Testing routes...';
                 const routesResponse = await fetch(`${API_BASE}/routes`);
@@ -916,7 +1028,7 @@
             }
         }
 
-        // Error/Success messaging
+        // Messaging
         function showError(message) {
             const container = document.getElementById('error-container');
             container.innerHTML = `<div class="error-message">❌ ${message}</div>`;
@@ -925,13 +1037,142 @@
         function showSuccess(message) {
             const container = document.getElementById('error-container');
             container.innerHTML = `<div class="success-message">✅ ${message}</div>`;
-            setTimeout(() => {
-                container.innerHTML = '';
-            }, 5000);
+            setTimeout(() => container.innerHTML = '', 5000);
         }
 
         function clearMessages() {
             document.getElementById('error-container').innerHTML = '';
+        }
+
+        // File Upload Functions
+        async function handleRouteImageUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const uploadArea = document.getElementById('route-image-upload');
+            const preview = document.getElementById('route-image-preview');
+            
+            uploadArea.classList.add('uploading');
+            uploadArea.querySelector('.upload-text').textContent = 'Uploading...';
+
+            try {
+                const formData = new FormData();
+                formData.append('image', file);
+
+                const response = await fetch(`${API_BASE}/upload/image`, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    throw new Error('Upload failed');
+                }
+
+                const result = await response.json();
+                
+                // Update form field
+                document.querySelector('[name="imageUrl"]').value = result.url;
+                
+                // Update upload area
+                uploadArea.classList.remove('uploading');
+                uploadArea.classList.add('has-file');
+                uploadArea.querySelector('.upload-text').textContent = result.originalName;
+                uploadArea.querySelector('.upload-subtext').textContent = `${(result.size / 1024 / 1024).toFixed(2)} MB`;
+                
+                // Update preview
+                preview.innerHTML = `<img src="${result.url}" alt="Route preview">`;
+                
+                showSuccess('Route image uploaded successfully');
+                
+            } catch (error) {
+                console.error('Upload error:', error);
+                showError('Failed to upload route image');
+                
+                uploadArea.classList.remove('uploading');
+                uploadArea.querySelector('.upload-text').textContent = 'Click to upload route image';
+            }
+        }
+
+        async function handleStopImageUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const uploadArea = document.getElementById('stop-image-upload');
+            uploadArea.classList.add('uploading');
+            uploadArea.querySelector('.upload-text').textContent = 'Uploading...';
+
+            try {
+                const formData = new FormData();
+                formData.append('image', file);
+
+                const response = await fetch(`${API_BASE}/upload/image`, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    throw new Error('Upload failed');
+                }
+
+                const result = await response.json();
+                
+                document.querySelector('[name="imageUrl"]').value = result.url;
+                
+                uploadArea.classList.remove('uploading');
+                uploadArea.classList.add('has-file');
+                uploadArea.querySelector('.upload-text').textContent = result.originalName;
+                uploadArea.querySelector('.upload-subtext').textContent = `${(result.size / 1024 / 1024).toFixed(2)} MB`;
+                
+                showSuccess('Stop image uploaded successfully');
+                
+            } catch (error) {
+                console.error('Upload error:', error);
+                showError('Failed to upload stop image');
+                
+                uploadArea.classList.remove('uploading');
+                uploadArea.querySelector('.upload-text').textContent = 'Click to upload image';
+            }
+        }
+
+        async function handleStopAudioUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const uploadArea = document.getElementById('stop-audio-upload');
+            uploadArea.classList.add('uploading');
+            uploadArea.querySelector('.upload-text').textContent = 'Uploading audio...';
+
+            try {
+                const formData = new FormData();
+                formData.append('audio', file);
+
+                const response = await fetch(`${API_BASE}/upload/audio`, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    throw new Error('Upload failed');
+                }
+
+                const result = await response.json();
+                
+                document.querySelector('[name="audioFile"]').value = result.filename;
+                
+                uploadArea.classList.remove('uploading');
+                uploadArea.classList.add('has-file');
+                uploadArea.querySelector('.upload-text').textContent = result.originalName;
+                uploadArea.querySelector('.upload-subtext').textContent = `${(result.size / 1024 / 1024).toFixed(2)} MB`;
+                
+                showSuccess('Audio file uploaded successfully');
+                
+            } catch (error) {
+                console.error('Upload error:', error);
+                showError('Failed to upload audio file');
+                
+                uploadArea.classList.remove('uploading');
+                uploadArea.querySelector('.upload-text').textContent = 'Click to upload audio';
+            }
         }
 
         // Routes Management
@@ -953,18 +1194,12 @@
             }
 
             try {
-                console.log('Loading routes from:', `${API_BASE}/routes`);
-                const response = await fetch(`${API_BASE}/routes`, {
-                    method: 'GET',
-                    headers: { 'Content-Type': 'application/json' }
-                });
-                
+                const response = await fetch(`${API_BASE}/routes`);
                 if (!response.ok) {
                     throw new Error(`HTTP ${response.status}: ${response.statusText}`);
                 }
 
                 currentRoutes = await response.json();
-                console.log('Routes loaded:', currentRoutes);
 
                 if (currentRoutes.length === 0) {
                     routesList.innerHTML = `
@@ -972,7 +1207,6 @@
                             <h3>No routes found</h3>
                             <p>Create your first audio tour route to get started.</p>
                             <button class="btn-primary" onclick="createNewRoute()">+ Create First Route</button>
-                            <button class="btn-secondary" onclick="importDefaultRoutes()">Import Default Routes</button>
                         </div>
                     `;
                     return;
@@ -988,7 +1222,7 @@
                                 <div class="route-tags">
                                     <span class="tag ${route.category?.toLowerCase() || 'modern'}">${route.category || 'Modern'}</span>
                                     <span class="tag">${route.city || 'Unknown City'}</span>
-                                    <span class="tag ${route.published ? 'published' : 'draft'}" data-status-tag>
+                                    <span class="tag ${route.published ? 'published' : 'draft'}">
                                         ${route.published ? 'Published' : 'Draft'}
                                     </span>
                                 </div>
@@ -997,12 +1231,10 @@
                                 <div class="publish-toggle-container">
                                     <span class="publish-toggle-label">Publish</span>
                                     <div class="toggle-switch ${route.published ? 'active' : ''}" 
-                                         data-route-id="${route.id}"
-                                         data-current-status="${route.published}"
                                          onclick="togglePublish('${route.id}', ${!route.published})">
                                         <div class="toggle-slider"></div>
                                     </div>
-                                    <span class="toggle-status" data-toggle-status>${route.published ? 'Live' : 'Draft'}</span>
+                                    <span class="toggle-status">${route.published ? 'Live' : 'Draft'}</span>
                                 </div>
                                 <button class="btn-icon" onclick="editRoute('${route.id}')" title="Edit">✏️</button>
                                 <button class="btn-icon btn-delete" onclick="deleteRoute('${route.id}')" title="Delete">🗑️</button>
@@ -1035,29 +1267,11 @@
             } catch (error) {
                 console.error('Error loading routes:', error);
                 showError(`Failed to load routes: ${error.message}`);
-                routesList.innerHTML = `
-                    <div class="empty-state">
-                        <h3>Error loading routes</h3>
-                        <p>${error.message}</p>
-                        <button class="btn-primary" onclick="loadRoutes()">Retry</button>
-                        <button class="btn-secondary" onclick="testConnection()">Test Connection</button>
-                    </div>
-                `;
             }
         }
 
-        // Toggle publish/unpublish with improved error handling
         async function togglePublish(routeId, shouldPublish) {
-            // Disable the toggle switch to prevent double-clicks
-            const toggleSwitch = document.querySelector(`[data-route-id="${routeId}"]`);
-            if (toggleSwitch) {
-                toggleSwitch.style.pointerEvents = 'none';
-                toggleSwitch.style.opacity = '0.5';
-            }
-
             try {
-                console.log(`${shouldPublish ? 'Publishing' : 'Unpublishing'} route:`, routeId);
-                
                 const response = await fetch(`${API_BASE}/routes/${routeId}/publish`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -1070,30 +1284,18 @@
                 }
 
                 const result = await response.json();
-                console.log('Toggle result:', result);
                 
-                // Update the route in our local data
                 const routeIndex = currentRoutes.findIndex(r => r.id === routeId);
                 if (routeIndex !== -1) {
                     currentRoutes[routeIndex].published = shouldPublish;
                 }
                 
-                showSuccess(`Route ${shouldPublish ? 'published' : 'unpublished'} successfully! ${result.publishedRoutes} routes are now live.`);
-                
-                // Reload the routes list to ensure everything is in sync
-                setTimeout(() => {
-                    loadRoutes();
-                }, 1000);
+                showSuccess(`Route ${shouldPublish ? 'published' : 'unpublished'} successfully!`);
+                setTimeout(() => loadRoutes(), 1000);
                 
             } catch (error) {
-                console.error(`Error ${shouldPublish ? 'publishing' : 'unpublishing'} route:`, error);
+                console.error('Error toggling publish status:', error);
                 showError(`Failed to ${shouldPublish ? 'publish' : 'unpublish'} route: ${error.message}`);
-                
-                // Re-enable the toggle switch on error
-                if (toggleSwitch) {
-                    toggleSwitch.style.pointerEvents = 'auto';
-                    toggleSwitch.style.opacity = '1';
-                }
             }
         }
 
@@ -1104,6 +1306,10 @@
             document.getElementById('modal-title').textContent = 'Create New Route';
             document.getElementById('route-form').reset();
             document.getElementById('stops-count-display').textContent = '0 stops';
+            
+            // Reset image preview
+            document.getElementById('route-image-preview').innerHTML = '<div class="route-image-placeholder">No image selected</div>';
+            
             updateStopsListInline();
             showModal('route-modal');
         }
@@ -1120,7 +1326,7 @@
             
             // Populate form
             const form = document.getElementById('route-form');
-            const fields = ['name', 'city', 'category', 'difficulty', 'estimatedDuration', 'distance', 'description', 'color'];
+            const fields = ['name', 'city', 'category', 'difficulty', 'estimatedDuration', 'distance', 'description', 'color', 'imageUrl'];
             
             fields.forEach(field => {
                 const input = form.querySelector(`[name="${field}"]`);
@@ -1129,8 +1335,16 @@
                 }
             });
 
-            document.getElementById('stops-count-display').textContent = `${route.points?.length || 0} stops`;
+            // Update image preview
+            const preview = document.getElementById('route-image-preview');
+            if (route.imageUrl) {
+                preview.innerHTML = `<img src="${route.imageUrl}" alt="Route preview">`;
+            } else {
+                preview.innerHTML = '<div class="route-image-placeholder">No image selected</div>';
+            }
+
             editingRouteStops = route.points || [];
+            document.getElementById('stops-count-display').textContent = `${editingRouteStops.length} stops`;
             updateStopsListInline();
             showModal('route-modal');
         }
@@ -1139,34 +1353,27 @@
             const form = document.getElementById('route-form');
             const formData = new FormData(form);
             
-            // Convert FormData to object
             const routeData = {};
             for (let [key, value] of formData.entries()) {
                 routeData[key] = value;
             }
 
-            // Add stops data
             routeData.points = editingRouteStops;
 
-            // Validate required fields
             if (!routeData.name || !routeData.city) {
                 showError('Name and City are required fields');
                 return;
             }
 
             try {
-                console.log('Saving route:', routeData);
-                
                 let response;
                 if (editingRoute) {
-                    // Update existing route
                     response = await fetch(`${API_BASE}/routes/${editingRoute}`, {
                         method: 'PUT',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify(routeData)
                     });
                 } else {
-                    // Create new route
                     response = await fetch(`${API_BASE}/routes`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
@@ -1180,7 +1387,6 @@
                 }
 
                 const savedRoute = await response.json();
-                console.log('Route saved:', savedRoute);
 
                 closeModal('route-modal');
                 showSuccess(`Route "${routeData.name}" saved successfully!`);
@@ -1237,6 +1443,7 @@
                             <div style="font-size: 11px; color: rgba(255,255,255,0.6); margin-top: 4px;">
                                 ${stop.coordinates ? `📍 ${stop.coordinates[1]?.toFixed(4)}, ${stop.coordinates[0]?.toFixed(4)}` : '📍 No location'}
                                 ${stop.audioFile ? ' 🎧' : ' 🔇'}
+                                ${stop.imageUrl ? ' 🖼️' : ''}
                             </div>
                         </div>
                         <button onclick="event.stopPropagation(); deleteStop(${index})" style="background: rgba(255,107,107,0.2); border: none; color: #ff6b6b; padding: 4px 8px; border-radius: 4px; cursor: pointer;">×</button>
@@ -1250,6 +1457,10 @@
             document.getElementById('stop-modal-title').textContent = `Add Stop ${editingRouteStops.length + 1}`;
             document.getElementById('stop-form').reset();
             document.getElementById('stop-form').querySelector('[name="stopNumber"]').value = editingRouteStops.length + 1;
+            
+            // Reset upload areas
+            resetUploadAreas();
+            
             showModal('stop-modal');
         }
 
@@ -1268,8 +1479,22 @@
                 form.querySelector('[name="longitude"]').value = stop.coordinates[0];
             }
             
+            form.querySelector('[name="imageUrl"]').value = stop.imageUrl || '';
             form.querySelector('[name="audioFile"]').value = stop.audioFile || '';
             form.querySelector('[name="audioDuration"]').value = stop.audioDuration || '';
+            
+            // Reset upload areas but show current files
+            resetUploadAreas();
+            if (stop.audioFile) {
+                const audioUpload = document.getElementById('stop-audio-upload');
+                audioUpload.classList.add('has-file');
+                audioUpload.querySelector('.upload-text').textContent = stop.audioFile;
+            }
+            if (stop.imageUrl) {
+                const imageUpload = document.getElementById('stop-image-upload');
+                imageUpload.classList.add('has-file');
+                imageUpload.querySelector('.upload-text').textContent = 'Image uploaded';
+            }
             
             showModal('stop-modal');
         }
@@ -1294,7 +1519,8 @@
                 coordinates: [parseFloat(stopData.longitude), parseFloat(stopData.latitude)],
                 type: editingStopIndex === 0 ? 'start' : 'waypoint',
                 audioFile: stopData.audioFile || null,
-                audioDuration: stopData.audioDuration || null
+                audioDuration: stopData.audioDuration || null,
+                imageUrl: stopData.imageUrl || null
             };
 
             if (editingStopIndex === -1) {
@@ -1314,7 +1540,31 @@
             }
         }
 
-        // Regenerate app routes
+        function resetUploadAreas() {
+            // Reset route image upload
+            const routeImageUpload = document.getElementById('route-image-upload');
+            if (routeImageUpload) {
+                routeImageUpload.classList.remove('has-file', 'uploading');
+                routeImageUpload.querySelector('.upload-text').textContent = 'Click to upload route image';
+                routeImageUpload.querySelector('.upload-subtext').textContent = 'JPG, PNG up to 10MB';
+            }
+
+            // Reset stop uploads
+            const stopImageUpload = document.getElementById('stop-image-upload');
+            if (stopImageUpload) {
+                stopImageUpload.classList.remove('has-file', 'uploading');
+                stopImageUpload.querySelector('.upload-text').textContent = 'Click to upload image';
+                stopImageUpload.querySelector('.upload-subtext').textContent = 'JPG, PNG up to 10MB';
+            }
+
+            const stopAudioUpload = document.getElementById('stop-audio-upload');
+            if (stopAudioUpload) {
+                stopAudioUpload.classList.remove('has-file', 'uploading');
+                stopAudioUpload.querySelector('.upload-text').textContent = 'Click to upload audio';
+                stopAudioUpload.querySelector('.upload-subtext').textContent = 'MP3, WAV up to 50MB';
+            }
+        }
+
         async function regenerateRoutesFile() {
             try {
                 const response = await fetch(`${API_BASE}/regenerate-routes`, {
@@ -1334,60 +1584,6 @@
             }
         }
 
-        // Import default routes
-        async function importDefaultRoutes() {
-            if (!confirm('This will add default Milan routes to your database. Continue?')) {
-                return;
-            }
-
-            const defaultRoutes = [
-                {
-                    name: 'Historic Milan Tour',
-                    city: 'Milan',
-                    category: 'Historical',
-                    difficulty: 'Easy',
-                    estimatedDuration: '2 hours',
-                    distance: '3.5 km',
-                    description: 'Walk through Milan\'s historic center visiting the Duomo, Galleria, and more iconic landmarks.',
-                    color: '#8B4513',
-                    published: true
-                },
-                {
-                    name: 'Modern Milan Route',
-                    city: 'Milan',
-                    category: 'Modern',
-                    difficulty: 'Easy',
-                    estimatedDuration: '1.5 hours',
-                    distance: '2.8 km',
-                    description: 'Explore Milan\'s modern districts and contemporary architecture.',
-                    color: '#E31E24',
-                    published: false
-                }
-            ];
-
-            try {
-                for (const route of defaultRoutes) {
-                    const response = await fetch(`${API_BASE}/routes`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(route)
-                    });
-                    
-                    if (!response.ok) {
-                        console.warn('Failed to create route:', route.name);
-                    }
-                }
-
-                showSuccess(`Imported ${defaultRoutes.length} default routes`);
-                await loadRoutes();
-
-            } catch (error) {
-                console.error('Error importing default routes:', error);
-                showError(`Failed to import routes: ${error.message}`);
-            }
-        }
-
-        // Analytics
         async function loadAnalytics() {
             const analyticsContent = document.getElementById('analytics-content');
             analyticsContent.innerHTML = '<div class="loading">Loading analytics...</div>';
@@ -1464,4 +1660,4 @@
         });
     </script>
 </body>
-</html>
+</html> 
