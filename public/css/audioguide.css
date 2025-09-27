@@ -117,35 +117,39 @@ body {
   border-top: 1px solid rgba(255, 255, 255, 0.1);
   display: flex;
   flex-direction: column;
-  max-height: 70vh; /* Prevent from taking too much screen */
+  max-height: 70vh;
   min-height: 200px;
 }
 
-/* FIXED: Info Cards Container - Now properly positioned */
+/* FIXED: Info Cards Container - Full width, no padding */
 .info-cards-container {
-  width: 100%;
+  width: 100vw;
   flex: 1;
   overflow: hidden;
-  padding: 20px 0;
+  padding: 0;
+  margin: 0;
 }
 
-/* FIXED: Cards Wrapper - Proper horizontal scrolling */
+/* FIXED: Cards Wrapper - Full width horizontal scrolling */
 .info-cards-wrapper {
   display: flex;
   transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
   touch-action: pan-x;
   height: 100%;
-  width: fit-content;
+  width: 100%;
+  margin: 0;
+  padding: 0;
 }
 
-/* FIXED: Individual Cards - Each takes exactly 90vw */
+/* FIXED: Individual Cards - Each takes exactly 90vw, centered */
 .info-card {
   width: 90vw;
   flex-shrink: 0;
   display: flex;
   justify-content: center;
   align-items: flex-start;
-  padding: 0 5vw; /* Center the content within the 90vw */
+  padding: 20px 5vw;
+  margin: 0;
   box-sizing: border-box;
 }
 
@@ -432,31 +436,7 @@ body {
   box-shadow: 0 6px 20px rgba(255, 107, 107, 0.4);
 }
 
-/* Card Indicators */
-.card-indicators {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 8px;
-  padding: 10px 0;
-  background: rgba(0, 0, 0, 0.3);
-  border-top: 1px solid rgba(255, 255, 255, 0.05);
-}
-
-.card-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.3);
-  transition: all 0.3s ease;
-  cursor: pointer;
-}
-
-.card-dot.active {
-  background: #FFD700;
-  width: 20px;
-  border-radius: 10px;
-}
+/* REMOVED: Card Indicators - Not needed as requested */
 
 /* Leaflet Map Customization */
 .leaflet-popup-content-wrapper {
@@ -665,7 +645,7 @@ body {
   border-radius: 12px;
   padding: 15px;
   margin: 10px 0;
-  color: #4CAF50;
+  color: #2b872e;
   font-size: 14px;
   text-align: center;
 }
