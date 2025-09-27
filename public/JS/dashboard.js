@@ -1,4 +1,4 @@
-// Dashboard.js - Updated with route image support
+// Dashboard.js - Updated with route image support and image positioning
 console.log("Dashboard loading...");
 
 // Wait for routes to load, then populate the interface
@@ -48,7 +48,7 @@ function populateRouteDropdown(routes) {
     console.log(`Added ${routes.length} routes to dropdown`);
 }
 
-// Populate the available routes section with images
+// Populate the available routes section with images and custom positioning
 function populateAvailableRoutes(routes) {
     const container = document.getElementById('routesContainer');
     if (!container) {
@@ -66,19 +66,26 @@ function populateAvailableRoutes(routes) {
         return;
     }
     
-    // Create route cards with images
+    // Create route cards with images and custom positioning
     container.innerHTML = routes.map(route => {
         // Determine the background image or fallback
         const backgroundImage = route.imageUrl 
             ? `url('${route.imageUrl}')` 
             : `linear-gradient(135deg, ${route.color || '#4a7c59'} 0%, #3d6b4a 100%)`;
         
-        // Use background position from route data or default to center
+        // Use image position from route data or default to center
         const backgroundPosition = route.imagePosition || 'center';
+        
+        console.log(`Route ${route.name}: using position "${backgroundPosition}"`);
         
         return `
             <div class="route-card" onclick="selectRoute('${route.id}')">
-                <div class="route-image" style="background-image: ${backgroundImage}; background-size: cover; background-position: ${backgroundPosition};">
+                <div class="route-image" style="
+                    background-image: ${backgroundImage}; 
+                    background-size: cover; 
+                    background-position: ${backgroundPosition};
+                    background-repeat: no-repeat;
+                ">
                     <div style="position: relative; z-index: 1;">
                         <span style="font-size: 32px; color: white; text-shadow: 0 2px 4px rgba(0,0,0,0.8);">🎧</span>
                     </div>
@@ -105,7 +112,7 @@ function populateAvailableRoutes(routes) {
         `;
     }).join('');
     
-    console.log(`Added ${routes.length} route cards with images`);
+    console.log(`Added ${routes.length} route cards with custom image positioning`);
 }
 
 // Handle route selection
@@ -131,17 +138,20 @@ function selectRoute(routeId) {
     sessionStorage.setItem('selectedRouteId', routeId);
 }
 
-// Show detailed route information with image
+// Show detailed route information with image and custom positioning
 function showDetailedRoute(route) {
     const detailedView = document.getElementById('detailedRouteView');
     if (!detailedView) return;
     
-    // Update detailed route image
+    // Update detailed route image with custom positioning
     const detailedRouteImage = document.getElementById('detailedRouteImage');
     if (detailedRouteImage && route.imageUrl) {
         detailedRouteImage.style.backgroundImage = `url('${route.imageUrl}')`;
         detailedRouteImage.style.backgroundSize = 'cover';
-        detailedRouteImage.style.backgroundPosition = 'center';
+        detailedRouteImage.style.backgroundPosition = route.imagePosition || 'center';
+        detailedRouteImage.style.backgroundRepeat = 'no-repeat';
+        
+        console.log(`Detailed view for ${route.name}: using position "${route.imagePosition || 'center'}"`);
     } else if (detailedRouteImage) {
         // Fallback to color gradient
         detailedRouteImage.style.backgroundImage = `linear-gradient(135deg, ${route.color || '#4a7c59'} 0%, #3d6b4a 100%)`;
