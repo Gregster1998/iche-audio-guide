@@ -1,4 +1,4 @@
-// Dashboard.js - Integrates with CMS routes
+// Dashboard.js - Updated with route image support
 console.log("Dashboard loading...");
 
 // Wait for routes to load, then populate the interface
@@ -48,7 +48,7 @@ function populateRouteDropdown(routes) {
     console.log(`Added ${routes.length} routes to dropdown`);
 }
 
-// Populate the available routes section
+// Populate the available routes section with images
 function populateAvailableRoutes(routes) {
     const container = document.getElementById('routesContainer');
     if (!container) {
@@ -60,40 +60,55 @@ function populateAvailableRoutes(routes) {
         container.innerHTML = `
             <div style="text-align: center; padding: 40px; color: rgba(255,255,255,0.6);">
                 <h3>No published routes available</h3>
-                <p>Go to <a href="http://localhost:3001/cms" target="_blank">CMS</a> to publish some routes</p>
+                <p>Go to <a href="/cms" target="_blank">CMS</a> to publish some routes</p>
             </div>
         `;
         return;
     }
     
-    // Create route cards
-    container.innerHTML = routes.map(route => `
-        <div class="route-card" onclick="selectRoute('${route.id}')">
-            <div class="route-image" style="background: ${route.color || '#FFD700'};">
-                <span style="font-size: 32px; color: white;">🎧</span>
-            </div>
-            <div class="route-content">
-                <h3>${route.name}</h3>
-                <p class="route-description">${route.description || 'No description available'}</p>
-                <div class="route-stats">
-                    <div class="route-stat">
-                        <span class="stat-icon">📍</span>
-                        <span>${route.points?.length || 0} stops</span>
+    // Create route cards with images
+    container.innerHTML = routes.map(route => {
+        // Determine the background image or fallback
+        const backgroundImage = route.imageUrl 
+            ? `url('${route.imageUrl}')` 
+            : `linear-gradient(135deg, ${route.color || '#4a7c59'} 0%, #3d6b4a 100%)`;
+        
+        // Create the image overlay for better text readability
+        const imageOverlay = route.imageUrl 
+            ? 'background: linear-gradient(135deg, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0.6) 100%);' 
+            : '';
+        
+        return `
+            <div class="route-card" onclick="selectRoute('${route.id}')">
+                <div class="route-image" style="background-image: ${backgroundImage}; background-size: cover; background-position: center;">
+                    ${route.imageUrl ? `<div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; ${imageOverlay}"></div>` : ''}
+                    <div style="position: relative; z-index: 1;">
+                        <span style="font-size: 32px; color: white; text-shadow: 0 2px 4px rgba(0,0,0,0.8);">🎧</span>
                     </div>
-                    <div class="route-stat">
-                        <span class="stat-icon">⏱️</span>
-                        <span>${route.estimatedDuration || 'N/A'}</span>
-                    </div>
-                    <div class="route-stat">
-                        <span class="stat-icon">📏</span>
-                        <span>${route.distance || 'N/A'}</span>
+                </div>
+                <div class="route-content">
+                    <h3>${route.name}</h3>
+                    <p class="route-description">${route.description || 'No description available'}</p>
+                    <div class="route-stats">
+                        <div class="route-stat">
+                            <span class="stat-icon">📍</span>
+                            <span>${route.points?.length || 0} stops</span>
+                        </div>
+                        <div class="route-stat">
+                            <span class="stat-icon">⏱️</span>
+                            <span>${route.estimatedDuration || 'N/A'}</span>
+                        </div>
+                        <div class="route-stat">
+                            <span class="stat-icon">📏</span>
+                            <span>${route.distance || 'N/A'}</span>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
-    `).join('');
+        `;
+    }).join('');
     
-    console.log(`Added ${routes.length} route cards`);
+    console.log(`Added ${routes.length} route cards with images`);
 }
 
 // Handle route selection
@@ -119,10 +134,21 @@ function selectRoute(routeId) {
     sessionStorage.setItem('selectedRouteId', routeId);
 }
 
-// Show detailed route information
+// Show detailed route information with image
 function showDetailedRoute(route) {
     const detailedView = document.getElementById('detailedRouteView');
     if (!detailedView) return;
+    
+    // Update detailed route image
+    const detailedRouteImage = document.getElementById('detailedRouteImage');
+    if (detailedRouteImage && route.imageUrl) {
+        detailedRouteImage.style.backgroundImage = `url('${route.imageUrl}')`;
+        detailedRouteImage.style.backgroundSize = 'cover';
+        detailedRouteImage.style.backgroundPosition = 'center';
+    } else if (detailedRouteImage) {
+        // Fallback to color gradient
+        detailedRouteImage.style.backgroundImage = `linear-gradient(135deg, ${route.color || '#4a7c59'} 0%, #3d6b4a 100%)`;
+    }
     
     // Populate detailed route information
     document.getElementById('detailedRouteName').textContent = route.name;
