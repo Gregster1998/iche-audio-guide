@@ -623,7 +623,6 @@
 
         function setupCards() {
             const cardsTrack = document.getElementById('cards-track');
-            const indicators = document.getElementById('card-indicators');
             
             if (currentStops.length === 0) {
                 cardsTrack.innerHTML = `
@@ -700,12 +699,6 @@
                     </div>
                 `;
             }).join('');
-
-            // Create indicators
-            totalCards = currentStops.length;
-            indicators.innerHTML = Array.from({length: totalCards}, (_, i) => 
-                `<div class="card-dot ${i === 0 ? 'active' : ''}" data-index="${i}" onclick="goToCard(${i})"></div>`
-            ).join('');
 
             // Setup swipe functionality
             setupSwipeNavigation();
@@ -787,11 +780,7 @@
             // Calculate the exact offset for each card
             const offsetX = index * 100; // 100vw per card
             track.style.transform = `translateX(-${offsetX}vw)`;
-            
-            // Update indicators
-            document.querySelectorAll('.card-dot').forEach((dot, i) => {
-                dot.classList.toggle('active', i === index);
-            });
+        
             
             // Select the stop
             selectStop(index);
