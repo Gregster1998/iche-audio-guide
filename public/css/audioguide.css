@@ -436,8 +436,6 @@ body {
   box-shadow: 0 6px 20px rgba(255, 107, 107, 0.4);
 }
 
-/* REMOVED: Card Indicators - Not needed as requested */
-
 /* Leaflet Map Customization */
 .leaflet-popup-content-wrapper {
   background: rgba(0, 0, 0, 0.9) !important;
@@ -623,7 +621,7 @@ body {
   }
   
   .info-card {
-    padding: 0 2.5vw; /* Reduce padding on very small screens */
+    padding: 20px 2.5vw; /* Reduce padding on very small screens */
   }
 }
 
@@ -645,7 +643,7 @@ body {
   border-radius: 12px;
   padding: 15px;
   margin: 10px 0;
-  color: #2b872e;
+  color: #4CAF50;
   font-size: 14px;
   text-align: center;
 }
