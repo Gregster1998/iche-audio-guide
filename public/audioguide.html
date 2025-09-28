@@ -23,7 +23,6 @@
             overflow: hidden;
         }
 
-        /* Full screen map */
         .map-container {
             position: absolute;
             top: 0;
@@ -39,7 +38,6 @@
             background: #2D5A3D;
         }
 
-        /* Header overlay */
         .header {
             position: fixed;
             top: 0;
@@ -74,7 +72,6 @@
             color: white;
         }
 
-        /* Location status indicator */
         .location-indicator {
             position: fixed;
             top: 80px;
@@ -96,7 +93,6 @@
             background: rgba(255, 107, 107, 0.8);
         }
 
-        /* Cards container */
         .cards-container {
             position: fixed;
             top: 0;
@@ -196,7 +192,6 @@
             gap: 8px;
         }
 
-        /* Audio player */
         .audio-player {
             background: rgba(0, 0, 0, 0.3);
             border-radius: 16px;
@@ -256,7 +251,6 @@
             background: #FFC700;
         }
 
-        /* Progress bar */
         .progress-section {
             margin-top: 16px;
         }
@@ -285,7 +279,6 @@
             color: rgba(255, 255, 255, 0.6);
         }
 
-        /* Auto-play indicator */
         .auto-play-indicator {
             position: absolute;
             top: -40px;
@@ -307,7 +300,6 @@
             transform: translateX(-50%) translateY(-10px);
         }
 
-        /* Distance badge */
         .distance-badge {
             position: absolute;
             top: 20px;
@@ -324,7 +316,6 @@
             background: rgba(76, 175, 80, 0.8);
         }
 
-        /* Loading state */
         .loading-card {
             display: flex;
             align-items: center;
@@ -348,7 +339,6 @@
             100% { transform: rotate(360deg); }
         }
 
-        /* Responsive adjustments */
         @media (max-width: 480px) {
             .header {
                 padding: 15px;
@@ -385,7 +375,6 @@
             }
         }
 
-        /* Custom Leaflet marker styles */
         .user-location-marker {
             background: #2196F3;
             border: 3px solid white;
@@ -417,30 +406,42 @@
             70% { box-shadow: 0 0 0 10px rgba(255, 215, 0, 0); }
             100% { box-shadow: 0 0 0 0 rgba(255, 215, 0, 0); }
         }
+
+        .debug-panel {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 10px;
+            border-radius: 8px;
+            font-size: 12px;
+            z-index: 1001;
+            max-width: 300px;
+            display: none;
+        }
+
+        .debug-panel.show {
+            display: block;
+        }
     </style>
 </head>
 <body>
-    <!-- Full screen map -->
     <div class="map-container">
         <div id="audioguide-map"></div>
     </div>
 
-    <!-- Header overlay -->
     <div class="header">
         <button class="back-btn" onclick="goBack()">←</button>
         <div class="route-title" id="route-title">Loading...</div>
     </div>
 
-    <!-- Location status -->
     <div class="location-indicator" id="location-indicator" onclick="toggleLocation()">
         Enable Location
     </div>
 
-    <!-- Cards container -->
     <div class="cards-container">
         <div class="cards-wrapper" id="cards-wrapper">
             <div class="cards-track" id="cards-track">
-                <!-- Loading card -->
                 <div class="stop-card">
                     <div class="loading-card">
                         <div class="loading-spinner"></div>
@@ -451,10 +452,16 @@
         </div>
     </div>
 
-    <!-- Hidden audio element -->
+    <!-- Debug Panel -->
+    <div class="debug-panel" id="debug-panel">
+        <div>Debug Info:</div>
+        <div id="debug-location">Location: Not available</div>
+        <div id="debug-audio">Audio: Not loaded</div>
+        <div id="debug-proximity">Proximity: Checking...</div>
+    </div>
+
     <audio id="audio-element" preload="metadata"></audio>
 
-    <!-- Leaflet JavaScript -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
     <script>
@@ -465,7 +472,6 @@
         let audioguideMap = null;
         let userLocation = null;
         let userMarker = null;
-        let userAccuracyCircle = null; // FIXED: Track accuracy circle
         let stopMarkers = [];
         let routePolyline = null;
         let radiusCircles = [];
@@ -474,18 +480,19 @@
         let isPlaying = false;
         let autoPlayTriggered = {};
         let lastTriggeredStop = null;
-
-        // Location tracking variables
         let locationEnabled = false;
         let locationAccuracy = null;
-
-        // Swipe variables
         let currentCardIndex = 0;
         let totalCards = 0;
 
-        // Initialize when page loads
+        // Debug mode - set to true for debugging
+        const DEBUG_MODE = true;
+
         document.addEventListener('DOMContentLoaded', function() {
             initializeAudioguide();
+            if (DEBUG_MODE) {
+                document.getElementById('debug-panel').classList.add('show');
+            }
         });
 
         async function initializeAudioguide() {
@@ -501,6 +508,7 @@
                 await loadRouteData(routeId);
                 initializeMap();
                 setupCards();
+                setupAudio();
                 
             } catch (error) {
                 console.error('Failed to initialize audioguide:', error);
@@ -531,6 +539,8 @@
 
                 currentStops = currentRoute.points || [];
                 document.getElementById('route-title').textContent = currentRoute.name;
+                
+                debugLog(`Route loaded: ${currentRoute.name} with ${currentStops.length} stops`);
                 
             } catch (error) {
                 console.error('Error loading route data:', error);
@@ -634,7 +644,6 @@
             document.documentElement.style.setProperty('--total-cards', currentStops.length);
 
             cardsTrack.innerHTML = currentStops.map((stop, index) => {
-                const isStart = index === 0;
                 const nextStop = index < currentStops.length - 1 ? currentStops[index + 1] : null;
                 
                 return `
@@ -671,7 +680,7 @@
                             <div class="audio-controls">
                                 <button class="control-btn" onclick="rewind()">⏪</button>
                                 <button class="control-btn" onclick="previousTrack()">⏮</button>
-                                <button class="control-btn play-btn" onclick="togglePlayback(${index})">▶</button>
+                                <button class="control-btn play-btn" id="play-btn-${index}" onclick="togglePlayback(${index})">▶</button>
                                 <button class="control-btn" onclick="nextTrack()">⏭</button>
                                 <button class="control-btn" onclick="forward()">⏩</button>
                             </div>
@@ -682,7 +691,7 @@
                                 </div>
                                 <div class="time-display">
                                     <span id="current-time-${index}">0:00</span>
-                                    <span id="total-time-${index}">2:30</span>
+                                    <span id="total-time-${index}">0:00</span>
                                 </div>
                             </div>
                         </div>
@@ -703,6 +712,45 @@
             }
         }
 
+        function setupAudio() {
+            currentAudio = document.getElementById('audio-element');
+            
+            currentAudio.addEventListener('loadedmetadata', () => {
+                debugLog(`Audio metadata loaded: duration ${formatTime(currentAudio.duration)}`);
+                updateTimeDisplay(currentStopIndex);
+            });
+            
+            currentAudio.addEventListener('timeupdate', () => {
+                updateProgress(currentStopIndex);
+            });
+            
+            currentAudio.addEventListener('ended', () => {
+                isPlaying = false;
+                updatePlayButton(currentStopIndex);
+                debugLog('Audio ended');
+                if (currentStopIndex < currentStops.length - 1) {
+                    setTimeout(() => goToCard(currentStopIndex + 1), 1000);
+                }
+            });
+
+            currentAudio.addEventListener('play', () => {
+                isPlaying = true;
+                updatePlayButton(currentStopIndex);
+                debugLog('Audio started playing');
+            });
+
+            currentAudio.addEventListener('pause', () => {
+                isPlaying = false;
+                updatePlayButton(currentStopIndex);
+                debugLog('Audio paused');
+            });
+
+            currentAudio.addEventListener('error', (e) => {
+                console.error('Audio error:', e);
+                debugLog(`Audio error: ${e.type}`);
+            });
+        }
+
         function setupSwipeNavigation() {
             const wrapper = document.getElementById('cards-wrapper');
             let startX = 0;
@@ -721,33 +769,6 @@
             });
 
             wrapper.addEventListener('touchend', () => {
-                if (!isDragging) return;
-                isDragging = false;
-                
-                const diffX = startX - currentX;
-                const threshold = 50;
-                
-                if (Math.abs(diffX) > threshold) {
-                    if (diffX > 0 && currentCardIndex < totalCards - 1) {
-                        goToCard(currentCardIndex + 1);
-                    } else if (diffX < 0 && currentCardIndex > 0) {
-                        goToCard(currentCardIndex - 1);
-                    }
-                }
-            });
-
-            wrapper.addEventListener('mousedown', (e) => {
-                startX = e.clientX;
-                isDragging = true;
-                e.preventDefault();
-            });
-
-            wrapper.addEventListener('mousemove', (e) => {
-                if (!isDragging) return;
-                currentX = e.clientX;
-            });
-
-            wrapper.addEventListener('mouseup', () => {
                 if (!isDragging) return;
                 isDragging = false;
                 
@@ -792,72 +813,76 @@
             }
         }
 
-        // FIXED: Audio loading with proper path handling
         function loadAudio(audioFile, stopIndex) {
-            const audioElement = document.getElementById('audio-element');
-            
-            // Handle different audio file formats from database
+            if (!currentAudio) {
+                debugLog('No audio element available');
+                return;
+            }
+
+            // Determine the correct audio URL
             let audioUrl;
-            if (audioFile.startsWith('http') || audioFile.startsWith('/')) {
-                // Full URL or absolute path
+            if (audioFile.startsWith('http')) {
+                audioUrl = audioFile;
+            } else if (audioFile.startsWith('/')) {
                 audioUrl = audioFile;
             } else {
-                // Relative filename - construct path
                 audioUrl = `/uploads/audio/${audioFile}`;
             }
             
-            console.log('Loading audio:', audioUrl);
+            debugLog(`Loading audio: ${audioUrl}`);
             
-            audioElement.src = audioUrl;
-            currentAudio = audioElement;
-            
-            // Handle audio loading errors
-            audioElement.addEventListener('error', (e) => {
-                console.error('Audio loading error:', e);
-                console.log('Failed URL:', audioUrl);
-                // Try alternative path if first fails
-                if (!audioFile.startsWith('/uploads/')) {
-                    const fallbackUrl = `/uploads/audio/${audioFile}`;
-                    console.log('Trying fallback URL:', fallbackUrl);
-                    audioElement.src = fallbackUrl;
-                }
-            });
-            
-            audioElement.addEventListener('loadedmetadata', () => {
-                updateTimeDisplay(stopIndex);
-            });
-            
-            audioElement.addEventListener('timeupdate', () => {
-                updateProgress(stopIndex);
-            });
-            
-            audioElement.addEventListener('ended', () => {
-                isPlaying = false;
-                updatePlayButton(stopIndex);
-                if (stopIndex < currentStops.length - 1) {
-                    setTimeout(() => goToCard(stopIndex + 1), 1000);
-                }
-            });
+            // Test if the audio file exists first
+            fetch(audioUrl, { method: 'HEAD' })
+                .then(response => {
+                    if (response.ok) {
+                        currentAudio.src = audioUrl;
+                        debugLog(`Audio file found: ${response.status}`);
+                    } else {
+                        debugLog(`Audio file not found: ${response.status}`);
+                        // Try alternative paths
+                        const altUrl = audioFile.startsWith('/uploads/') ? audioFile : `/uploads/audio/${audioFile.split('/').pop()}`;
+                        debugLog(`Trying alternative URL: ${altUrl}`);
+                        currentAudio.src = altUrl;
+                    }
+                })
+                .catch(error => {
+                    debugLog(`Error checking audio file: ${error.message}`);
+                    currentAudio.src = audioUrl; // Try loading anyway
+                });
         }
 
         function togglePlayback(stopIndex) {
-            if (!currentAudio) return;
+            if (!currentAudio) {
+                debugLog('No audio element available for playback');
+                return;
+            }
+            
+            debugLog(`Toggle playback for stop ${stopIndex}, current playing: ${isPlaying}`);
             
             if (isPlaying) {
                 currentAudio.pause();
-                isPlaying = false;
             } else {
-                currentAudio.play().then(() => {
-                    isPlaying = true;
-                }).catch(error => {
-                    console.error('Error playing audio:', error);
-                });
+                // Ensure we have the right audio loaded
+                const stop = currentStops[stopIndex];
+                if (stop.audioFile && currentAudio.src.indexOf(stop.audioFile) === -1) {
+                    loadAudio(stop.audioFile, stopIndex);
+                    setTimeout(() => {
+                        currentAudio.play().catch(error => {
+                            console.error('Play error:', error);
+                            debugLog(`Play error: ${error.message}`);
+                        });
+                    }, 500);
+                } else {
+                    currentAudio.play().catch(error => {
+                        console.error('Play error:', error);
+                        debugLog(`Play error: ${error.message}`);
+                    });
+                }
             }
-            updatePlayButton(stopIndex);
         }
 
         function updatePlayButton(stopIndex) {
-            const playBtn = document.querySelector(`[data-stop-index="${stopIndex}"] .play-btn`);
+            const playBtn = document.getElementById(`play-btn-${stopIndex}`);
             if (playBtn) {
                 playBtn.innerHTML = isPlaying ? '⏸' : '▶';
             }
@@ -878,7 +903,7 @@
             if (!currentAudio) return;
             
             const current = formatTime(currentAudio.currentTime);
-            const duration = formatTime(currentAudio.duration);
+            const duration = formatTime(currentAudio.duration || 0);
             
             const currentTimeEl = document.getElementById(`current-time-${stopIndex}`);
             const totalTimeEl = document.getElementById(`total-time-${stopIndex}`);
@@ -938,32 +963,35 @@
             }
 
             if (locationEnabled) {
-                if (geolocationWatcher) {
-                    navigator.geolocation.clearWatch(geolocationWatcher);
-                    geolocationWatcher = null;
-                }
-                if (userMarker) {
-                    audioguideMap.removeLayer(userMarker);
-                    userMarker = null;
-                }
-                if (userAccuracyCircle) {
-                    audioguideMap.removeLayer(userAccuracyCircle);
-                    userAccuracyCircle = null;
-                }
-                locationEnabled = false;
-                updateLocationIndicator('disabled');
+                stopLocationTracking();
             } else {
                 requestLocation();
             }
         }
 
+        function stopLocationTracking() {
+            if (geolocationWatcher) {
+                navigator.geolocation.clearWatch(geolocationWatcher);
+                geolocationWatcher = null;
+            }
+            if (userMarker) {
+                audioguideMap.removeLayer(userMarker);
+                userMarker = null;
+            }
+            locationEnabled = false;
+            userLocation = null;
+            updateLocationIndicator('disabled');
+            debugLog('Location tracking stopped');
+        }
+
         function requestLocation() {
             updateLocationIndicator('requesting');
+            debugLog('Requesting location permission...');
 
             const options = {
                 enableHighAccuracy: true,
                 timeout: 10000,
-                maximumAge: 300000
+                maximumAge: 30000
             };
 
             navigator.geolocation.getCurrentPosition(
@@ -972,10 +1000,12 @@
                     updateUserLocation(position);
                     startLocationTracking();
                     updateLocationIndicator('active');
+                    debugLog(`Location obtained: ${position.coords.latitude}, ${position.coords.longitude}`);
                 },
                 (error) => {
                     console.error('Geolocation error:', error);
                     updateLocationIndicator('error');
+                    debugLog(`Location error: ${error.message}`);
                 },
                 options
             );
@@ -996,45 +1026,36 @@
                 updateUserLocation,
                 (error) => {
                     console.error('Location tracking error:', error);
+                    debugLog(`Tracking error: ${error.message}`);
                 },
                 options
             );
+
+            debugLog('Location tracking started');
         }
 
-        // FIXED: Single location pin tracking
         function updateUserLocation(position) {
             const { latitude, longitude, accuracy } = position.coords;
             userLocation = { lat: latitude, lng: longitude };
             locationAccuracy = accuracy;
 
+            debugLog(`Location updated: ${latitude.toFixed(6)}, ${longitude.toFixed(6)} (±${accuracy}m)`);
+
             if (audioguideMap) {
-                // Remove existing user marker and accuracy circle
+                // Remove existing user marker (no accuracy circle)
                 if (userMarker) {
                     audioguideMap.removeLayer(userMarker);
                 }
-                if (userAccuracyCircle) {
-                    audioguideMap.removeLayer(userAccuracyCircle);
-                }
 
-                // Add single user marker
+                // Add single user marker - NO ACCURACY CIRCLE
                 userMarker = L.circleMarker([latitude, longitude], {
-                    radius: 10,
+                    radius: 8,
                     fillColor: '#2196F3',
                     color: '#fff',
-                    weight: 3,
+                    weight: 2,
                     opacity: 1,
-                    fillOpacity: 0.8,
+                    fillOpacity: 1,
                     className: 'user-location-marker'
-                }).addTo(audioguideMap);
-
-                // Add single accuracy circle
-                userAccuracyCircle = L.circle([latitude, longitude], {
-                    radius: Math.min(accuracy, 100),
-                    fillColor: '#2196F3',
-                    fillOpacity: 0.1,
-                    color: '#2196F3',
-                    weight: 1,
-                    opacity: 0.5
                 }).addTo(audioguideMap);
             }
 
@@ -1042,9 +1063,10 @@
             updateStopDistances();
         }
 
-        // ENHANCED: Auto-play with better error handling
         function checkStopProximity() {
             if (!userLocation) return;
+
+            let proximityInfo = [];
 
             currentStops.forEach((stop, index) => {
                 if (!stop.coordinates) return;
@@ -1057,13 +1079,16 @@
                 const radius = stop.radius || 50;
                 const isInRange = distance <= radius;
                 
+                proximityInfo.push(`Stop ${index + 1}: ${Math.round(distance)}m ${isInRange ? '(IN RANGE)' : ''}`);
+
                 const badge = document.getElementById(`distance-${index}`);
                 if (badge) {
                     badge.classList.toggle('in-range', isInRange);
                 }
 
+                // Auto-play logic
                 if (isInRange && !autoPlayTriggered[index]) {
-                    console.log(`Entering range of stop ${index + 1}: ${stop.name}`);
+                    debugLog(`ENTERING RANGE: Stop ${index + 1} - ${stop.name}`);
                     autoPlayTriggered[index] = true;
                     lastTriggeredStop = index;
                     
@@ -1071,32 +1096,31 @@
                     goToCard(index);
                     
                     if (stop.audioFile && !isPlaying) {
-                        console.log('Attempting auto-play for stop:', stop.name);
-                        
+                        debugLog(`AUTO-PLAY: Starting audio for ${stop.name}`);
                         setTimeout(() => {
                             loadAudio(stop.audioFile, index);
                             setTimeout(() => {
                                 togglePlayback(index);
-                                setTimeout(() => {
-                                    if (!isPlaying) {
-                                        console.warn('Auto-play may have failed for stop:', stop.name);
-                                    }
-                                }, 1000);
-                            }, 500);
-                        }, 1000);
+                            }, 1000);
+                        }, 500);
                     }
                     
+                    // Reset other triggers
                     Object.keys(autoPlayTriggered).forEach(key => {
                         if (parseInt(key) !== index) {
                             autoPlayTriggered[key] = false;
                         }
                     });
-                }
-                
-                if (!isInRange && distance > radius + 20) {
-                    autoPlayTriggered[index] = false;
+                } else if (!isInRange && distance > radius + 20) {
+                    // Reset trigger when far enough away
+                    if (autoPlayTriggered[index]) {
+                        debugLog(`LEFT RANGE: Stop ${index + 1} - resetting trigger`);
+                        autoPlayTriggered[index] = false;
+                    }
                 }
             });
+
+            updateDebugProximity(proximityInfo.join('; '));
         }
 
         function updateStopDistances() {
@@ -1197,6 +1221,48 @@
             `;
         }
 
+        // Debug functions
+        function debugLog(message) {
+            if (DEBUG_MODE) {
+                console.log(`[DEBUG] ${message}`);
+                updateDebugAudio(message);
+            }
+        }
+
+        function updateDebugLocation(message) {
+            if (DEBUG_MODE) {
+                const el = document.getElementById('debug-location');
+                if (el) el.textContent = `Location: ${message}`;
+            }
+        }
+
+        function updateDebugAudio(message) {
+            if (DEBUG_MODE) {
+                const el = document.getElementById('debug-audio');
+                if (el) el.textContent = `Audio: ${message}`;
+            }
+        }
+
+        function updateDebugProximity(message) {
+            if (DEBUG_MODE) {
+                const el = document.getElementById('debug-proximity');
+                if (el) el.textContent = `Proximity: ${message}`;
+            }
+        }
+
+        // Test function for manual debugging
+        function testAudio(stopIndex = 0) {
+            const stop = currentStops[stopIndex];
+            if (!stop || !stop.audioFile) {
+                debugLog('No audio file for this stop');
+                return;
+            }
+            
+            debugLog(`Testing audio for stop ${stopIndex}: ${stop.name}`);
+            loadAudio(stop.audioFile, stopIndex);
+            setTimeout(() => togglePlayback(stopIndex), 1000);
+        }
+
         window.addEventListener('beforeunload', () => {
             if (geolocationWatcher) {
                 navigator.geolocation.clearWatch(geolocationWatcher);
@@ -1206,36 +1272,9 @@
             }
         });
 
-        // Debug function to test audio loading manually
-        function testAudioLoad(stopIndex) {
-            const stop = currentStops[stopIndex];
-            if (!stop || !stop.audioFile) {
-                console.log('No audio file for this stop');
-                return;
-            }
-            
-            console.log('=== AUDIO DEBUG ===');
-            console.log('Stop:', stop.name);
-            console.log('Audio file from DB:', stop.audioFile);
-            console.log('==================');
-            
-            const testUrl = `/uploads/audio/${stop.audioFile}`;
-            
-            fetch(testUrl, { method: 'HEAD' })
-                .then(response => {
-                    console.log('Audio file exists:', response.ok);
-                    console.log('Response status:', response.status);
-                    if (response.ok) {
-                        loadAudio(stop.audioFile, stopIndex);
-                    }
-                })
-                .catch(error => {
-                    console.error('Audio file test failed:', error);
-                });
-        }
-
-        // Make testAudioLoad available globally for debugging
-        window.testAudioLoad = testAudioLoad;
+        // Make test function available globally
+        window.testAudio = testAudio;
+        window.debugLog = debugLog;
     </script>
 </body>
 </html>
