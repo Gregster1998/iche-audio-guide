@@ -7,8 +7,9 @@ const app = express();
 const PORT = process.env.PORT || 3001;
 
 // Supabase configuration
-const supabaseUrl = process.env.SUPABASE_URL || 'YOUR_SUPABASE_URL_HERE'
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_KEY || 'YOUR_SERVICE_KEY_HERE'
+const supabaseUrl = process.env.SUPABASE_URL || 'YOUR_SUPABASE_URL_HERE';
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_KEY || 'YOUR_SERVICE_KEY_HERE';
+
 const supabase = createClient(supabaseUrl, supabaseServiceKey, {
     auth: {
         autoRefreshToken: false,
