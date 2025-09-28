@@ -1,4 +1,4 @@
-console.log("=== WELCOME.JS STARTED ===");
+console.log("=== WELCOME.JS STARTED - DATABASE VERSION ===");
 
 const userNameInput = document.getElementById("userName");
 const userCitySelect = document.getElementById("userCity");
@@ -10,74 +10,107 @@ console.log("Elements found:", {
   startAppBtn: !!startAppBtn
 });
 
-// Load cities from citiesData (provided by cities.js)
-function loadCities() {
-  console.log("=== LOADING CITIES ===");
+// Load cities from database instead of cities.js
+async function loadCitiesFromDatabase() {
+  console.log("=== LOADING CITIES FROM DATABASE ===");
   
-  // Check if citiesData is available
-  if (typeof citiesData === 'undefined') {
-    console.error("❌ citiesData not found. cities.js not loaded yet or path incorrect.");
+  try {
+    // Try multiple endpoints to find working one
+    const endpoints = [
+      `${window.location.origin}/api/cities`,
+      'http://localhost:3001/api/cities'
+    ];
     
-    // Retry after a short delay
-    console.log("🔄 Retrying in 100ms...");
-    setTimeout(loadCities, 100);
-    return;
+    let cities = null;
+    let workingEndpoint = null;
+    
+    for (const endpoint of endpoints) {
+      try {
+        console.log(`Testing cities endpoint: ${endpoint}`);
+        const response = await fetch(endpoint);
+        
+        if (response.ok) {
+          const data = await response.json();
+          console.log(`Cities data received from ${endpoint}:`, data);
+          
+          if (data && Array.isArray(data) && data.length > 0) {
+            cities = data;
+            workingEndpoint = endpoint;
+            console.log(`✅ Working cities endpoint found: ${endpoint}`);
+            break;
+          } else if (data && Array.isArray(data)) {
+            console.log(`⚠️ Endpoint ${endpoint} returned empty array`);
+          }
+        }
+      } catch (error) {
+        console.log(`❌ Endpoint ${endpoint} failed:`, error.message);
+      }
+    }
+    
+    if (!cities || cities.length === 0) {
+      console.error('❌ No cities found in database');
+      
+      // Fallback to hardcoded cities if database fails
+      cities = [
+        { name: 'Milan', country: 'Italy' },
+        { name: 'Vienna', country: 'Austria' },
+        { name: 'Rome', country: 'Italy' },
+        { name: 'Paris', country: 'France' }
+      ];
+      console.log('Using fallback cities:', cities);
+    }
+
+    console.log(`📋 Available cities: ${cities.length}`);
+    
+    // Clear existing options first
+    userCitySelect.innerHTML = '<option value="">Which city are you exploring?</option>';
+    
+    // Populate the select dropdown with cities from database
+    cities.forEach(city => {
+      const option = document.createElement("option");
+      option.value = city.name;
+      option.textContent = city.country ? `${city.name}, ${city.country}` : city.name;
+      userCitySelect.appendChild(option);
+      console.log(`➕ Added city: ${city.name} (${city.country || 'No country'})`);
+    });
+    
+    console.log(`✅ Successfully loaded ${cities.length} cities from database`);
+    
+    // Verify the options were added
+    const addedOptions = [...userCitySelect.options].map(opt => opt.value).filter(val => val !== "");
+    console.log("🎯 Final cities in dropdown:", addedOptions);
+    
+    return cities;
+    
+  } catch (error) {
+    console.error('❌ Error loading cities from database:', error);
+    
+    // Show error message to user
+    userCitySelect.innerHTML = `
+      <option value="">Error loading cities - please refresh</option>
+      <option value="Milan">Milan (fallback)</option>
+      <option value="Vienna">Vienna (fallback)</option>
+    `;
+    
+    throw error;
   }
-
-  console.log("✅ citiesData found:", citiesData);
-
-  // Get city names from the data
-  const cities = Object.keys(citiesData.cities);
-  console.log("📋 Available cities:", cities);
-  
-  if (cities.length === 0) {
-    console.error("❌ No cities found in citiesData");
-    return;
-  }
-
-  // Clear existing options first
-  userCitySelect.innerHTML = '<option value="">Which city are you exploring?</option>';
-  
-  // Populate the select dropdown
-  cities.forEach(city => {
-    const option = document.createElement("option");
-    option.value = city;
-    option.textContent = city;
-    userCitySelect.appendChild(option);
-    console.log(`➕ Added city: ${city}`);
-  });
-  
-  console.log(`✅ Successfully loaded ${cities.length} cities into dropdown`);
-  
-  // Verify the options were added
-  const addedOptions = [...userCitySelect.options].map(opt => opt.value).filter(val => val !== "");
-  console.log("🎯 Final cities in dropdown:", addedOptions);
 }
 
-// Initialize cities when page loads
-document.addEventListener('DOMContentLoaded', () => {
-  console.log("📄 DOM loaded, starting city initialization...");
+// Initialize cities when page loads - DATABASE VERSION
+document.addEventListener('DOMContentLoaded', async () => {
+  console.log("🔄 DOM loaded, starting database city initialization...");
   
-  // Try to load cities immediately
-  if (typeof citiesData !== 'undefined') {
-    console.log("Strategy 1: citiesData already available");
-    loadCities();
-  } else {
-    console.log("Strategy 2: Waiting for citiesData...");
-    // Wait a bit and try again
-    setTimeout(() => {
-      if (typeof citiesData !== 'undefined') {
-        loadCities();
-      } else {
-        console.error("❌ citiesData still not available after waiting");
-        alert("Error loading city data. Please refresh the page.");
-      }
-    }, 500);
+  try {
+    await loadCitiesFromDatabase();
+    console.log('✅ Cities loaded successfully from database');
+  } catch (error) {
+    console.error('❌ Failed to load cities from database:', error);
+    // Error handling already done in loadCitiesFromDatabase
   }
 });
 
 // Handle start button click - ENHANCED VERSION
-startAppBtn.addEventListener("click", () => {
+startAppBtn.addEventListener("click", async () => {
   const name = userNameInput.value.trim();
   const city = userCitySelect.value;
 
@@ -90,20 +123,59 @@ startAppBtn.addEventListener("click", () => {
 
   // Detailed validation
   if (!name || name.length === 0) {
-    alert("Bitte gib deinen Namen ein.");
+    alert("Please enter your name.");
     console.log("❌ Validation failed: Empty name");
     userNameInput.focus();
     return;
   }
 
   if (!city || city === "") {
-    alert("Bitte wähle eine Stadt aus.");
+    alert("Please select a city.");
     console.log("❌ Validation failed: No city selected");
     userCitySelect.focus();
     return;
   }
 
   console.log("✅ Validation passed - proceeding to save data");
+
+  // Check if there are routes available for the selected city
+  try {
+    console.log(`🔍 Checking routes for ${city}...`);
+    const routeCheckEndpoints = [
+      `${window.location.origin}/api/routes/city/${encodeURIComponent(city)}`,
+      `http://localhost:3001/api/routes/city/${encodeURIComponent(city)}`
+    ];
+    
+    let routesFound = false;
+    
+    for (const endpoint of routeCheckEndpoints) {
+      try {
+        const response = await fetch(endpoint);
+        if (response.ok) {
+          const routes = await response.json();
+          if (routes && routes.length > 0) {
+            routesFound = true;
+            console.log(`✅ Found ${routes.length} routes for ${city}`);
+            break;
+          }
+        }
+      } catch (error) {
+        console.log(`Route check failed for ${endpoint}:`, error.message);
+      }
+    }
+    
+    if (!routesFound) {
+      console.log(`⚠️ No routes found for ${city}`);
+      const proceed = confirm(`No audio tours are currently available for ${city}. Would you like to continue anyway? You can always switch cities later in the dashboard.`);
+      if (!proceed) {
+        return;
+      }
+    }
+    
+  } catch (error) {
+    console.log('Route availability check failed:', error);
+    // Continue anyway
+  }
 
   // Save to localStorage with extensive logging
   try {
@@ -131,7 +203,7 @@ startAppBtn.addEventListener("click", () => {
     
     if (savedName !== name || savedCity !== city) {
       console.error("❌ Save verification failed!");
-      alert("Fehler beim Speichern der Daten. Bitte versuche es erneut.");
+      alert("Error saving your data. Please try again.");
       return;
     }
     
@@ -139,7 +211,7 @@ startAppBtn.addEventListener("click", () => {
     
     // Also save additional debug info
     localStorage.setItem("debugTimestamp", new Date().toISOString());
-    localStorage.setItem("debugSource", "welcome.js");
+    localStorage.setItem("debugSource", "welcome.js - database version");
     
     console.log("🚀 Redirecting to dashboard.html...");
     
@@ -151,15 +223,14 @@ startAppBtn.addEventListener("click", () => {
   } catch (error) {
     console.error("❌ Error saving data:", error);
     console.error("Error details:", error.message);
-    alert("Fehler beim Speichern der Daten: " + error.message);
+    alert("Error saving your data: " + error.message);
   }
 });
 
 // Enhanced debug function
 window.debugWelcome = function() {
-  console.log("=== WELCOME DEBUG ===");
-  console.log("citiesData available:", typeof citiesData !== 'undefined');
-  console.log("citiesData content:", typeof citiesData !== 'undefined' ? citiesData : "Not available");
+  console.log("=== WELCOME DEBUG - DATABASE VERSION ===");
+  console.log("Database cities loading enabled: TRUE");
   console.log("Select element found:", !!userCitySelect);
   console.log("Current select options:", userCitySelect ? [...userCitySelect.options].map(o => `"${o.value}"`) : "Select not found");
   console.log("Current form values:");
@@ -185,5 +256,16 @@ window.testSaveUserData = function(testName, testCity) {
   console.log("Form updated, now click the Start Tour button");
 };
 
-console.log("✅ WELCOME.JS SETUP COMPLETE");
-console.log("💡 Available debug functions: debugWelcome(), testSaveUserData('name', 'city')");
+// Function to manually reload cities (for testing)
+window.reloadCities = async function() {
+  console.log("🔄 Manually reloading cities...");
+  try {
+    await loadCitiesFromDatabase();
+    console.log("✅ Cities reloaded successfully");
+  } catch (error) {
+    console.error("❌ Failed to reload cities:", error);
+  }
+};
+
+console.log("✅ WELCOME.JS SETUP COMPLETE - DATABASE VERSION");
+console.log("💡 Available debug functions: debugWelcome(), testSaveUserData('name', 'city'), reloadCities()");
