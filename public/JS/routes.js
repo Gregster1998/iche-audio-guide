@@ -3,12 +3,19 @@ const cors = require('cors');
 const path = require('path');
 const multer = require('multer');
 const { createClient } = require('@supabase/supabase-js');
+const fs = require('fs');
+
 const app = express();
 const PORT = process.env.PORT || 3001;
 
 // Supabase configuration
-const supabaseUrl = process.env.SUPABASE_URL || 'YOUR_SUPABASE_URL_HERE';
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_KEY || 'YOUR_SERVICE_KEY_HERE';
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_KEY;
+
+if (!supabaseUrl || !supabaseServiceKey) {
+    console.error('Missing Supabase configuration. Please set SUPABASE_URL and SUPABASE_SERVICE_KEY environment variables.');
+    process.exit(1);
+}
 
 const supabase = createClient(supabaseUrl, supabaseServiceKey, {
     auth: {
@@ -17,7 +24,26 @@ const supabase = createClient(supabaseUrl, supabaseServiceKey, {
     }
 });
 
-// Configure multer for file uploads to memory (we'll upload to Supabase)
+// Create local upload directories for fallback
+const createDirectories = () => {
+    const dirs = [
+        path.join(__dirname, 'public', 'uploads'),
+        path.join(__dirname, 'public', 'uploads', 'audio'),
+        path.join(__dirname, 'public', 'uploads', 'images')
+    ];
+    
+    dirs.forEach(dir => {
+        if (!fs.existsSync(dir)) {
+            fs.mkdirSync(dir, { recursive: true });
+            console.log('Created directory:', dir);
+        }
+    });
+};
+
+// Initialize directories
+createDirectories();
+
+// Configure multer for file uploads (both local and Supabase)
 const storage = multer.memoryStorage();
 const upload = multer({
     storage: storage,
@@ -70,32 +96,53 @@ app.post('/api/upload/audio', upload.single('audio'), async (req, res) => {
         }
 
         const filename = generateUniqueFilename(req.file.originalname, 'audio');
-        const { data, error } = await supabase.storage
-            .from('audio-files')
-            .upload(filename, req.file.buffer, {
-                contentType: req.file.mimetype,
-                duplex: false
-            });
+        
+        // Try Supabase first, fallback to local
+        try {
+            const { data, error } = await supabase.storage
+                .from('audio-files')
+                .upload(filename, req.file.buffer, {
+                    contentType: req.file.mimetype,
+                    duplex: false
+                });
 
-        if (error) {
-            console.error('Supabase upload error:', error);
-            return res.status(500).json({ error: 'Failed to upload audio file' });
+            if (error) throw error;
+
+            const { data: urlData } = supabase.storage
+                .from('audio-files')
+                .getPublicUrl(filename);
+
+            const response = {
+                success: true,
+                filename: filename,
+                url: urlData.publicUrl,
+                originalName: req.file.originalname,
+                size: req.file.size,
+                storage: 'supabase'
+            };
+
+            console.log('Audio uploaded to Supabase successfully:', response);
+            res.json(response);
+
+        } catch (supabaseError) {
+            console.error('Supabase upload failed, using local storage:', supabaseError);
+            
+            // Fallback to local storage
+            const localPath = path.join(__dirname, 'public', 'uploads', 'audio', filename);
+            fs.writeFileSync(localPath, req.file.buffer);
+            
+            const response = {
+                success: true,
+                filename: filename,
+                url: `/uploads/audio/${filename}`,
+                originalName: req.file.originalname,
+                size: req.file.size,
+                storage: 'local'
+            };
+
+            console.log('Audio uploaded locally:', response);
+            res.json(response);
         }
-
-        const { data: urlData } = supabase.storage
-            .from('audio-files')
-            .getPublicUrl(filename);
-
-        const response = {
-            success: true,
-            filename: filename,
-            url: urlData.publicUrl,
-            originalName: req.file.originalname,
-            size: req.file.size
-        };
-
-        console.log('Audio uploaded successfully:', response);
-        res.json(response);
 
     } catch (error) {
         console.error('Audio upload error:', error);
@@ -110,32 +157,53 @@ app.post('/api/upload/image', upload.single('image'), async (req, res) => {
         }
 
         const filename = generateUniqueFilename(req.file.originalname, 'image');
-        const { data, error } = await supabase.storage
-            .from('images')
-            .upload(filename, req.file.buffer, {
-                contentType: req.file.mimetype,
-                duplex: false
-            });
+        
+        // Try Supabase first, fallback to local
+        try {
+            const { data, error } = await supabase.storage
+                .from('images')
+                .upload(filename, req.file.buffer, {
+                    contentType: req.file.mimetype,
+                    duplex: false
+                });
 
-        if (error) {
-            console.error('Supabase upload error:', error);
-            return res.status(500).json({ error: 'Failed to upload image file' });
+            if (error) throw error;
+
+            const { data: urlData } = supabase.storage
+                .from('images')
+                .getPublicUrl(filename);
+
+            const response = {
+                success: true,
+                filename: filename,
+                url: urlData.publicUrl,
+                originalName: req.file.originalname,
+                size: req.file.size,
+                storage: 'supabase'
+            };
+
+            console.log('Image uploaded to Supabase successfully:', response);
+            res.json(response);
+
+        } catch (supabaseError) {
+            console.error('Supabase upload failed, using local storage:', supabaseError);
+            
+            // Fallback to local storage
+            const localPath = path.join(__dirname, 'public', 'uploads', 'images', filename);
+            fs.writeFileSync(localPath, req.file.buffer);
+            
+            const response = {
+                success: true,
+                filename: filename,
+                url: `/uploads/images/${filename}`,
+                originalName: req.file.originalname,
+                size: req.file.size,
+                storage: 'local'
+            };
+
+            console.log('Image uploaded locally:', response);
+            res.json(response);
         }
-
-        const { data: urlData } = supabase.storage
-            .from('images')
-            .getPublicUrl(filename);
-
-        const response = {
-            success: true,
-            filename: filename,
-            url: urlData.publicUrl,
-            originalName: req.file.originalname,
-            size: req.file.size
-        };
-
-        console.log('Image uploaded successfully:', response);
-        res.json(response);
 
     } catch (error) {
         console.error('Image upload error:', error);
@@ -160,12 +228,25 @@ app.get('/api/health', async (req, res) => {
             routes: count || 0,
             publishedRoutes: publishedCount || 0,
             timestamp: new Date().toISOString(),
-            server: 'Supabase-powered with file storage',
-            database: 'Supabase PostgreSQL'
+            server: 'Supabase-powered with hybrid file storage',
+            database: 'Supabase PostgreSQL',
+            supabase: {
+                url: supabaseUrl,
+                connected: true
+            }
         });
     } catch (error) {
         console.error('Health check error:', error);
-        res.status(500).json({ error: 'Health check failed' });
+        res.status(500).json({ 
+            status: 'error',
+            error: 'Health check failed',
+            database: 'Connection failed',
+            supabase: {
+                url: supabaseUrl || 'not configured',
+                connected: false,
+                error: error.message
+            }
+        });
     }
 });
 
@@ -217,8 +298,8 @@ app.get('/api/routes', async (req, res) => {
         res.json(transformedRoutes);
 
     } catch (error) {
-        console.error('Error loading routes:', error);
-        res.status(500).json({ error: 'Failed to load routes' });
+        console.error('Error loading routes from database:', error);
+        res.status(500).json({ error: 'Failed to load routes: ' + error.message });
     }
 });
 
@@ -271,7 +352,7 @@ app.get('/api/app/routes', async (req, res) => {
 
     } catch (error) {
         console.error('Error loading published routes:', error);
-        res.status(500).json({ error: 'Failed to load routes' });
+        res.status(500).json({ error: 'Failed to load published routes: ' + error.message });
     }
 });
 
@@ -330,7 +411,7 @@ app.post('/api/routes', async (req, res) => {
             if (pointsError) throw pointsError;
         }
 
-        // Transform response
+        // Transform response to match frontend expectations
         const response = {
             id: route.route_id,
             name: route.name,
@@ -349,11 +430,11 @@ app.post('/api/routes', async (req, res) => {
             points: req.body.points || []
         };
 
-        console.log('Route created successfully:', routeId);
+        console.log('Route created successfully in database:', routeId);
         res.json(response);
 
     } catch (error) {
-        console.error('Error creating route:', error);
+        console.error('Error creating route in database:', error);
         res.status(500).json({ error: 'Failed to create route: ' + error.message });
     }
 });
@@ -439,7 +520,7 @@ app.put('/api/routes/:id', async (req, res) => {
             points: req.body.points || []
         };
 
-        console.log('Route updated successfully:', routeId);
+        console.log('Route updated successfully in database:', routeId);
         res.json(response);
 
     } catch (error) {
@@ -461,7 +542,7 @@ app.delete('/api/routes/:id', async (req, res) => {
 
         if (error) throw error;
 
-        console.log('Route deleted:', routeId);
+        console.log('Route deleted from database:', routeId);
         res.json({ message: 'Route deleted successfully' });
 
     } catch (error) {
@@ -532,7 +613,27 @@ app.get('/api/analytics', async (req, res) => {
 
     } catch (error) {
         console.error('Error generating analytics:', error);
-        res.status(500).json({ error: 'Failed to generate analytics' });
+        res.status(500).json({ error: 'Failed to generate analytics: ' + error.message });
+    }
+});
+
+// Route regeneration (for backwards compatibility)
+app.post('/api/regenerate-routes', async (req, res) => {
+    try {
+        const { count: publishedCount } = await supabase
+            .from('routes')
+            .select('*', { count: 'exact', head: true })
+            .eq('published', true);
+
+        console.log(`Regenerated routes: ${publishedCount || 0} published routes`);
+        res.json({ 
+            message: 'Routes regenerated successfully', 
+            publishedRoutes: publishedCount || 0 
+        });
+
+    } catch (error) {
+        console.error('Error regenerating routes:', error);
+        res.status(500).json({ error: 'Failed to regenerate routes' });
     }
 });
 
@@ -557,6 +658,14 @@ app.get('/cms', (req, res) => {
 app.use((error, req, res, next) => {
     if (error instanceof multer.MulterError) {
         console.error('Multer error:', error);
+        
+        if (error.code === 'LIMIT_FILE_SIZE') {
+            return res.status(400).json({ error: 'File too large (max 50MB)' });
+        }
+        if (error.code === 'LIMIT_UNEXPECTED_FILE') {
+            return res.status(400).json({ error: 'Unexpected file field' });
+        }
+        
         return res.status(400).json({ error: 'File upload error: ' + error.message });
     }
     
@@ -564,14 +673,18 @@ app.use((error, req, res, next) => {
     res.status(500).json({ error: 'Internal server error: ' + error.message });
 });
 
+// 404 handler
 app.get('*', (req, res) => {
-    res.status(404).send('Page not found');
+    console.log('404 - Page not found:', req.url);
+    res.status(404).send('Page not found: ' + req.url);
 });
 
 // START SERVER
 app.listen(PORT, '0.0.0.0', () => {
     console.log(`Server running on port ${PORT}`);
     console.log(`Database: Supabase PostgreSQL`);
-    console.log(`Storage: Supabase Storage`);
+    console.log(`Storage: Hybrid (Supabase + Local fallback)`);
     console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
+    console.log(`Supabase URL: ${supabaseUrl}`);
+    console.log(`Service Key configured: ${supabaseServiceKey ? 'Yes' : 'No'}`);
 });
