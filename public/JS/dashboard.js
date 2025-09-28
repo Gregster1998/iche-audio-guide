@@ -1,102 +1,220 @@
-// Dashboard.js - Fixed with proper route storage
+// Dashboard.js - Enhanced with user name display and city filtering
 console.log("Dashboard loading...");
 
 // Global route storage
 let globalRoutesData = [];
+let allCitiesData = [];
+let currentUserCity = '';
+let currentUserName = '';
 
 // Wait for routes to load, then populate the interface
 document.addEventListener('DOMContentLoaded', async function() {
-    console.log("Dashboard DOM loaded, starting debug...");
+    console.log("Dashboard DOM loaded, starting initialization...");
+    
+    // Load user data from localStorage first
+    loadUserData();
     
     try {
-        // Test multiple API endpoints to find the working one
-        const testEndpoints = [
-            `${window.location.origin}/api/app/routes`,
-            `${window.location.origin}/api/routes`,
-            'http://localhost:3001/api/app/routes',
-            'http://localhost:3001/api/routes'
-        ];
+        // Load cities from database
+        await loadCitiesFromDatabase();
         
-        let workingRoutes = null;
-        let workingEndpoint = null;
+        // Load routes for the user's selected city
+        await loadRoutesForCity(currentUserCity);
         
-        for (const endpoint of testEndpoints) {
-            try {
-                console.log(`Testing endpoint: ${endpoint}`);
-                const response = await fetch(endpoint);
-                console.log(`Response status: ${response.status}`);
-                
-                if (response.ok) {
-                    const data = await response.json();
-                    console.log(`Data received:`, data);
-                    
-                    if (data && Array.isArray(data) && data.length > 0) {
-                        workingRoutes = data;
-                        workingEndpoint = endpoint;
-                        console.log(`✅ Working endpoint found: ${endpoint}`);
-                        break;
-                    } else if (data && Array.isArray(data)) {
-                        console.log(`⚠️ Endpoint ${endpoint} returned empty array`);
-                    }
-                }
-            } catch (error) {
-                console.log(`❌ Endpoint ${endpoint} failed:`, error.message);
-            }
-        }
-        
-        if (!workingRoutes) {
-            console.error('❌ No working endpoints found');
-            showError('Cannot connect to server. Make sure your server is running.');
-            return;
-        }
-        
-        console.log(`Using endpoint: ${workingEndpoint}`);
-        console.log(`Routes found: ${workingRoutes.length}`);
-        
-        // Wait for routes.js if it's available, otherwise use direct data
-        let finalRoutes = workingRoutes;
-        
-        if (typeof window.waitForRoutes === 'function') {
-            try {
-                console.log('Trying routes.js system...');
-                const routesJsData = await Promise.race([
-                    window.waitForRoutes(),
-                    new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 3000))
-                ]);
-                
-                if (routesJsData && routesJsData.length > 0) {
-                    finalRoutes = routesJsData;
-                    console.log('Using routes.js data');
-                } else {
-                    console.log('Routes.js returned empty, using direct API data');
-                }
-            } catch (error) {
-                console.log('Routes.js failed, using direct API data:', error.message);
-            }
-        } else {
-            console.log('Routes.js not available, using direct API data');
-        }
-        
-        // IMPORTANT: Store routes globally for selectRoute function
-        globalRoutesData = finalRoutes;
-        window.currentRoutesData = finalRoutes; // For backwards compatibility
-        
-        console.log("Dashboard final routes:", finalRoutes);
-        console.log("Routes count:", finalRoutes.length);
-        console.log("Global routes stored:", globalRoutesData.length);
-        
-        // Populate the interface
-        populateRouteDropdown(finalRoutes);
-        populateAvailableRoutes(finalRoutes);
+        // Setup event listeners
         setupEventListeners();
         
         console.log('✅ Dashboard loaded successfully');
         
     } catch (error) {
         console.error('Dashboard initialization error:', error);
-        showError(`Failed to load: ${error.message}`);
+        showError(`Failed to load dashboard: ${error.message}`);
     }
 });
+
+// Load user data from localStorage and update UI
+function loadUserData() {
+    console.log("Loading user data from localStorage...");
+    
+    // Get user data
+    currentUserName = localStorage.getItem('userName') || 'User';
+    currentUserCity = localStorage.getItem('userCity') || '';
+    
+    console.log('User data loaded:', {
+        name: currentUserName,
+        city: currentUserCity
+    });
+    
+    // Update welcome message
+    const welcomeTitle = document.getElementById('welcomeTitle');
+    if (welcomeTitle) {
+        welcomeTitle.textContent = `Welcome, ${currentUserName}!`;
+    }
+    
+    // Update city display
+    const cityDisplay = document.getElementById('userCity');
+    if (cityDisplay) {
+        cityDisplay.textContent = currentUserCity || 'Select City';
+    }
+    
+    // Update user avatar with first letter of name
+    const userAvatar = document.getElementById('userAvatar');
+    if (userAvatar) {
+        userAvatar.textContent = currentUserName.charAt(0).toUpperCase();
+    }
+}
+
+// Load cities from database
+async function loadCitiesFromDatabase() {
+    console.log("Loading cities from database...");
+    
+    try {
+        const endpoints = [
+            `${window.location.origin}/api/cities`,
+            'http://localhost:3001/api/cities'
+        ];
+        
+        let cities = null;
+        
+        for (const endpoint of endpoints) {
+            try {
+                console.log(`Testing cities endpoint: ${endpoint}`);
+                const response = await fetch(endpoint);
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    
+                    if (data && Array.isArray(data) && data.length > 0) {
+                        cities = data;
+                        console.log(`✅ Loaded ${cities.length} cities from database`);
+                        break;
+                    }
+                }
+            } catch (error) {
+                console.log(`Cities endpoint ${endpoint} failed:`, error.message);
+            }
+        }
+        
+        if (!cities || cities.length === 0) {
+            console.warn('⚠️ No cities found, using fallback');
+            cities = [
+                { name: 'Milan', country: 'Italy' },
+                { name: 'Vienna', country: 'Austria' },
+                { name: 'Rome', country: 'Italy' }
+            ];
+        }
+        
+        allCitiesData = cities;
+        console.log('Cities available:', cities.map(c => c.name));
+        
+    } catch (error) {
+        console.error('Error loading cities:', error);
+        throw error;
+    }
+}
+
+// Load routes for a specific city
+async function loadRoutesForCity(cityName) {
+    console.log(`Loading routes for city: ${cityName}`);
+    
+    if (!cityName) {
+        console.log('No city specified, loading all published routes');
+        return await loadAllPublishedRoutes();
+    }
+    
+    try {
+        const endpoints = [
+            `${window.location.origin}/api/routes/city/${encodeURIComponent(cityName)}`,
+            'http://localhost:3001/api/routes/city/' + encodeURIComponent(cityName)
+        ];
+        
+        let routes = null;
+        
+        for (const endpoint of endpoints) {
+            try {
+                console.log(`Testing endpoint: ${endpoint}`);
+                const response = await fetch(endpoint);
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    
+                    if (data && Array.isArray(data)) {
+                        routes = data;
+                        console.log(`✅ Found ${routes.length} routes for ${cityName}`);
+                        break;
+                    }
+                }
+            } catch (error) {
+                console.log(`Endpoint ${endpoint} failed:`, error.message);
+            }
+        }
+        
+        if (!routes) {
+            console.log(`No routes found for ${cityName}, trying all routes`);
+            return await loadAllPublishedRoutes();
+        }
+        
+        // Store routes globally
+        globalRoutesData = routes;
+        window.currentRoutesData = routes;
+        
+        // Update UI
+        populateRouteDropdown(routes);
+        populateAvailableRoutes(routes);
+        
+        // Update progress section
+        updateProgressSection(routes);
+        
+        console.log(`✅ Loaded ${routes.length} routes for ${cityName}`);
+        
+    } catch (error) {
+        console.error(`Error loading routes for ${cityName}:`, error);
+        showError(`Failed to load routes for ${cityName}: ${error.message}`);
+    }
+}
+
+// Fallback: load all published routes
+async function loadAllPublishedRoutes() {
+    console.log('Loading all published routes as fallback...');
+    
+    const endpoints = [
+        `${window.location.origin}/api/app/routes`,
+        `${window.location.origin}/api/routes`,
+        'http://localhost:3001/api/app/routes',
+        'http://localhost:3001/api/routes'
+    ];
+    
+    let routes = null;
+    
+    for (const endpoint of endpoints) {
+        try {
+            const response = await fetch(endpoint);
+            if (response.ok) {
+                const data = await response.json();
+                if (data && Array.isArray(data)) {
+                    routes = data;
+                    console.log(`✅ Loaded ${routes.length} routes from ${endpoint}`);
+                    break;
+                }
+            }
+        } catch (error) {
+            console.log(`Endpoint ${endpoint} failed:`, error.message);
+        }
+    }
+    
+    if (!routes) {
+        routes = [];
+        showError('Cannot connect to server. Make sure your server is running.');
+        return;
+    }
+    
+    globalRoutesData = routes;
+    window.currentRoutesData = routes;
+    
+    populateRouteDropdown(routes);
+    populateAvailableRoutes(routes);
+    updateProgressSection(routes);
+}
 
 // Show error in the routes container
 function showError(message) {
@@ -118,6 +236,22 @@ function showError(message) {
     }
 }
 
+// Update progress section based on available routes
+function updateProgressSection(routes) {
+    const progressText = document.getElementById('progressText');
+    const progressPercent = document.getElementById('progressPercent');
+    
+    if (progressText && progressPercent) {
+        if (routes.length === 0) {
+            progressText.textContent = `No tours available for ${currentUserCity}`;
+            progressPercent.textContent = '0%';
+        } else {
+            progressText.textContent = `${routes.length} tour${routes.length === 1 ? '' : 's'} available in ${currentUserCity}`;
+            progressPercent.textContent = '100%';
+        }
+    }
+}
+
 // Populate the route selection dropdown
 function populateRouteDropdown(routes) {
     console.log('Populating dropdown with routes:', routes.length);
@@ -133,7 +267,7 @@ function populateRouteDropdown(routes) {
     if (!routes || routes.length === 0) {
         const option = document.createElement('option');
         option.value = '';
-        option.textContent = 'No routes available - check CMS';
+        option.textContent = `No routes available for ${currentUserCity}`;
         option.disabled = true;
         dropdown.appendChild(option);
         return;
@@ -151,7 +285,7 @@ function populateRouteDropdown(routes) {
     console.log(`✅ Added ${routes.length} routes to dropdown`);
 }
 
-// Populate the available routes section with images and custom positioning
+// Populate the available routes section
 function populateAvailableRoutes(routes) {
     console.log('Populating route cards with routes:', routes.length);
     const container = document.getElementById('routesContainer');
@@ -163,29 +297,25 @@ function populateAvailableRoutes(routes) {
     if (!routes || routes.length === 0) {
         container.innerHTML = `
             <div style="text-align: center; padding: 40px; color: rgba(255,255,255,0.6);">
-                <h3>No published routes available</h3>
-                <p>Go to <a href="/cms" target="_blank" style="color: #FFD700;">CMS</a> to create and publish routes</p>
-                <button onclick="testRouteConnection()" style="background: #FFD700; color: #1B3A2E; border: none; padding: 10px 20px; border-radius: 8px; margin-top: 15px; cursor: pointer;">
-                    🔍 Check Connection
+                <h3>No tours available for ${currentUserCity}</h3>
+                <p>Try switching to a different city or check the <a href="/cms" target="_blank" style="color: #FFD700;">CMS</a> to create routes for this city</p>
+                <button onclick="showCitySelector()" style="background: #FFD700; color: #1B3A2E; border: none; padding: 10px 20px; border-radius: 8px; margin-top: 15px; cursor: pointer;">
+                    🌍 Change City
                 </button>
             </div>
         `;
         return;
     }
     
-    // Create route cards with images and custom positioning
+    // Create route cards
     container.innerHTML = routes.map(route => {
         console.log(`Creating card for route: ${route.name} (ID: ${route.id})`);
         
-        // Determine the background image or fallback
         const backgroundImage = route.imageUrl 
             ? `url('${route.imageUrl}')` 
             : `linear-gradient(135deg, ${route.color || '#4a7c59'} 0%, #3d6b4a 100%)`;
         
-        // Use image position from route data or default to center
         const backgroundPosition = route.imagePosition || 'center';
-        
-        console.log(`Route ${route.name}: using position "${backgroundPosition}"`);
         
         return `
             <div class="route-card" onclick="selectRoute('${route.id}')" data-route-id="${route.id}">
@@ -221,58 +351,18 @@ function populateAvailableRoutes(routes) {
         `;
     }).join('');
     
-    console.log(`✅ Added ${routes.length} route cards with custom image positioning`);
+    console.log(`✅ Added ${routes.length} route cards`);
 }
 
-// FIXED: Handle route selection with proper route lookup
+// Handle route selection
 function selectRoute(routeId) {
     console.log('Route selected:', routeId);
-    console.log('Available routes in globalRoutesData:', globalRoutesData.length);
-    console.log('Route IDs available:', globalRoutesData.map(r => r.id));
     
-    // Look for route in multiple places
-    let route = null;
-    
-    // First try: globalRoutesData
-    if (globalRoutesData && globalRoutesData.length > 0) {
-        route = globalRoutesData.find(r => r.id === routeId);
-        if (route) {
-            console.log('✅ Found route in globalRoutesData:', route.name);
-        }
-    }
-    
-    // Second try: window.getRoute if available
-    if (!route && typeof window.getRoute === 'function') {
-        route = window.getRoute(routeId);
-        if (route) {
-            console.log('✅ Found route via window.getRoute:', route.name);
-        }
-    }
-    
-    // Third try: window.currentRoutesData
-    if (!route && window.currentRoutesData) {
-        route = window.currentRoutesData.find(r => r.id === routeId);
-        if (route) {
-            console.log('✅ Found route in window.currentRoutesData:', route.name);
-        }
-    }
-    
-    // Fourth try: window.routes
-    if (!route && window.routes) {
-        route = window.routes.find(r => r.id === routeId);
-        if (route) {
-            console.log('✅ Found route in window.routes:', route.name);
-        }
-    }
+    const route = globalRoutesData.find(r => r.id === routeId);
     
     if (!route) {
-        console.error('❌ Selected route not found:', routeId);
-        console.error('Debug info:');
-        console.error('- globalRoutesData length:', globalRoutesData?.length || 0);
-        console.error('- window.currentRoutesData length:', window.currentRoutesData?.length || 0);
-        console.error('- window.routes length:', window.routes?.length || 0);
-        
-        alert(`Route not found (ID: ${routeId}). Please try reloading the page.`);
+        console.error('Selected route not found:', routeId);
+        alert(`Route not found. Please try reloading the page.`);
         return;
     }
     
@@ -291,7 +381,7 @@ function selectRoute(routeId) {
     sessionStorage.setItem('selectedRouteId', routeId);
 }
 
-// Show detailed route information with image and custom positioning
+// Show detailed route information
 function showDetailedRoute(route) {
     console.log('Showing detailed route:', route.name);
     const detailedView = document.getElementById('detailedRouteView');
@@ -300,17 +390,14 @@ function showDetailedRoute(route) {
         return;
     }
     
-    // Update detailed route image with custom positioning
+    // Update detailed route image
     const detailedRouteImage = document.getElementById('detailedRouteImage');
     if (detailedRouteImage && route.imageUrl) {
         detailedRouteImage.style.backgroundImage = `url('${route.imageUrl}')`;
         detailedRouteImage.style.backgroundSize = 'cover';
         detailedRouteImage.style.backgroundPosition = route.imagePosition || 'center';
         detailedRouteImage.style.backgroundRepeat = 'no-repeat';
-        
-        console.log(`Detailed view for ${route.name}: using position "${route.imagePosition || 'center'}"`);
     } else if (detailedRouteImage) {
-        // Fallback to color gradient
         detailedRouteImage.style.backgroundImage = `linear-gradient(135deg, ${route.color || '#4a7c59'} 0%, #3d6b4a 100%)`;
     }
     
@@ -334,6 +421,115 @@ function showDetailedRoute(route) {
     console.log('✅ Detailed route view shown');
 }
 
+// Show city selector modal
+function showCitySelector() {
+    // Create modal HTML
+    const modalHTML = `
+        <div id="citySelectorModal" style="
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        ">
+            <div style="
+                background: linear-gradient(135deg, #1B3A2E 0%, #0F1419 100%);
+                border-radius: 16px;
+                padding: 30px;
+                max-width: 400px;
+                width: 90%;
+                color: white;
+                border: 1px solid rgba(255,255,255,0.2);
+            ">
+                <h3 style="margin-bottom: 20px; text-align: center;">Choose Your City</h3>
+                <select id="citySelector" style="
+                    width: 100%;
+                    padding: 12px;
+                    border-radius: 8px;
+                    border: 1px solid rgba(255,255,255,0.3);
+                    background: rgba(255,255,255,0.1);
+                    color: white;
+                    font-size: 16px;
+                    margin-bottom: 20px;
+                ">
+                    <option value="">Select a city...</option>
+                    ${allCitiesData.map(city => `
+                        <option value="${city.name}" ${city.name === currentUserCity ? 'selected' : ''}>
+                            ${city.country ? `${city.name}, ${city.country}` : city.name}
+                        </option>
+                    `).join('')}
+                </select>
+                <div style="display: flex; gap: 10px; justify-content: center;">
+                    <button onclick="closeCitySelector()" style="
+                        background: rgba(255,255,255,0.1);
+                        color: white;
+                        border: 1px solid rgba(255,255,255,0.3);
+                        padding: 10px 20px;
+                        border-radius: 8px;
+                        cursor: pointer;
+                    ">Cancel</button>
+                    <button onclick="changeCity()" style="
+                        background: #FFD700;
+                        color: #1B3A2E;
+                        border: none;
+                        padding: 10px 20px;
+                        border-radius: 8px;
+                        cursor: pointer;
+                        font-weight: 600;
+                    ">Change City</button>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Add modal to page
+    document.body.insertAdjacentHTML('beforeend', modalHTML);
+}
+
+// Close city selector modal
+function closeCitySelector() {
+    const modal = document.getElementById('citySelectorModal');
+    if (modal) {
+        modal.remove();
+    }
+}
+
+// Change user's city
+async function changeCity() {
+    const selector = document.getElementById('citySelector');
+    const selectedCity = selector.value;
+    
+    if (!selectedCity) {
+        alert('Please select a city');
+        return;
+    }
+    
+    console.log(`Changing city from ${currentUserCity} to ${selectedCity}`);
+    
+    // Update localStorage
+    localStorage.setItem('userCity', selectedCity);
+    currentUserCity = selectedCity;
+    
+    // Update UI
+    const cityDisplay = document.getElementById('userCity');
+    if (cityDisplay) {
+        cityDisplay.textContent = selectedCity;
+    }
+    
+    // Close modal
+    closeCitySelector();
+    
+    // Load routes for new city
+    await loadRoutesForCity(selectedCity);
+    
+    console.log(`✅ City changed to ${selectedCity}`);
+}
+
 // Set up event listeners
 function setupEventListeners() {
     // Route dropdown change
@@ -353,69 +549,42 @@ function setupEventListeners() {
         startButton.addEventListener('click', function() {
             const selectedRouteId = sessionStorage.getItem('selectedRouteId');
             if (selectedRouteId) {
-                // Navigate to audio guide with selected route
                 window.location.href = `audioguide.html?route=${selectedRouteId}`;
             } else {
                 alert('Please select a route first');
             }
         });
     }
+    
+    // Make city display clickable
+    const cityDisplay = document.getElementById('userCity');
+    if (cityDisplay) {
+        cityDisplay.style.cursor = 'pointer';
+        cityDisplay.addEventListener('click', showCitySelector);
+        cityDisplay.title = 'Click to change city';
+    }
 }
 
 // Enhanced test function
 function testRouteConnection() {
     console.log('=== DASHBOARD ROUTE CONNECTION TEST ===');
+    console.log('Current user city:', currentUserCity);
+    console.log('Available cities:', allCitiesData.map(c => c.name));
+    console.log('Current routes count:', globalRoutesData.length);
     
-    // Test all possible endpoints
-    const endpoints = [
-        `${window.location.origin}/api/app/routes`,
-        `${window.location.origin}/api/routes`,
-        `${window.location.origin}/api/debug/routes`,
-        'http://localhost:3001/api/app/routes',
-        'http://localhost:3001/api/routes'
-    ];
-    
-    endpoints.forEach(async (endpoint) => {
-        try {
-            console.log(`Testing: ${endpoint}`);
-            const response = await fetch(endpoint);
-            console.log(`${endpoint} - Status: ${response.status}`);
-            
-            if (response.ok) {
-                const data = await response.json();
-                console.log(`${endpoint} - Data:`, data);
-                console.log(`${endpoint} - Count: ${data.length || 'N/A'}`);
-                
-                if (data && (Array.isArray(data) ? data.length > 0 : true)) {
-                    console.log(`✅ ${endpoint} is working!`);
-                    
-                    if (Array.isArray(data) && data.length > 0) {
-                        // Store working data for later use
-                        globalRoutesData = data;
-                        window.currentRoutesData = data;
-                        // Try to repopulate
-                        populateRouteDropdown(data);
-                        populateAvailableRoutes(data);
-                    }
-                }
-            }
-        } catch (error) {
-            console.log(`❌ ${endpoint} failed:`, error.message);
-        }
-    });
-    
-    // Test routes.js functions
-    console.log('Routes.js functions available:');
-    console.log('- window.routes:', window.routes?.length || 'undefined');
-    console.log('- window.loadRoutes:', typeof window.loadRoutes);
-    console.log('- window.getRoute:', typeof window.getRoute);
-    console.log('- window.waitForRoutes:', typeof window.waitForRoutes);
-    console.log('- globalRoutesData:', globalRoutesData.length);
+    // Test city-specific endpoints
+    if (currentUserCity) {
+        const cityEndpoint = `${window.location.origin}/api/routes/city/${encodeURIComponent(currentUserCity)}`;
+        console.log('Testing city endpoint:', cityEndpoint);
+    }
 }
 
 // Make functions available globally
 if (typeof window !== 'undefined') {
     window.testRouteConnection = testRouteConnection;
     window.selectRoute = selectRoute;
+    window.showCitySelector = showCitySelector;
+    window.closeCitySelector = closeCitySelector;
+    window.changeCity = changeCity;
     window.globalRoutesData = globalRoutesData;
 }
