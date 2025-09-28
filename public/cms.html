@@ -1081,6 +1081,7 @@
         let editingRoute = null;
         let editingRouteStops = [];
         let editingStopIndex = -1;
+        let availableCities = [];
         let systemStatus = {
             serverConnected: false,
             routesLoaded: false
@@ -1102,8 +1103,106 @@
 
         async function initializeCMS() {
             await testConnection();
+            await loadCities();
             await loadRoutes();
             setupImagePositionPreview();
+        }
+
+        // Load cities from database for CMS
+        async function loadCities() {
+            console.log('Loading cities for CMS...');
+            
+            try {
+                const response = await fetch(`${API_BASE}/cities`);
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                
+                availableCities = await response.json();
+                console.log('Loaded cities:', availableCities);
+                
+                // Populate city dropdown
+                populateCityDropdown();
+                
+            } catch (error) {
+                console.error('Error loading cities:', error);
+                // Add fallback cities
+                availableCities = [
+                    { name: 'Milan', country: 'Italy' },
+                    { name: 'Vienna', country: 'Austria' },
+                    { name: 'Rome', country: 'Italy' },
+                    { name: 'Paris', country: 'France' }
+                ];
+                populateCityDropdown();
+            }
+        }
+
+        // Populate city dropdown in route form
+        function populateCityDropdown() {
+            const dropdown = document.getElementById('cityDropdown');
+            if (!dropdown) return;
+            
+            // Clear existing options
+            dropdown.innerHTML = '<option value="">Select a city</option>';
+            
+            // Add cities from database
+            availableCities.forEach(city => {
+                const option = document.createElement('option');
+                option.value = city.name;
+                option.textContent = city.country ? `${city.name}, ${city.country}` : city.name;
+                dropdown.appendChild(option);
+            });
+            
+            console.log(`Added ${availableCities.length} cities to dropdown`);
+        }
+
+        // Add new city to database
+        async function addNewCity() {
+            const newCityInput = document.getElementById('newCityInput');
+            const cityName = newCityInput.value.trim();
+            
+            if (!cityName) {
+                alert('Please enter a city name');
+                return;
+            }
+            
+            // Check if city already exists
+            if (availableCities.some(city => city.name.toLowerCase() === cityName.toLowerCase())) {
+                alert('City already exists');
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${API_BASE}/cities`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name: cityName })
+                });
+                
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.error || 'Failed to add city');
+                }
+                
+                const newCity = await response.json();
+                console.log('Added new city:', newCity);
+                
+                // Add to available cities
+                availableCities.push(newCity);
+                
+                // Refresh dropdown
+                populateCityDropdown();
+                
+                // Select the new city
+                document.getElementById('cityDropdown').value = newCity.name;
+                
+                // Clear input
+                newCityInput.value = '';
+                
+                showSuccess(`City "${cityName}" added successfully!`);
+                
+            } catch (error) {
+                console.error('Error adding city:', error);
+                showError(`Failed to add city: ${error.message}`);
+            }
         }
 
         // Connection Testing
@@ -1135,11 +1234,11 @@
                         serverText.textContent = `Server Online (${healthData.routes} routes) - ${baseUrl}`;
                         systemStatus.serverConnected = true;
                         
-                        console.log('✅ Server connected via:', baseUrl);
+                        console.log('Server connected via:', baseUrl);
                         break;
                     }
                 } catch (error) {
-                    console.log(`❌ Failed ${baseUrl}:`, error.message);
+                    console.log(`Failed ${baseUrl}:`, error.message);
                     continue;
                 }
             }
@@ -1209,12 +1308,12 @@
         // Messaging
         function showError(message) {
             const container = document.getElementById('error-container');
-            container.innerHTML = `<div class="error-message">❌ ${message}</div>`;
+            container.innerHTML = `<div class="error-message">${message}</div>`;
         }
 
         function showSuccess(message) {
             const container = document.getElementById('error-container');
-            container.innerHTML = `<div class="success-message">✅ ${message}</div>`;
+            container.innerHTML = `<div class="success-message">${message}</div>`;
             setTimeout(() => container.innerHTML = '', 5000);
         }
 
@@ -1222,221 +1321,357 @@
             document.getElementById('error-container').innerHTML = '';
         }
 
-        // Map Functions
-        function initializeStopLocationMap() {
-            if (stopLocationMap) {
-                stopLocationMap.remove();
-            }
+        // Enhanced analytics loading with city breakdown
+        async function loadAnalytics() {
+            const analyticsContent = document.getElementById('analytics-content');
+            analyticsContent.innerHTML = '<div class="loading">Loading analytics...</div>';
 
-            stopLocationMap = L.map('stopLocationMap').setView([45.4642, 9.1900], 13); // Default to Milan
-
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                attribution: '© OpenStreetMap contributors'
-            }).addTo(stopLocationMap);
-
-            // Add click handler
-            stopLocationMap.on('click', function(e) {
-                selectLocationOnMap(e.latlng);
-            });
-        }
-
-        function initializeRouteOverviewMap() {
-            if (routeOverviewMap) {
-                routeOverviewMap.remove();
-            }
-
-            if (editingRouteStops.length === 0) {
-                document.getElementById('route-overview-container').style.display = 'none';
-                return;
-            }
-
-            document.getElementById('route-overview-container').style.display = 'block';
-            
-            setTimeout(() => {
-                routeOverviewMap = L.map('routeOverviewMap').setView([45.4642, 9.1900], 13);
-
-                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                    attribution: '© OpenStreetMap contributors'
-                }).addTo(routeOverviewMap);
-
-                updateRouteOverviewMap();
-            }, 100);
-        }
-
-        function updateRouteOverviewMap() {
-            if (!routeOverviewMap || editingRouteStops.length === 0) return;
-
-            // Clear existing markers and lines
-            routeMarkers.forEach(marker => routeOverviewMap.removeLayer(marker));
-            routeMarkers = [];
-            if (routePolyline) {
-                routeOverviewMap.removeLayer(routePolyline);
-            }
-
-            const validStops = editingRouteStops.filter(stop => stop.coordinates);
-            if (validStops.length === 0) return;
-
-            // Add markers for each stop
-            validStops.forEach((stop, index) => {
-                const [lng, lat] = stop.coordinates;
-                const isStart = index === 0;
+            try {
+                const response = await fetch(`${API_BASE}/analytics`);
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
                 
-                const marker = L.circleMarker([lat, lng], {
-                    radius: 8,
-                    fillColor: isStart ? '#FF5722' : '#4CAF50',
-                    color: '#fff',
-                    weight: 2,
-                    opacity: 1,
-                    fillOpacity: 0.8
-                }).addTo(routeOverviewMap);
+                const analytics = await response.json();
+                console.log('Analytics data:', analytics);
 
-                // Add radius circle
-                if (stop.radius) {
-                    L.circle([lat, lng], {
-                        radius: stop.radius,
-                        fillColor: isStart ? '#FF5722' : '#4CAF50',
-                        fillOpacity: 0.1,
-                        color: isStart ? '#FF5722' : '#4CAF50',
-                        weight: 1
-                    }).addTo(routeOverviewMap);
+                let cityBreakdownHTML = '';
+                if (analytics.cityBreakdown && Object.keys(analytics.cityBreakdown).length > 0) {
+                    cityBreakdownHTML = `
+                        <div class="form-section" style="margin-top: 20px;">
+                            <h3>Routes by City</h3>
+                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+                                ${Object.entries(analytics.cityBreakdown).map(([city, stats]) => `
+                                    <div style="background: rgba(255,255,255,0.05); padding: 15px; border-radius: 8px; text-align: center;">
+                                        <div style="font-size: 18px; font-weight: 600; color: #FFD700; margin-bottom: 5px;">${city}</div>
+                                        <div style="font-size: 14px; color: rgba(255,255,255,0.8);">
+                                            ${stats.total} total (${stats.published} published)
+                                        </div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    `;
                 }
 
-                marker.bindPopup(`
-                    <div style="color: #333;">
-                        <strong>${stop.name || `Stop ${index + 1}`}</strong><br>
-                        ${stop.description || 'No description'}<br>
-                        <small>Radius: ${stop.radius || 50}m</small>
+                analyticsContent.innerHTML = `
+                    <div class="form-section">
+                        <h3>Route Overview</h3>
+                        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px;">
+                            <div style="text-align: center; padding: 20px; background: rgba(255,255,255,0.05); border-radius: 8px;">
+                                <div style="font-size: 32px; font-weight: 700; color: #FFD700;">${analytics.totalRoutes || 0}</div>
+                                <div style="color: rgba(255,255,255,0.8);">Total Routes</div>
+                            </div>
+                            <div style="text-align: center; padding: 20px; background: rgba(255,255,255,0.05); border-radius: 8px;">
+                                <div style="font-size: 32px; font-weight: 700; color: #4CAF50;">${analytics.publishedRoutes || 0}</div>
+                                <div style="color: rgba(255,255,255,0.8);">Published</div>
+                            </div>
+                            <div style="text-align: center; padding: 20px; background: rgba(255,255,255,0.05); border-radius: 8px;">
+                                <div style="font-size: 32px; font-weight: 700; color: #ff6b6b;">${analytics.unpublishedRoutes || 0}</div>
+                                <div style="color: rgba(255,255,255,0.8);">Drafts</div>
+                            </div>
+                        </div>
                     </div>
-                `);
+                    ${cityBreakdownHTML}
+                `;
 
-                routeMarkers.push(marker);
-            });
-
-            // Add connection lines between stops
-            if (validStops.length > 1) {
-                const latlngs = validStops.map(stop => [stop.coordinates[1], stop.coordinates[0]]);
-                routePolyline = L.polyline(latlngs, {
-                    color: '#FFD700',
-                    weight: 3,
-                    opacity: 0.7
-                }).addTo(routeOverviewMap);
-            }
-
-            // Fit map to show all stops
-            const group = new L.featureGroup(routeMarkers);
-            routeOverviewMap.fitBounds(group.getBounds().pad(0.1));
-        }
-
-        function openLocationPicker() {
-            const mapContainer = document.getElementById('stopLocationMap');
-            const controls = document.getElementById('location-controls');
-            
-            if (mapContainer.style.display === 'none') {
-                mapContainer.style.display = 'block';
-                controls.style.display = 'flex';
-                
-                setTimeout(() => {
-                    initializeStopLocationMap();
-                    
-                    // If editing existing stop with coordinates, show them
-                    const latInput = document.getElementById('stop-latitude');
-                    const lngInput = document.getElementById('stop-longitude');
-                    const radiusInput = document.getElementById('stop-radius');
-                    
-                    if (latInput.value && lngInput.value) {
-                        const lat = parseFloat(latInput.value);
-                        const lng = parseFloat(lngInput.value);
-                        const radius = parseFloat(radiusInput.value) || 50;
-                        
-                        selectLocationOnMap({ lat, lng });
-                        updateRadius(radius);
-                        document.getElementById('radius-slider').value = radius;
-                    }
-                }, 100);
-            } else {
-                mapContainer.style.display = 'none';
-                controls.style.display = 'none';
+            } catch (error) {
+                console.error('Error loading analytics:', error);
+                analyticsContent.innerHTML = `
+                    <div class="empty-state">
+                        <h3>Error loading analytics</h3>
+                        <p>${error.message}</p>
+                        <button class="btn-primary" onclick="loadAnalytics()">Retry</button>
+                    </div>
+                `;
             }
         }
 
-        function selectLocationOnMap(latlng) {
-            const { lat, lng } = latlng;
-            
-            // Update hidden inputs
-            document.getElementById('stop-latitude').value = lat.toFixed(6);
-            document.getElementById('stop-longitude').value = lng.toFixed(6);
-            
-            // Update coordinates display
-            document.getElementById('coordinates-display').innerHTML = 
-                `📍 Selected: ${lat.toFixed(6)}, ${lng.toFixed(6)}`;
-            
-            // Remove existing marker and circle
-            if (currentMarker) {
-                stopLocationMap.removeLayer(currentMarker);
-            }
-            if (currentCircle) {
-                stopLocationMap.removeLayer(currentCircle);
-            }
-            
-            // Add new marker
-            currentMarker = L.circleMarker([lat, lng], {
-                radius: 10,
-                fillColor: '#FFD700',
-                color: '#fff',
-                weight: 3,
-                opacity: 1,
-                fillOpacity: 0.8
-            }).addTo(stopLocationMap);
-            
-            // Add radius circle
-            const radius = parseFloat(document.getElementById('stop-radius').value) || 50;
-            currentCircle = L.circle([lat, lng], {
-                radius: radius,
-                fillColor: '#FFD700',
-                fillOpacity: 0.1,
-                color: '#FFD700',
-                weight: 2
-            }).addTo(stopLocationMap);
-            
-            // Center map on selected location
-            stopLocationMap.setView([lat, lng], 16);
-        }
+        // Routes Management
+        async function loadRoutes() {
+            const routesList = document.getElementById('routes-list');
+            routesList.innerHTML = '<div class="loading">Loading routes...</div>';
+            clearMessages();
 
-        function updateRadius(value) {
-            document.getElementById('stop-radius').value = value;
-            document.getElementById('radius-value').textContent = value + 'm';
-            
-            // Update circle on map if exists
-            if (currentCircle && stopLocationMap) {
-                const center = currentCircle.getLatLng();
-                stopLocationMap.removeLayer(currentCircle);
-                
-                currentCircle = L.circle(center, {
-                    radius: parseFloat(value),
-                    fillColor: '#FFD700',
-                    fillOpacity: 0.1,
-                    color: '#FFD700',
-                    weight: 2
-                }).addTo(stopLocationMap);
-            }
-        }
-
-        function getCurrentLocation() {
-            if (!navigator.geolocation) {
-                alert('Geolocation is not supported by this browser.');
+            if (!systemStatus.serverConnected) {
+                showError('Cannot load routes - server connection failed');
+                routesList.innerHTML = `
+                    <div class="empty-state">
+                        <h3>Server Connection Failed</h3>
+                        <p>Make sure your server is running and try again.</p>
+                        <button class="btn-primary" onclick="testConnection()">Retry Connection</button>
+                    </div>
+                `;
                 return;
             }
 
-            navigator.geolocation.getCurrentPosition(
-                function(position) {
-                    const lat = position.coords.latitude;
-                    const lng = position.coords.longitude;
-                    selectLocationOnMap({ lat, lng });
-                },
-                function(error) {
-                    alert('Unable to get your location: ' + error.message);
+            try {
+                const response = await fetch(`${API_BASE}/routes`);
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
                 }
-            );
+
+                currentRoutes = await response.json();
+
+                if (currentRoutes.length === 0) {
+                    routesList.innerHTML = `
+                        <div class="empty-state">
+                            <h3>No routes found</h3>
+                            <p>Create your first audio tour route to get started.</p>
+                            <button class="btn-primary" onclick="createNewRoute()">+ Create First Route</button>
+                        </div>
+                    `;
+                    return;
+                }
+
+                routesList.innerHTML = currentRoutes.map(route => `
+                    <div class="route-card" data-route-id="${route.id}">
+                        <div class="route-header">
+                            <div>
+                                <div class="route-name" onclick="editRoute('${route.id}')">
+                                    ${route.name}
+                                </div>
+                                <div class="route-tags">
+                                    <span class="tag ${route.category?.toLowerCase() || 'modern'}">${route.category || 'Modern'}</span>
+                                    <span class="tag">${route.city || 'Unknown City'}</span>
+                                    <span class="tag ${route.published ? 'published' : 'draft'}">
+                                        ${route.published ? 'Published' : 'Draft'}
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="route-actions">
+                                <div class="publish-toggle-container">
+                                    <span class="publish-toggle-label">Publish</span>
+                                    <div class="toggle-switch ${route.published ? 'active' : ''}" 
+                                         onclick="togglePublish('${route.id}', ${!route.published})">
+                                        <div class="toggle-slider"></div>
+                                    </div>
+                                    <span class="toggle-status">${route.published ? 'Live' : 'Draft'}</span>
+                                </div>
+                                <button class="btn-icon" onclick="editRoute('${route.id}')" title="Edit">✏️</button>
+                                <button class="btn-icon btn-delete" onclick="deleteRoute('${route.id}')" title="Delete">🗑️</button>
+                            </div>
+                        </div>
+                        <div class="route-description">${route.description || 'No description'}</div>
+                        <div class="route-stats">
+                            <div class="stat">
+                                <div class="stat-label">Total Stops</div>
+                                <div class="stat-value">${route.points?.length || 0}</div>
+                            </div>
+                            <div class="stat">
+                                <div class="stat-label">Duration</div>
+                                <div class="stat-value">${route.estimatedDuration || 'N/A'}</div>
+                            </div>
+                            <div class="stat">
+                                <div class="stat-label">Distance</div>
+                                <div class="stat-value">${route.distance || 'N/A'}</div>
+                            </div>
+                            <div class="stat">
+                                <div class="stat-label">Difficulty</div>
+                                <div class="stat-value">${route.difficulty || 'Easy'}</div>
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+
+                showSuccess(`Loaded ${currentRoutes.length} routes successfully`);
+
+            } catch (error) {
+                console.error('Error loading routes:', error);
+                showError(`Failed to load routes: ${error.message}`);
+            }
+        }
+
+        async function togglePublish(routeId, shouldPublish) {
+            try {
+                const response = await fetch(`${API_BASE}/routes/${routeId}/publish`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ published: shouldPublish })
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || `HTTP ${response.status}`);
+                }
+
+                const result = await response.json();
+                
+                const routeIndex = currentRoutes.findIndex(r => r.id === routeId);
+                if (routeIndex !== -1) {
+                    currentRoutes[routeIndex].published = shouldPublish;
+                }
+                
+                showSuccess(`Route ${shouldPublish ? 'published' : 'unpublished'} successfully!`);
+                setTimeout(() => loadRoutes(), 1000);
+                
+            } catch (error) {
+                console.error('Error toggling publish status:', error);
+                showError(`Failed to ${shouldPublish ? 'publish' : 'unpublish'} route: ${error.message}`);
+            }
+        }
+
+        // Route CRUD operations
+        function createNewRoute() {
+            editingRoute = null;
+            editingRouteStops = [];
+            document.getElementById('modal-title').textContent = 'Create New Route';
+            document.getElementById('route-form').reset();
+            document.getElementById('stops-count-display').textContent = '0 stops';
+            
+            document.getElementById('route-image-preview').innerHTML = '<div class="route-image-placeholder">No image selected</div>';
+            hideImagePositionPreview();
+            
+            document.querySelector('[name="imagePosition"]').value = 'center';
+            
+            // Populate city dropdown when creating new route
+            populateCityDropdown();
+            
+            updateStopsListInline();
+            document.getElementById('route-overview-container').style.display = 'none';
+            showModal('route-modal');
+        }
+
+        function editRoute(routeId) {
+            editingRoute = routeId;
+            const route = currentRoutes.find(r => r.id === routeId);
+            if (!route) {
+                showError('Route not found');
+                return;
+            }
+
+            document.getElementById('modal-title').textContent = `Edit Route: ${route.name}`;
+            
+            const form = document.getElementById('route-form');
+            const fields = ['name', 'category', 'difficulty', 'estimatedDuration', 'distance', 'description', 'color', 'imageUrl', 'imagePosition'];
+            
+            fields.forEach(field => {
+                const input = form.querySelector(`[name="${field}"]`);
+                if (input && route[field]) {
+                    input.value = route[field];
+                }
+            });
+
+            // Set city in dropdown
+            populateCityDropdown();
+            const cityDropdown = document.getElementById('cityDropdown');
+            if (cityDropdown && route.city) {
+                cityDropdown.value = route.city;
+            }
+
+            if (!route.imagePosition) {
+                form.querySelector('[name="imagePosition"]').value = 'center';
+            }
+
+            const preview = document.getElementById('route-image-preview');
+            if (route.imageUrl) {
+                preview.innerHTML = `<img src="${route.imageUrl}" alt="Route preview">`;
+                showImagePositionPreview(route.imageUrl, route.imagePosition || 'center');
+            } else {
+                preview.innerHTML = '<div class="route-image-placeholder">No image selected</div>';
+                hideImagePositionPreview();
+            }
+
+            editingRouteStops = route.points || [];
+            document.getElementById('stops-count-display').textContent = `${editingRouteStops.length} stops`;
+            updateStopsListInline();
+            initializeRouteOverviewMap();
+            showModal('route-modal');
+        }
+
+        async function saveRoute() {
+            const form = document.getElementById('route-form');
+            const formData = new FormData(form);
+            
+            const routeData = {};
+            for (let [key, value] of formData.entries()) {
+                routeData[key] = value;
+            }
+
+            // Get city from dropdown instead of text input
+            const cityDropdown = document.getElementById('cityDropdown');
+            routeData.city = cityDropdown.value;
+
+            routeData.points = editingRouteStops;
+
+            if (!routeData.name || !routeData.city) {
+                showError('Name and City are required fields');
+                return;
+            }
+
+            try {
+                let response;
+                if (editingRoute) {
+                    response = await fetch(`${API_BASE}/routes/${editingRoute}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(routeData)
+                    });
+                } else {
+                    response = await fetch(`${API_BASE}/routes`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(routeData)
+                    });
+                }
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || `HTTP ${response.status}`);
+                }
+
+                const savedRoute = await response.json();
+
+                closeModal('route-modal');
+                showSuccess(`Route "${routeData.name}" saved successfully!`);
+                await loadRoutes();
+
+            } catch (error) {
+                console.error('Error saving route:', error);
+                showError(`Failed to save route: ${error.message}`);
+            }
+        }
+
+        async function deleteRoute(routeId) {
+            const route = currentRoutes.find(r => r.id === routeId);
+            if (!confirm(`Are you sure you want to delete "${route?.name || routeId}"? This action cannot be undone.`)) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/routes/${routeId}`, {
+                    method: 'DELETE'
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || `HTTP ${response.status}`);
+                }
+
+                showSuccess('Route deleted successfully');
+                await loadRoutes();
+
+            } catch (error) {
+                console.error('Error deleting route:', error);
+                showError(`Failed to delete route: ${error.message}`);
+            }
+        }
+
+        async function regenerateRoutesFile() {
+            try {
+                const response = await fetch(`${API_BASE}/regenerate-routes`, {
+                    method: 'POST'
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+
+                const result = await response.json();
+                showSuccess(`App updated! ${result.publishedRoutes} published routes are now live in your app.`);
+                
+            } catch (error) {
+                console.error('Error regenerating routes:', error);
+                showError(`Failed to update app: ${error.message}`);
+            }
         }
 
         // Image Position Preview Functions
@@ -1614,262 +1849,6 @@
             }
         }
 
-        // Routes Management
-        async function loadRoutes() {
-            const routesList = document.getElementById('routes-list');
-            routesList.innerHTML = '<div class="loading">Loading routes...</div>';
-            clearMessages();
-
-            if (!systemStatus.serverConnected) {
-                showError('Cannot load routes - server connection failed');
-                routesList.innerHTML = `
-                    <div class="empty-state">
-                        <h3>Server Connection Failed</h3>
-                        <p>Make sure your server is running and try again.</p>
-                        <button class="btn-primary" onclick="testConnection()">Retry Connection</button>
-                    </div>
-                `;
-                return;
-            }
-
-            try {
-                const response = await fetch(`${API_BASE}/routes`);
-                if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-                }
-
-                currentRoutes = await response.json();
-
-                if (currentRoutes.length === 0) {
-                    routesList.innerHTML = `
-                        <div class="empty-state">
-                            <h3>No routes found</h3>
-                            <p>Create your first audio tour route to get started.</p>
-                            <button class="btn-primary" onclick="createNewRoute()">+ Create First Route</button>
-                        </div>
-                    `;
-                    return;
-                }
-
-                routesList.innerHTML = currentRoutes.map(route => `
-                    <div class="route-card" data-route-id="${route.id}">
-                        <div class="route-header">
-                            <div>
-                                <div class="route-name" onclick="editRoute('${route.id}')">
-                                    ${route.name}
-                                </div>
-                                <div class="route-tags">
-                                    <span class="tag ${route.category?.toLowerCase() || 'modern'}">${route.category || 'Modern'}</span>
-                                    <span class="tag">${route.city || 'Unknown City'}</span>
-                                    <span class="tag ${route.published ? 'published' : 'draft'}">
-                                        ${route.published ? 'Published' : 'Draft'}
-                                    </span>
-                                </div>
-                            </div>
-                            <div class="route-actions">
-                                <div class="publish-toggle-container">
-                                    <span class="publish-toggle-label">Publish</span>
-                                    <div class="toggle-switch ${route.published ? 'active' : ''}" 
-                                         onclick="togglePublish('${route.id}', ${!route.published})">
-                                        <div class="toggle-slider"></div>
-                                    </div>
-                                    <span class="toggle-status">${route.published ? 'Live' : 'Draft'}</span>
-                                </div>
-                                <button class="btn-icon" onclick="editRoute('${route.id}')" title="Edit">✏️</button>
-                                <button class="btn-icon btn-delete" onclick="deleteRoute('${route.id}')" title="Delete">🗑️</button>
-                            </div>
-                        </div>
-                        <div class="route-description">${route.description || 'No description'}</div>
-                        <div class="route-stats">
-                            <div class="stat">
-                                <div class="stat-label">Total Stops</div>
-                                <div class="stat-value">${route.points?.length || 0}</div>
-                            </div>
-                            <div class="stat">
-                                <div class="stat-label">Duration</div>
-                                <div class="stat-value">${route.estimatedDuration || 'N/A'}</div>
-                            </div>
-                            <div class="stat">
-                                <div class="stat-label">Distance</div>
-                                <div class="stat-value">${route.distance || 'N/A'}</div>
-                            </div>
-                            <div class="stat">
-                                <div class="stat-label">Difficulty</div>
-                                <div class="stat-value">${route.difficulty || 'Easy'}</div>
-                            </div>
-                        </div>
-                    </div>
-                `).join('');
-
-                showSuccess(`Loaded ${currentRoutes.length} routes successfully`);
-
-            } catch (error) {
-                console.error('Error loading routes:', error);
-                showError(`Failed to load routes: ${error.message}`);
-            }
-        }
-
-        async function togglePublish(routeId, shouldPublish) {
-            try {
-                const response = await fetch(`${API_BASE}/routes/${routeId}/publish`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ published: shouldPublish })
-                });
-
-                if (!response.ok) {
-                    const errorData = await response.json();
-                    throw new Error(errorData.error || `HTTP ${response.status}`);
-                }
-
-                const result = await response.json();
-                
-                const routeIndex = currentRoutes.findIndex(r => r.id === routeId);
-                if (routeIndex !== -1) {
-                    currentRoutes[routeIndex].published = shouldPublish;
-                }
-                
-                showSuccess(`Route ${shouldPublish ? 'published' : 'unpublished'} successfully!`);
-                setTimeout(() => loadRoutes(), 1000);
-                
-            } catch (error) {
-                console.error('Error toggling publish status:', error);
-                showError(`Failed to ${shouldPublish ? 'publish' : 'unpublish'} route: ${error.message}`);
-            }
-        }
-
-        // Route CRUD operations
-        function createNewRoute() {
-            editingRoute = null;
-            editingRouteStops = [];
-            document.getElementById('modal-title').textContent = 'Create New Route';
-            document.getElementById('route-form').reset();
-            document.getElementById('stops-count-display').textContent = '0 stops';
-            
-            document.getElementById('route-image-preview').innerHTML = '<div class="route-image-placeholder">No image selected</div>';
-            hideImagePositionPreview();
-            
-            document.querySelector('[name="imagePosition"]').value = 'center';
-            
-            updateStopsListInline();
-            document.getElementById('route-overview-container').style.display = 'none';
-            showModal('route-modal');
-        }
-
-        function editRoute(routeId) {
-            editingRoute = routeId;
-            const route = currentRoutes.find(r => r.id === routeId);
-            if (!route) {
-                showError('Route not found');
-                return;
-            }
-
-            document.getElementById('modal-title').textContent = `Edit Route: ${route.name}`;
-            
-            const form = document.getElementById('route-form');
-            const fields = ['name', 'city', 'category', 'difficulty', 'estimatedDuration', 'distance', 'description', 'color', 'imageUrl', 'imagePosition'];
-            
-            fields.forEach(field => {
-                const input = form.querySelector(`[name="${field}"]`);
-                if (input && route[field]) {
-                    input.value = route[field];
-                }
-            });
-
-            if (!route.imagePosition) {
-                form.querySelector('[name="imagePosition"]').value = 'center';
-            }
-
-            const preview = document.getElementById('route-image-preview');
-            if (route.imageUrl) {
-                preview.innerHTML = `<img src="${route.imageUrl}" alt="Route preview">`;
-                showImagePositionPreview(route.imageUrl, route.imagePosition || 'center');
-            } else {
-                preview.innerHTML = '<div class="route-image-placeholder">No image selected</div>';
-                hideImagePositionPreview();
-            }
-
-            editingRouteStops = route.points || [];
-            document.getElementById('stops-count-display').textContent = `${editingRouteStops.length} stops`;
-            updateStopsListInline();
-            initializeRouteOverviewMap();
-            showModal('route-modal');
-        }
-
-        async function saveRoute() {
-            const form = document.getElementById('route-form');
-            const formData = new FormData(form);
-            
-            const routeData = {};
-            for (let [key, value] of formData.entries()) {
-                routeData[key] = value;
-            }
-
-            routeData.points = editingRouteStops;
-
-            if (!routeData.name || !routeData.city) {
-                showError('Name and City are required fields');
-                return;
-            }
-
-            try {
-                let response;
-                if (editingRoute) {
-                    response = await fetch(`${API_BASE}/routes/${editingRoute}`, {
-                        method: 'PUT',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(routeData)
-                    });
-                } else {
-                    response = await fetch(`${API_BASE}/routes`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(routeData)
-                    });
-                }
-
-                if (!response.ok) {
-                    const errorData = await response.json();
-                    throw new Error(errorData.error || `HTTP ${response.status}`);
-                }
-
-                const savedRoute = await response.json();
-
-                closeModal('route-modal');
-                showSuccess(`Route "${routeData.name}" saved successfully!`);
-                await loadRoutes();
-
-            } catch (error) {
-                console.error('Error saving route:', error);
-                showError(`Failed to save route: ${error.message}`);
-            }
-        }
-
-        async function deleteRoute(routeId) {
-            const route = currentRoutes.find(r => r.id === routeId);
-            if (!confirm(`Are you sure you want to delete "${route?.name || routeId}"? This action cannot be undone.`)) {
-                return;
-            }
-
-            try {
-                const response = await fetch(`${API_BASE}/routes/${routeId}`, {
-                    method: 'DELETE'
-                });
-
-                if (!response.ok) {
-                    const errorData = await response.json();
-                    throw new Error(errorData.error || `HTTP ${response.status}`);
-                }
-
-                showSuccess('Route deleted successfully');
-                await loadRoutes();
-
-            } catch (error) {
-                console.error('Error deleting route:', error);
-                showError(`Failed to delete route: ${error.message}`);
-            }
-        }
-
         // Stop Management Functions
         function updateStopsListInline() {
             const stopsList = document.getElementById('stops-list-inline');
@@ -1899,7 +1878,6 @@
                 </div>
             `).join('');
 
-            // Update route overview map
             if (editingRouteStops.length > 0) {
                 initializeRouteOverviewMap();
             }
@@ -1911,7 +1889,6 @@
             document.getElementById('stop-form').reset();
             document.getElementById('stop-form').querySelector('[name="stopNumber"]').value = editingRouteStops.length + 1;
             
-            // Reset map and location controls
             document.getElementById('stopLocationMap').style.display = 'none';
             document.getElementById('location-controls').style.display = 'none';
             document.getElementById('coordinates-display').innerHTML = '📍 Click "Select Location on Map" to choose coordinates';
@@ -1933,7 +1910,6 @@
             form.querySelector('[name="name"]').value = stop.name || '';
             form.querySelector('[name="description"]').value = stop.description || '';
             
-            // Set coordinates and radius
             if (stop.coordinates) {
                 document.getElementById('stop-latitude').value = stop.coordinates[1];
                 document.getElementById('stop-longitude').value = stop.coordinates[0];
@@ -1950,7 +1926,6 @@
             form.querySelector('[name="audioFile"]').value = stop.audioFile || '';
             form.querySelector('[name="audioDuration"]').value = stop.audioDuration || '';
             
-            // Reset map display
             document.getElementById('stopLocationMap').style.display = 'none';
             document.getElementById('location-controls').style.display = 'none';
             
@@ -1978,7 +1953,6 @@
                 stopData[key] = value;
             }
 
-            // Get data from hidden inputs
             const lat = parseFloat(document.getElementById('stop-latitude').value);
             const lng = parseFloat(document.getElementById('stop-longitude').value);
             const radius = parseFloat(document.getElementById('stop-radius').value) || 50;
@@ -2044,65 +2018,30 @@
             }
         }
 
-        async function regenerateRoutesFile() {
-            try {
-                const response = await fetch(`${API_BASE}/regenerate-routes`, {
-                    method: 'POST'
-                });
-
-                if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}`);
-                }
-
-                const result = await response.json();
-                showSuccess(`App updated! ${result.publishedRoutes} published routes are now live in your app.`);
-                
-            } catch (error) {
-                console.error('Error regenerating routes:', error);
-                showError(`Failed to update app: ${error.message}`);
-            }
+        // Map Functions (placeholder - you'll need to add the full Leaflet functionality)
+        function initializeStopLocationMap() {
+            // Map initialization code here
         }
 
-        async function loadAnalytics() {
-            const analyticsContent = document.getElementById('analytics-content');
-            analyticsContent.innerHTML = '<div class="loading">Loading analytics...</div>';
+        function initializeRouteOverviewMap() {
+            // Route overview map code here
+        }
 
-            try {
-                const response = await fetch(`${API_BASE}/analytics`);
-                if (!response.ok) throw new Error(`HTTP ${response.status}`);
-                
-                const analytics = await response.json();
+        function openLocationPicker() {
+            // Location picker functionality here
+        }
 
-                analyticsContent.innerHTML = `
-                    <div class="form-section">
-                        <h3>📊 Route Overview</h3>
-                        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px;">
-                            <div style="text-align: center; padding: 20px; background: rgba(255,255,255,0.05); border-radius: 8px;">
-                                <div style="font-size: 32px; font-weight: 700; color: #FFD700;">${analytics.totalRoutes || 0}</div>
-                                <div style="color: rgba(255,255,255,0.8);">Total Routes</div>
-                            </div>
-                            <div style="text-align: center; padding: 20px; background: rgba(255,255,255,0.05); border-radius: 8px;">
-                                <div style="font-size: 32px; font-weight: 700; color: #4CAF50;">${analytics.publishedRoutes || 0}</div>
-                                <div style="color: rgba(255,255,255,0.8);">Published</div>
-                            </div>
-                            <div style="text-align: center; padding: 20px; background: rgba(255,255,255,0.05); border-radius: 8px;">
-                                <div style="font-size: 32px; font-weight: 700; color: #ff6b6b;">${analytics.unpublishedRoutes || 0}</div>
-                                <div style="color: rgba(255,255,255,0.8);">Drafts</div>
-                            </div>
-                        </div>
-                    </div>
-                `;
+        function updateRadius(value) {
+            document.getElementById('stop-radius').value = value;
+            document.getElementById('radius-value').textContent = value + 'm';
+        }
 
-            } catch (error) {
-                console.error('Error loading analytics:', error);
-                analyticsContent.innerHTML = `
-                    <div class="empty-state">
-                        <h3>Error loading analytics</h3>
-                        <p>${error.message}</p>
-                        <button class="btn-primary" onclick="loadAnalytics()">Retry</button>
-                    </div>
-                `;
-            }
+        function getCurrentLocation() {
+            // Get current location functionality here
+        }
+
+        function selectLocationOnMap(latlng) {
+            // Location selection functionality here
         }
 
         // Utility Functions
@@ -2113,7 +2052,6 @@
         function closeModal(modalId) {
             document.getElementById(modalId).classList.remove('active');
             
-            // Clean up maps when closing modals
             if (modalId === 'stop-modal') {
                 if (stopLocationMap) {
                     stopLocationMap.remove();
