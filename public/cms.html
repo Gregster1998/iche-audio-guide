@@ -444,6 +444,48 @@
             resize: vertical;
         }
 
+        /* City Selection Styles */
+        .city-selector-container {
+            position: relative;
+        }
+
+        .city-input-group {
+            display: flex;
+            gap: 10px;
+            align-items: flex-end;
+        }
+
+        .city-dropdown-container {
+            flex: 1;
+        }
+
+        .add-city-container {
+            display: none;
+            flex: 1;
+        }
+
+        .city-toggle-btn {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 12px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 12px;
+            white-space: nowrap;
+            transition: all 0.3s ease;
+        }
+
+        .city-toggle-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .city-help-text {
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.6);
+            margin-top: 5px;
+        }
+
         /* File Upload Areas */
         .file-upload-area {
             border: 2px dashed rgba(255, 255, 255, 0.3);
@@ -729,6 +771,11 @@
                 flex-direction: column;
                 align-items: stretch;
             }
+
+            .city-input-group {
+                flex-direction: column;
+                gap: 10px;
+            }
         }
 
         .error-message {
@@ -749,26 +796,50 @@
             margin-bottom: 20px;
         }
 
-        /* Custom Leaflet marker styles */
-        .custom-marker {
-            background-color: #FFD700;
-            border: 3px solid #fff;
-            border-radius: 50%;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+        .stop-item {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
         }
 
-        .stop-marker {
-            background-color: #4CAF50;
-            border: 3px solid #fff;
-            border-radius: 50%;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+        .stop-item:hover {
+            background: rgba(255,255,255,0.1);
         }
 
-        .start-marker {
-            background-color: #FF5722;
-            border: 3px solid #fff;
-            border-radius: 50%;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+        .stop-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .stop-name {
+            font-weight: 600;
+            color: white;
+            font-size: 14px;
+        }
+
+        .stop-details {
+            font-size: 11px;
+            color: rgba(255,255,255,0.6);
+            margin-top: 4px;
+        }
+
+        .stop-delete-btn {
+            background: rgba(255,107,107,0.2);
+            border: none;
+            color: #ff6b6b;
+            padding: 4px 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        .stop-delete-btn:hover {
+            background: rgba(255,107,107,0.4);
         }
     </style>
 </head>
@@ -780,9 +851,7 @@
                 <div class="logo">ICHE CMS</div>
                 <div class="subtitle">Enhanced Content Management System for Audio Tours</div>
             </div>
-            <button class="close-btn" onclick="closeCMS()">
-                ✕ Close CMS
-            </button>
+            <button class="close-btn" onclick="closeCMS()">Close CMS</button>
         </div>
 
         <!-- Debug Panel -->
@@ -818,12 +887,8 @@
                     <h2 class="section-title">Tour Routes</h2>
                     <div class="header-actions">
                         <button class="btn-secondary" onclick="testConnection()">Test Connection</button>
-                        <button class="btn-primary" onclick="regenerateRoutesFile()">
-                            🔄 Update App
-                        </button>
-                        <button class="btn-primary" onclick="createNewRoute()">
-                            + Create New Route
-                        </button>
+                        <button class="btn-primary" onclick="regenerateRoutesFile()">Update App</button>
+                        <button class="btn-primary" onclick="createNewRoute()">+ Create New Route</button>
                     </div>
                 </div>
                 <div id="error-container"></div>
@@ -848,7 +913,7 @@
                     <h2 class="section-title">Settings</h2>
                 </div>
                 <div class="form-section">
-                    <h3>🔧 Debug Tools</h3>
+                    <h3>Debug Tools</h3>
                     <div class="form-group">
                         <button class="btn-secondary" onclick="resetDatabase()">Reset Database</button>
                         <button class="btn-secondary" onclick="importDefaultRoutes()">Import Default Routes</button>
@@ -858,24 +923,39 @@
         </div>
     </div>
 
-    <!-- Modal for Route Editor -->
+    <!-- Route Modal -->
     <div id="route-modal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
                 <h3 class="modal-title" id="modal-title">New Route</h3>
-                <button class="close-btn" onclick="closeModal('route-modal')">✕</button>
+                <button class="close-btn" onclick="closeModal('route-modal')">×</button>
             </div>
             <form id="route-form" class="form-grid">
                 <div class="form-section">
-                    <h3>📝 Route Details</h3>
+                    <h3>Route Details</h3>
                     <div class="form-group">
                         <label class="form-label">Route Name *</label>
                         <input type="text" class="form-input" name="name" placeholder="Enter route name" required>
                     </div>
+                    
                     <div class="form-group">
                         <label class="form-label">City *</label>
-                        <input type="text" class="form-input" name="city" placeholder="Enter city name" required>
+                        <div class="city-selector-container">
+                            <div class="city-input-group">
+                                <div class="city-dropdown-container" id="cityDropdownContainer">
+                                    <select class="form-select" name="city" id="cityDropdown" required>
+                                        <option value="">Loading cities...</option>
+                                    </select>
+                                </div>
+                                <div class="add-city-container" id="addCityContainer">
+                                    <input type="text" class="form-input" id="newCityInput" placeholder="Enter new city name">
+                                </div>
+                                <button type="button" class="city-toggle-btn" id="cityToggleBtn" onclick="toggleCityInput()">+ Add New</button>
+                            </div>
+                            <div class="city-help-text">Select an existing city or add a new one</div>
+                        </div>
                     </div>
+                    
                     <div class="form-group">
                         <label class="form-label">Category</label>
                         <select class="form-select" name="category">
@@ -908,7 +988,7 @@
                     </div>
                 </div>
                 <div class="form-section">
-                    <h3>🎧 Tour Information</h3>
+                    <h3>Tour Information</h3>
                     <div class="form-group">
                         <label class="form-label">Route Color</label>
                         <input type="color" class="form-input" name="color" value="#FFD700">
@@ -917,7 +997,7 @@
                         <label class="form-label">Route Image</label>
                         <input type="url" class="form-input" name="imageUrl" placeholder="Enter image URL or upload below">
                         <div class="file-upload-area" id="route-image-upload" onclick="document.getElementById('route-image-file').click()">
-                            <div class="upload-icon">🖼️</div>
+                            <div class="upload-icon">📷</div>
                             <div class="upload-text">Click to upload route image</div>
                             <div class="upload-subtext">JPG, PNG up to 10MB</div>
                         </div>
@@ -944,10 +1024,8 @@
                         </div>
                     </div>
                     <div class="image-position-preview" id="imagePositionPreview" style="display: none;">
-                        <div style="font-size: 12px; color: rgba(255,255,255,0.8); margin-bottom: 8px;">Preview in route card:</div>
-                        <div class="position-preview-box" id="positionPreviewBox">
-                            🎧
-                        </div>
+                        <div style="font-size: 12px; color: rgba(255,255,255,0.8); margin-bottom: 8px;">Preview:</div>
+                        <div class="position-preview-box" id="positionPreviewBox">Audio Tour</div>
                     </div>
                     <div class="form-group">
                         <label class="form-label">Points Added</label>
@@ -957,7 +1035,6 @@
                         </div>
                         <div id="stops-list-inline" style="max-height: 300px; overflow-y: auto;"></div>
                         
-                        <!-- Route Overview Map -->
                         <div id="route-overview-container" style="display: none; margin-top: 20px;">
                             <h4 style="color: rgba(255,255,255,0.9); margin-bottom: 10px;">Route Overview</h4>
                             <div class="route-overview-map" id="routeOverviewMap"></div>
@@ -966,23 +1043,21 @@
                 </div>
             </form>
             <div style="text-align: right; margin-top: 30px; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.1);">
-                <button type="button" class="btn-primary" onclick="saveRoute()">
-                    💾 Save Route
-                </button>
+                <button type="button" class="btn-primary" onclick="saveRoute()">Save Route</button>
             </div>
         </div>
     </div>
 
-    <!-- Stop Editor Modal -->
+    <!-- Stop Modal -->
     <div id="stop-modal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
                 <h3 class="modal-title" id="stop-modal-title">Edit Stop</h3>
-                <button class="close-btn" onclick="closeModal('stop-modal')">✕</button>
+                <button class="close-btn" onclick="closeModal('stop-modal')">×</button>
             </div>
             <form id="stop-form" style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px;">
                 <div class="form-section">
-                    <h3>📝 Basic Information</h3>
+                    <h3>Basic Information</h3>
                     <div class="form-group">
                         <label class="form-label">Stop Number</label>
                         <input type="number" class="form-input" name="stopNumber" min="1" readonly>
@@ -996,10 +1071,10 @@
                         <textarea class="form-textarea" name="description" placeholder="Enter detailed description" required></textarea>
                     </div>
                     
-                    <h3 style="margin-top: 30px;">🎧 Audio Guide</h3>
+                    <h3 style="margin-top: 30px;">Audio Guide</h3>
                     <div class="form-group">
                         <label class="form-label">Audio File</label>
-                        <input type="text" class="form-input" name="audioFile" placeholder="e.g. stop1.mp3 or upload below" readonly>
+                        <input type="text" class="form-input" name="audioFile" placeholder="Audio filename" readonly>
                         <div class="file-upload-area" id="stop-audio-upload" onclick="document.getElementById('stop-audio-file').click()">
                             <div class="upload-icon">🎵</div>
                             <div class="upload-text">Click to upload audio</div>
@@ -1013,39 +1088,35 @@
                     </div>
                 </div>
                 <div class="form-section">
-                    <h3>🖼️ Stop Image</h3>
+                    <h3>Stop Image</h3>
                     <div class="form-group">
                         <label class="form-label">Image URL</label>
                         <input type="url" class="form-input" name="imageUrl" placeholder="Enter image URL or upload below">
                         <div class="file-upload-area" id="stop-image-upload" onclick="document.getElementById('stop-image-file').click()">
-                            <div class="upload-icon">🖼️</div>
+                            <div class="upload-icon">📷</div>
                             <div class="upload-text">Click to upload image</div>
                             <div class="upload-subtext">JPG, PNG up to 10MB</div>
                         </div>
                         <input type="file" id="stop-image-file" accept="image/*" style="display: none;" onchange="handleStopImageUpload(event)">
                     </div>
                     
-                    <h3 style="margin-top: 30px;">📍 Location & Trigger Area</h3>
+                    <h3 style="margin-top: 30px;">Location & Trigger Area</h3>
                     <div class="form-group">
                         <label class="form-label">Choose Location on Map</label>
                         <button type="button" class="btn-secondary" onclick="openLocationPicker()" style="width: 100%; margin-bottom: 10px;">
-                            🗺️ Select Location on Map
+                            Select Location on Map
                         </button>
                         
-                        <!-- Hidden coordinate inputs (populated by map) -->
                         <input type="hidden" name="latitude" id="stop-latitude">
                         <input type="hidden" name="longitude" id="stop-longitude">
                         <input type="hidden" name="radius" id="stop-radius" value="50">
                         
-                        <!-- Location display -->
                         <div class="coordinates-display" id="coordinates-display">
-                            📍 Click "Select Location on Map" to choose coordinates
+                            Click "Select Location on Map" to choose coordinates
                         </div>
                         
-                        <!-- Interactive Map -->
                         <div class="map-container" id="stopLocationMap" style="display: none;"></div>
                         
-                        <!-- Location Controls -->
                         <div class="location-controls" id="location-controls" style="display: none;">
                             <div class="radius-control">
                                 <label style="font-size: 12px; color: rgba(255,255,255,0.8);">Audio Trigger Radius:</label>
@@ -1053,7 +1124,7 @@
                                 <span id="radius-value" style="font-size: 12px; color: #FFD700; min-width: 40px;">50m</span>
                             </div>
                             <button type="button" class="btn-secondary" onclick="getCurrentLocation()" style="padding: 8px 16px; font-size: 12px;">
-                                📍 Use My Location
+                                Use My Location
                             </button>
                         </div>
                     </div>
@@ -1061,7 +1132,7 @@
             </form>
             <div style="text-align: right; margin-top: 30px; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.1);">
                 <button type="button" class="btn-secondary" onclick="closeModal('stop-modal')">Cancel</button>
-                <button type="button" class="btn-primary" onclick="saveStop()">💾 Save Stop</button>
+                <button type="button" class="btn-primary" onclick="saveStop()">Save Stop</button>
             </div>
         </div>
     </div>
@@ -1071,21 +1142,14 @@
     
     <script>
         // Global variables
-        const API_BASES = [
-            '/api',
-            `${window.location.origin}/api`,
-            'http://localhost:3001/api'
-        ];
+        const API_BASES = ['/api', `${window.location.origin}/api`, 'http://localhost:3001/api'];
         let API_BASE = API_BASES[0];
         let currentRoutes = [];
         let editingRoute = null;
         let editingRouteStops = [];
         let editingStopIndex = -1;
         let availableCities = [];
-        let systemStatus = {
-            serverConnected: false,
-            routesLoaded: false
-        };
+        let systemStatus = { serverConnected: false, routesLoaded: false };
 
         // Map variables
         let stopLocationMap = null;
@@ -1108,7 +1172,6 @@
             setupImagePositionPreview();
         }
 
-        // Load cities from database for CMS
         async function loadCities() {
             console.log('Loading cities for CMS...');
             
@@ -1118,13 +1181,10 @@
                 
                 availableCities = await response.json();
                 console.log('Loaded cities:', availableCities);
-                
-                // Populate city dropdown
                 populateCityDropdown();
                 
             } catch (error) {
                 console.error('Error loading cities:', error);
-                // Add fallback cities
                 availableCities = [
                     { name: 'Milan', country: 'Italy' },
                     { name: 'Vienna', country: 'Austria' },
@@ -1135,15 +1195,12 @@
             }
         }
 
-        // Populate city dropdown in route form
         function populateCityDropdown() {
             const dropdown = document.getElementById('cityDropdown');
             if (!dropdown) return;
             
-            // Clear existing options
             dropdown.innerHTML = '<option value="">Select a city</option>';
             
-            // Add cities from database
             availableCities.forEach(city => {
                 const option = document.createElement('option');
                 option.value = city.name;
@@ -1154,27 +1211,41 @@
             console.log(`Added ${availableCities.length} cities to dropdown`);
         }
 
-        // Add new city to database
-        async function addNewCity() {
-            const newCityInput = document.getElementById('newCityInput');
-            const cityName = newCityInput.value.trim();
+        function toggleCityInput() {
+            const dropdownContainer = document.getElementById('cityDropdownContainer');
+            const addCityContainer = document.getElementById('addCityContainer');
+            const toggleBtn = document.getElementById('cityToggleBtn');
             
-            if (!cityName) {
-                alert('Please enter a city name');
-                return;
+            if (dropdownContainer.style.display === 'none') {
+                dropdownContainer.style.display = 'block';
+                addCityContainer.style.display = 'none';
+                toggleBtn.textContent = '+ Add New';
+                document.getElementById('newCityInput').value = '';
+            } else {
+                dropdownContainer.style.display = 'none';
+                addCityContainer.style.display = 'block';
+                toggleBtn.textContent = 'Cancel';
+                document.getElementById('newCityInput').focus();
+            }
+        }
+
+        async function addNewCity(cityName) {
+            if (!cityName || !cityName.trim()) {
+                return null;
             }
             
-            // Check if city already exists
-            if (availableCities.some(city => city.name.toLowerCase() === cityName.toLowerCase())) {
-                alert('City already exists');
-                return;
+            const trimmedCity = cityName.trim();
+            
+            if (availableCities.some(city => city.name.toLowerCase() === trimmedCity.toLowerCase())) {
+                console.log('City already exists:', trimmedCity);
+                return trimmedCity;
             }
             
             try {
                 const response = await fetch(`${API_BASE}/cities`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ name: cityName })
+                    body: JSON.stringify({ name: trimmedCity })
                 });
                 
                 if (!response.ok) {
@@ -1185,27 +1256,18 @@
                 const newCity = await response.json();
                 console.log('Added new city:', newCity);
                 
-                // Add to available cities
                 availableCities.push(newCity);
-                
-                // Refresh dropdown
                 populateCityDropdown();
-                
-                // Select the new city
-                document.getElementById('cityDropdown').value = newCity.name;
-                
-                // Clear input
-                newCityInput.value = '';
-                
-                showSuccess(`City "${cityName}" added successfully!`);
+                showSuccess(`City "${trimmedCity}" added successfully!`);
+                return trimmedCity;
                 
             } catch (error) {
                 console.error('Error adding city:', error);
                 showError(`Failed to add city: ${error.message}`);
+                return null;
             }
         }
 
-        // Connection Testing
         async function testConnection() {
             console.log('Testing connection to server...');
             
@@ -1254,7 +1316,6 @@
                 return;
             }
 
-            // Test routes endpoint
             try {
                 routesText.textContent = 'Testing routes...';
                 const routesResponse = await fetch(`${API_BASE}/routes`);
@@ -1276,7 +1337,6 @@
             }
         }
 
-        // Tab Navigation
         function setupTabNavigation() {
             const tabs = document.querySelectorAll('.nav-tab');
             tabs.forEach(tab => {
@@ -1305,7 +1365,6 @@
             }
         }
 
-        // Messaging
         function showError(message) {
             const container = document.getElementById('error-container');
             container.innerHTML = `<div class="error-message">${message}</div>`;
@@ -1321,7 +1380,6 @@
             document.getElementById('error-container').innerHTML = '';
         }
 
-        // Enhanced analytics loading with city breakdown
         async function loadAnalytics() {
             const analyticsContent = document.getElementById('analytics-content');
             analyticsContent.innerHTML = '<div class="loading">Loading analytics...</div>';
@@ -1385,7 +1443,6 @@
             }
         }
 
-        // Routes Management
         async function loadRoutes() {
             const routesList = document.getElementById('routes-list');
             routesList.innerHTML = '<div class="loading">Loading routes...</div>';
@@ -1446,8 +1503,8 @@
                                     </div>
                                     <span class="toggle-status">${route.published ? 'Live' : 'Draft'}</span>
                                 </div>
-                                <button class="btn-icon" onclick="editRoute('${route.id}')" title="Edit">✏️</button>
-                                <button class="btn-icon btn-delete" onclick="deleteRoute('${route.id}')" title="Delete">🗑️</button>
+                                <button class="btn-icon" onclick="editRoute('${route.id}')" title="Edit">Edit</button>
+                                <button class="btn-icon btn-delete" onclick="deleteRoute('${route.id}')" title="Delete">Delete</button>
                             </div>
                         </div>
                         <div class="route-description">${route.description || 'No description'}</div>
@@ -1509,7 +1566,6 @@
             }
         }
 
-        // Route CRUD operations
         function createNewRoute() {
             editingRoute = null;
             editingRouteStops = [];
@@ -1521,13 +1577,24 @@
             hideImagePositionPreview();
             
             document.querySelector('[name="imagePosition"]').value = 'center';
-            
-            // Populate city dropdown when creating new route
-            populateCityDropdown();
-            
+            resetCitySelector();
             updateStopsListInline();
             document.getElementById('route-overview-container').style.display = 'none';
             showModal('route-modal');
+        }
+
+        function resetCitySelector() {
+            const dropdownContainer = document.getElementById('cityDropdownContainer');
+            const addCityContainer = document.getElementById('addCityContainer');
+            const toggleBtn = document.getElementById('cityToggleBtn');
+            const newCityInput = document.getElementById('newCityInput');
+            
+            dropdownContainer.style.display = 'block';
+            addCityContainer.style.display = 'none';
+            toggleBtn.textContent = '+ Add New';
+            newCityInput.value = '';
+            
+            populateCityDropdown();
         }
 
         function editRoute(routeId) {
@@ -1550,8 +1617,7 @@
                 }
             });
 
-            // Set city in dropdown
-            populateCityDropdown();
+            resetCitySelector();
             const cityDropdown = document.getElementById('cityDropdown');
             if (cityDropdown && route.city) {
                 cityDropdown.value = route.city;
@@ -1586,9 +1652,31 @@
                 routeData[key] = value;
             }
 
-            // Get city from dropdown instead of text input
-            const cityDropdown = document.getElementById('cityDropdown');
-            routeData.city = cityDropdown.value;
+            // Handle city selection - check if we're adding a new city
+            const dropdownContainer = document.getElementById('cityDropdownContainer');
+            const addCityContainer = document.getElementById('addCityContainer');
+            
+            if (addCityContainer.style.display !== 'none') {
+                // Adding new city
+                const newCityInput = document.getElementById('newCityInput');
+                const newCityName = newCityInput.value.trim();
+                
+                if (!newCityName) {
+                    showError('Please enter a city name or select from existing cities');
+                    return;
+                }
+                
+                const addedCity = await addNewCity(newCityName);
+                if (!addedCity) {
+                    showError('Failed to add new city');
+                    return;
+                }
+                routeData.city = addedCity;
+            } else {
+                // Using existing city from dropdown
+                const cityDropdown = document.getElementById('cityDropdown');
+                routeData.city = cityDropdown.value;
+            }
 
             routeData.points = editingRouteStops;
 
@@ -1674,7 +1762,6 @@
             }
         }
 
-        // Image Position Preview Functions
         function setupImagePositionPreview() {
             const positionSelect = document.querySelector('[name="imagePosition"]');
             const imageUrlInput = document.querySelector('[name="imageUrl"]');
@@ -1718,7 +1805,6 @@
             }
         }
 
-        // File Upload Functions
         async function handleRouteImageUpload(event) {
             const file = event.target.files[0];
             if (!file) return;
@@ -1849,7 +1935,6 @@
             }
         }
 
-        // Stop Management Functions
         function updateStopsListInline() {
             const stopsList = document.getElementById('stops-list-inline');
             const stopsCount = document.getElementById('stops-count-display');
@@ -1862,18 +1947,18 @@
             }
 
             stopsList.innerHTML = editingRouteStops.map((stop, index) => `
-                <div style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 12px; margin-bottom: 8px; cursor: pointer;" onclick="editStop(${index})">
-                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div class="stop-item" onclick="editStop(${index})">
+                    <div class="stop-header">
                         <div>
-                            <div style="font-weight: 600; color: white; font-size: 14px;">${index + 1}. ${stop.name || 'Unnamed Stop'}</div>
-                            <div style="font-size: 11px; color: rgba(255,255,255,0.6); margin-top: 4px;">
-                                ${stop.coordinates ? `📍 ${stop.coordinates[1]?.toFixed(4)}, ${stop.coordinates[0]?.toFixed(4)}` : '📍 No location'}
+                            <div class="stop-name">${index + 1}. ${stop.name || 'Unnamed Stop'}</div>
+                            <div class="stop-details">
+                                ${stop.coordinates ? `${stop.coordinates[1]?.toFixed(4)}, ${stop.coordinates[0]?.toFixed(4)}` : 'No location'}
                                 ${stop.radius ? ` • ${stop.radius}m radius` : ''}
-                                ${stop.audioFile ? ' 🎧' : ' 🔇'}
-                                ${stop.imageUrl ? ' 🖼️' : ''}
+                                ${stop.audioFile ? ' Audio' : ' No Audio'}
+                                ${stop.imageUrl ? ' Image' : ''}
                             </div>
                         </div>
-                        <button onclick="event.stopPropagation(); deleteStop(${index})" style="background: rgba(255,107,107,0.2); border: none; color: #ff6b6b; padding: 4px 8px; border-radius: 4px; cursor: pointer;">×</button>
+                        <button class="stop-delete-btn" onclick="event.stopPropagation(); deleteStop(${index})">×</button>
                     </div>
                 </div>
             `).join('');
@@ -1891,7 +1976,7 @@
             
             document.getElementById('stopLocationMap').style.display = 'none';
             document.getElementById('location-controls').style.display = 'none';
-            document.getElementById('coordinates-display').innerHTML = '📍 Click "Select Location on Map" to choose coordinates';
+            document.getElementById('coordinates-display').innerHTML = 'Click "Select Location on Map" to choose coordinates';
             document.getElementById('stop-radius').value = '50';
             document.getElementById('radius-slider').value = '50';
             document.getElementById('radius-value').textContent = '50m';
@@ -1914,7 +1999,7 @@
                 document.getElementById('stop-latitude').value = stop.coordinates[1];
                 document.getElementById('stop-longitude').value = stop.coordinates[0];
                 document.getElementById('coordinates-display').innerHTML = 
-                    `📍 Selected: ${stop.coordinates[1]?.toFixed(6)}, ${stop.coordinates[0]?.toFixed(6)}`;
+                    `Selected: ${stop.coordinates[1]?.toFixed(6)}, ${stop.coordinates[0]?.toFixed(6)}`;
             }
             
             const radius = stop.radius || 50;
@@ -1996,61 +2081,205 @@
         }
 
         function resetUploadAreas() {
-            const routeImageUpload = document.getElementById('route-image-upload');
-            if (routeImageUpload) {
-                routeImageUpload.classList.remove('has-file', 'uploading');
-                routeImageUpload.querySelector('.upload-text').textContent = 'Click to upload route image';
-                routeImageUpload.querySelector('.upload-subtext').textContent = 'JPG, PNG up to 10MB';
-            }
-
-            const stopImageUpload = document.getElementById('stop-image-upload');
-            if (stopImageUpload) {
-                stopImageUpload.classList.remove('has-file', 'uploading');
-                stopImageUpload.querySelector('.upload-text').textContent = 'Click to upload image';
-                stopImageUpload.querySelector('.upload-subtext').textContent = 'JPG, PNG up to 10MB';
-            }
-
-            const stopAudioUpload = document.getElementById('stop-audio-upload');
-            if (stopAudioUpload) {
-                stopAudioUpload.classList.remove('has-file', 'uploading');
-                stopAudioUpload.querySelector('.upload-text').textContent = 'Click to upload audio';
-                stopAudioUpload.querySelector('.upload-subtext').textContent = 'MP3, WAV up to 50MB';
-            }
-        }
-
-        // Map Functions (placeholder - you'll need to add the full Leaflet functionality)
-        function initializeStopLocationMap() {
-            // Map initialization code here
-        }
-
-        function initializeRouteOverviewMap() {
-            // Route overview map code here
+            const areas = ['route-image-upload', 'stop-image-upload', 'stop-audio-upload'];
+            areas.forEach(id => {
+                const area = document.getElementById(id);
+                if (area) {
+                    area.classList.remove('has-file', 'uploading');
+                    area.querySelector('.upload-text').textContent = area.id.includes('audio') ? 'Click to upload audio' : 'Click to upload image';
+                    area.querySelector('.upload-subtext').textContent = area.id.includes('audio') ? 'MP3, WAV up to 50MB' : 'JPG, PNG up to 10MB';
+                }
+            });
         }
 
         function openLocationPicker() {
-            // Location picker functionality here
+            const mapContainer = document.getElementById('stopLocationMap');
+            const controls = document.getElementById('location-controls');
+            
+            mapContainer.style.display = 'block';
+            controls.style.display = 'flex';
+            
+            if (!stopLocationMap) {
+                initializeStopLocationMap();
+            }
+            
+            setTimeout(() => {
+                if (stopLocationMap) {
+                    stopLocationMap.invalidateSize();
+                }
+            }, 100);
+        }
+
+        function initializeStopLocationMap() {
+            const mapElement = document.getElementById('stopLocationMap');
+            if (!mapElement) return;
+            
+            let defaultLat = 45.4642;
+            let defaultLng = 9.1900;
+            
+            const existingLat = document.getElementById('stop-latitude').value;
+            const existingLng = document.getElementById('stop-longitude').value;
+            
+            if (existingLat && existingLng) {
+                defaultLat = parseFloat(existingLat);
+                defaultLng = parseFloat(existingLng);
+            }
+            
+            stopLocationMap = L.map('stopLocationMap').setView([defaultLat, defaultLng], 15);
+            
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap contributors'
+            }).addTo(stopLocationMap);
+            
+            stopLocationMap.on('click', function(e) {
+                selectLocationOnMap(e.latlng);
+            });
+            
+            if (existingLat && existingLng) {
+                selectLocationOnMap(L.latLng(defaultLat, defaultLng));
+            }
+        }
+
+        function selectLocationOnMap(latlng) {
+            if (currentMarker) {
+                stopLocationMap.removeLayer(currentMarker);
+            }
+            if (currentCircle) {
+                stopLocationMap.removeLayer(currentCircle);
+            }
+            
+            currentMarker = L.marker([latlng.lat, latlng.lng], {
+                icon: L.divIcon({
+                    className: 'custom-marker',
+                    html: '<div style="background-color: #FFD700; width: 20px; height: 20px; border-radius: 50%; border: 3px solid white; box-shadow: 0 2px 8px rgba(0,0,0,0.4);"></div>',
+                    iconSize: [26, 26],
+                    iconAnchor: [13, 13]
+                })
+            }).addTo(stopLocationMap);
+            
+            const radius = parseInt(document.getElementById('radius-slider').value) || 50;
+            currentCircle = L.circle([latlng.lat, latlng.lng], {
+                color: '#FFD700',
+                fillColor: '#FFD700',
+                fillOpacity: 0.2,
+                radius: radius
+            }).addTo(stopLocationMap);
+            
+            document.getElementById('stop-latitude').value = latlng.lat;
+            document.getElementById('stop-longitude').value = latlng.lng;
+            document.getElementById('coordinates-display').innerHTML = 
+                `Selected: ${latlng.lat.toFixed(6)}, ${latlng.lng.toFixed(6)}`;
         }
 
         function updateRadius(value) {
             document.getElementById('stop-radius').value = value;
             document.getElementById('radius-value').textContent = value + 'm';
+            
+            if (currentCircle && stopLocationMap) {
+                const center = currentCircle.getLatLng();
+                stopLocationMap.removeLayer(currentCircle);
+                currentCircle = L.circle([center.lat, center.lng], {
+                    color: '#FFD700',
+                    fillColor: '#FFD700',
+                    fillOpacity: 0.2,
+                    radius: parseInt(value)
+                }).addTo(stopLocationMap);
+            }
         }
 
         function getCurrentLocation() {
-            // Get current location functionality here
+            if (!navigator.geolocation) {
+                alert('Geolocation is not supported by your browser');
+                return;
+            }
+            
+            navigator.geolocation.getCurrentPosition(
+                function(position) {
+                    const lat = position.coords.latitude;
+                    const lng = position.coords.longitude;
+                    
+                    if (stopLocationMap) {
+                        stopLocationMap.setView([lat, lng], 16);
+                        selectLocationOnMap(L.latLng(lat, lng));
+                    }
+                },
+                function(error) {
+                    console.error('Geolocation error:', error);
+                    alert('Unable to get your location: ' + error.message);
+                }
+            );
         }
 
-        function selectLocationOnMap(latlng) {
-            // Location selection functionality here
+        function initializeRouteOverviewMap() {
+            if (editingRouteStops.length === 0) {
+                document.getElementById('route-overview-container').style.display = 'none';
+                return;
+            }
+            
+            document.getElementById('route-overview-container').style.display = 'block';
+            
+            setTimeout(() => {
+                const mapElement = document.getElementById('routeOverviewMap');
+                if (!mapElement) return;
+                
+                if (routeOverviewMap) {
+                    routeOverviewMap.remove();
+                    routeOverviewMap = null;
+                }
+                
+                const coordinates = editingRouteStops
+                    .filter(stop => stop.coordinates)
+                    .map(stop => [stop.coordinates[1], stop.coordinates[0]]);
+                
+                if (coordinates.length === 0) return;
+                
+                const bounds = L.latLngBounds(coordinates);
+                routeOverviewMap = L.map('routeOverviewMap').fitBounds(bounds, { padding: [20, 20] });
+                
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    attribution: '© OpenStreetMap contributors'
+                }).addTo(routeOverviewMap);
+                
+                routeMarkers = [];
+                
+                editingRouteStops.forEach((stop, index) => {
+                    if (!stop.coordinates) return;
+                    
+                    const marker = L.marker([stop.coordinates[1], stop.coordinates[0]], {
+                        icon: L.divIcon({
+                            className: index === 0 ? 'start-marker' : 'stop-marker',
+                            html: `<div style="background-color: ${index === 0 ? '#FF5722' : '#4CAF50'}; width: 24px; height: 24px; border-radius: 50%; border: 3px solid white; box-shadow: 0 2px 8px rgba(0,0,0,0.4); display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 12px;">${index + 1}</div>`,
+                            iconSize: [30, 30],
+                            iconAnchor: [15, 15]
+                        })
+                    }).addTo(routeOverviewMap);
+                    
+                    marker.bindPopup(`<strong>${index + 1}. ${stop.name || 'Unnamed Stop'}</strong><br>${stop.description || 'No description'}`);
+                    routeMarkers.push(marker);
+                });
+                
+                if (coordinates.length > 1) {
+                    if (routePolyline) {
+                        routeOverviewMap.removeLayer(routePolyline);
+                    }
+                    
+                    routePolyline = L.polyline(coordinates, {
+                        color: '#FFD700',
+                        weight: 4,
+                        opacity: 0.8
+                    }).addTo(routeOverviewMap);
+                }
+            }, 100);
         }
 
-        // Utility Functions
         function showModal(modalId) {
             document.getElementById(modalId).classList.add('active');
+            document.body.style.overflow = 'hidden';
         }
 
         function closeModal(modalId) {
             document.getElementById(modalId).classList.remove('active');
+            document.body.style.overflow = 'auto';
             
             if (modalId === 'stop-modal') {
                 if (stopLocationMap) {
@@ -2077,7 +2306,17 @@
             }
         }
 
-        // Keyboard shortcuts
+        async function resetDatabase() {
+            if (!confirm('Are you sure you want to reset the database? This will delete all routes!')) {
+                return;
+            }
+            showError('Database reset functionality not implemented - for safety reasons');
+        }
+
+        async function importDefaultRoutes() {
+            showError('Import default routes functionality not implemented');
+        }
+
         document.addEventListener('keydown', function(e) {
             if ((e.ctrlKey || e.metaKey) && e.key === 's') {
                 e.preventDefault();
@@ -2094,7 +2333,38 @@
                 });
             }
         });
+
+        // Make functions globally accessible
+        window.toggleCityInput = toggleCityInput;
+        window.addNewCity = addNewCity;
+        window.testConnection = testConnection;
+        window.loadRoutes = loadRoutes;
+        window.createNewRoute = createNewRoute;
+        window.editRoute = editRoute;
+        window.saveRoute = saveRoute;
+        window.deleteRoute = deleteRoute;
+        window.togglePublish = togglePublish;
+        window.regenerateRoutesFile = regenerateRoutesFile;
+        window.addNewStop = addNewStop;
+        window.editStop = editStop;
+        window.saveStop = saveStop;
+        window.deleteStop = deleteStop;
+        window.openLocationPicker = openLocationPicker;
+        window.updateRadius = updateRadius;
+        window.getCurrentLocation = getCurrentLocation;
+        window.handleRouteImageUpload = handleRouteImageUpload;
+        window.handleStopImageUpload = handleStopImageUpload;
+        window.handleStopAudioUpload = handleStopAudioUpload;
+        window.showModal = showModal;
+        window.closeModal = closeModal;
+        window.closeCMS = closeCMS;
+        window.resetDatabase = resetDatabase;
+        window.importDefaultRoutes = importDefaultRoutes;
+
+        console.log('ICHE CMS Loaded Successfully');
+        console.log('Available functions:', Object.keys(window).filter(k => k.includes('Route') || k.includes('Stop') || k.includes('City')));
     </script>
 
 </body>
 </html>
+            

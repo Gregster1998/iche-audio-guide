@@ -181,7 +181,41 @@ app.post('/api/upload/audio', upload.single('audio'), async (req, res) => {
         res.status(500).json({ error: 'Failed to upload audio file: ' + error.message });
     }
 });
+// Get all cities
+app.get('/api/cities', async (req, res) => {
+    try {
+        const { data: cities, error } = await supabase
+            .from('cities')
+            .select('*')
+            .order('name');
+        
+        if (error) throw error;
+        res.json(cities || []);
+    } catch (error) {
+        console.error('Error loading cities:', error);
+        res.status(500).json({ error: 'Failed to load cities' });
+    }
+});
 
+// Add new city
+app.post('/api/cities', async (req, res) => {
+    try {
+        const { name } = req.body;
+        if (!name) throw new Error('City name is required');
+        
+        const { data: city, error } = await supabase
+            .from('cities')
+            .insert([{ name: name.trim() }])
+            .select()
+            .single();
+        
+        if (error) throw error;
+        res.json(city);
+    } catch (error) {
+        console.error('Error adding city:', error);
+        res.status(500).json({ error: 'Failed to add city' });
+    }
+});
 app.post('/api/upload/image', upload.single('image'), async (req, res) => {
     try {
         if (!req.file) {
@@ -684,7 +718,7 @@ app.post('/api/routes/:id/publish', async (req, res) => {
     }
 });
 
-// Get analytics
+// Get analytics with city breakdown
 app.get('/api/analytics', async (req, res) => {
     try {
         const { count: totalRoutes } = await supabase
@@ -698,10 +732,38 @@ app.get('/api/analytics', async (req, res) => {
 
         const unpublishedRoutes = (totalRoutes || 0) - (publishedRoutes || 0);
 
+        // Get routes by city
+        const { data: routesByCity } = await supabase
+            .from('routes')
+            .select('city')
+            .not('city', 'is', null);
+
+        const { data: publishedRoutesByCity } = await supabase
+            .from('routes')
+            .select('city')
+            .eq('published', true)
+            .not('city', 'is', null);
+
+        // Count routes per city
+        const cityStats = {};
+        routesByCity?.forEach(route => {
+            if (route.city) {
+                cityStats[route.city] = cityStats[route.city] || { total: 0, published: 0 };
+                cityStats[route.city].total++;
+            }
+        });
+
+        publishedRoutesByCity?.forEach(route => {
+            if (route.city && cityStats[route.city]) {
+                cityStats[route.city].published++;
+            }
+        });
+
         res.json({
             totalRoutes: totalRoutes || 0,
             publishedRoutes: publishedRoutes || 0,
             unpublishedRoutes: unpublishedRoutes,
+            cityBreakdown: cityStats,
             lastUpdate: new Date().toISOString()
         });
 
@@ -728,6 +790,131 @@ app.post('/api/regenerate-routes', async (req, res) => {
     } catch (error) {
         console.error('Error regenerating routes:', error);
         res.status(500).json({ error: 'Failed to regenerate routes' });
+    }
+});
+
+// CITIES ENDPOINTS
+// Get all cities
+app.get('/api/cities', async (req, res) => {
+    try {
+        console.log('Getting all cities from database...');
+        
+        const { data: cities, error } = await supabase
+            .from('cities')
+            .select('*')
+            .order('name', { ascending: true });
+
+        if (error) {
+            console.error('Database error:', error);
+            throw error;
+        }
+
+        console.log(`Found ${cities?.length || 0} cities in database`);
+        res.json(cities || []);
+
+    } catch (error) {
+        console.error('Error loading cities from database:', error);
+        res.status(500).json({ 
+            error: 'Failed to load cities from database: ' + error.message,
+            hint: 'Check that your cities table exists'
+        });
+    }
+});
+
+// Get routes by city
+app.get('/api/routes/city/:cityName', async (req, res) => {
+    try {
+        const cityName = req.params.cityName;
+        console.log(`Getting routes for city: ${cityName}`);
+        
+        const { data: routes, error } = await supabase
+            .from('routes')
+            .select(`
+                *,
+                route_points (*)
+            `)
+            .eq('published', true)
+            .ilike('city', cityName) // Case-insensitive match
+            .order('created_at', { ascending: false });
+
+        if (error) {
+            console.error('Database error:', error);
+            throw error;
+        }
+
+        console.log(`Found ${routes?.length || 0} published routes for ${cityName}`);
+
+        const transformedRoutes = (routes || []).map(route => ({
+            id: route.route_id,
+            name: route.name,
+            city: route.city,
+            category: route.category,
+            difficulty: route.difficulty,
+            estimatedDuration: route.estimated_duration,
+            distance: route.distance,
+            description: route.description,
+            color: route.color,
+            imageUrl: route.image_url,
+            imagePosition: route.image_position,
+            audioFolder: route.audio_folder,
+            published: route.published,
+            createdAt: route.created_at,
+            updatedAt: route.updated_at,
+            points: (route.route_points || [])
+                .sort((a, b) => a.point_index - b.point_index)
+                .map(point => ({
+                    name: point.name,
+                    description: point.description,
+                    coordinates: point.coordinates,
+                    radius: point.radius,
+                    type: point.point_type,
+                    audioFile: point.audio_file,
+                    audioDuration: point.audio_duration,
+                    imageUrl: point.image_url
+                }))
+        }));
+
+        console.log(`GET /api/routes/city/${cityName} - returning ${transformedRoutes.length} routes`);
+        res.json(transformedRoutes);
+
+    } catch (error) {
+        console.error(`Error loading routes for city ${req.params.cityName}:`, error);
+        res.status(500).json({ 
+            error: `Failed to load routes for ${req.params.cityName}: ` + error.message
+        });
+    }
+});
+
+// Add new city (for CMS)
+app.post('/api/cities', async (req, res) => {
+    try {
+        console.log('POST /api/cities - creating city:', req.body.name);
+
+        const cityData = {
+            name: req.body.name,
+            country: req.body.country,
+            description: req.body.description
+        };
+
+        const { data: city, error } = await supabase
+            .from('cities')
+            .insert([cityData])
+            .select()
+            .single();
+
+        if (error) {
+            if (error.code === '23505') { // Unique violation
+                return res.status(400).json({ error: 'City already exists' });
+            }
+            throw error;
+        }
+
+        console.log('City created successfully:', city.name);
+        res.json(city);
+
+    } catch (error) {
+        console.error('Error creating city:', error);
+        res.status(500).json({ error: 'Failed to create city: ' + error.message });
     }
 });
 
