@@ -1,0 +1,1010 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ICHE - Audio City Tours</title>
+    <style>
+        /* GLOBAL STYLES - Change these to affect the entire website */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        /* GLOBAL FONT - Change 'Inter' to any Google Font or system font */
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            line-height: 1.6;
+            color: #ffffff;
+        }
+
+        /* GLOBAL BACKGROUND COLOR - Change #2d5a4f to modify main background */
+        .main-bg {
+            background: linear-gradient(135deg, #2d5a4f 0%, #1e3d35 100%);
+            min-height: 100vh;
+        }
+
+        /* ACCENT COLOR - Change #ffd700 to modify yellow buttons/highlights */
+        .accent-color {
+            background-color: #ffd700;
+            color: #2d5a4f;
+        }
+
+        /* NAVIGATION STYLES */
+        .navbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 2rem;
+            background: rgba(45, 90, 79, 0.95);
+            backdrop-filter: blur(10px);
+            position: fixed;
+            top: 0;
+            width: 100%;
+            z-index: 1000;
+        }
+
+        /* LOGO SECTION - Change logo image here */
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .logo-icon {
+            width: 40px;
+            height: 40px;
+            background: #ffd700;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: #2d5a4f;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 2rem;
+            list-style: none;
+        }
+
+        /* NAVIGATION LINKS - Change hover colors here */
+        .nav-links a {
+            color: white;
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.3s;
+        }
+
+        .nav-links a:hover {
+            color: #ffd700;
+        }
+
+        .nav-buttons {
+            display: flex;
+            gap: 1rem;
+        }
+
+        /* BUTTON STYLES - Modify button appearances */
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s;
+            border: none;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: #ffd700;
+            color: #2d5a4f;
+        }
+
+        .btn-primary:hover {
+            background: #ffed4e;
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background: transparent;
+            color: white;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        /* HERO SECTION */
+        .hero {
+            padding: 120px 2rem 60px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 4rem;
+            align-items: center;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        /* HERO TEXT STYLES - Modify main heading and description */
+        .hero-content h1 {
+            font-size: 3.5rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            line-height: 1.1;
+        }
+
+        .hero-content .highlight {
+            color: #ffd700;
+        }
+
+        .hero-content p {
+            font-size: 1.2rem;
+            margin-bottom: 2rem;
+            opacity: 0.9;
+            line-height: 1.6;
+        }
+
+        .hero-buttons {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 3rem;
+        }
+
+        /* STATS SECTION */
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 2rem;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: #ffd700;
+            display: block;
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            opacity: 0.8;
+        }
+
+        /* HERO IMAGE - Replace with your tour guide image */
+        .hero-image {
+            position: relative;
+        }
+
+        .hero-image img {
+            width: 100%;
+            height: 500px;
+            object-fit: cover;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        /* FEATURES SECTION */
+        .features {
+            padding: 80px 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .section-title {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+
+        .section-title h2 {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+
+        .section-title .highlight {
+            color: #ffd700;
+        }
+
+        .section-title p {
+            font-size: 1.2rem;
+            opacity: 0.8;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 2rem;
+            margin-bottom: 4rem;
+        }
+
+        /* FEATURE CARDS - Modify card styles */
+        .feature-card {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 2rem;
+            text-align: center;
+            transition: transform 0.3s;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .feature-icon {
+            width: 60px;
+            height: 60px;
+            background: #ffd700;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1rem;
+            font-size: 1.5rem;
+            color: #2d5a4f;
+        }
+
+        /* PROCESS SECTION */
+        .process {
+            background: rgba(0, 0, 0, 0.1);
+            padding: 80px 2rem;
+        }
+
+        .process-container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .process-steps {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 4rem;
+            margin-top: 4rem;
+        }
+
+        .process-step {
+            text-align: center;
+            position: relative;
+        }
+
+        .step-number {
+            width: 80px;
+            height: 80px;
+            background: #ffd700;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            font-weight: 700;
+            color: #2d5a4f;
+            margin: 0 auto 2rem;
+        }
+
+        .step-icon {
+            font-size: 2rem;
+            color: #ffd700;
+            margin-bottom: 1rem;
+        }
+
+        /* TESTIMONIALS SECTION */
+        .testimonials {
+            padding: 80px 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .testimonials-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 2rem;
+            margin-top: 4rem;
+        }
+
+        /* TESTIMONIAL CARDS - Modify review card styles */
+        .testimonial-card {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 2rem;
+        }
+
+        .stars {
+            color: #ffd700;
+            font-size: 1.2rem;
+            margin-bottom: 1rem;
+        }
+
+        .testimonial-text {
+            font-style: italic;
+            margin-bottom: 1.5rem;
+            line-height: 1.6;
+        }
+
+        .testimonial-author {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .author-avatar {
+            width: 50px;
+            height: 50px;
+            background: #ffd700;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: #2d5a4f;
+        }
+
+        /* PRICING SECTION */
+        .pricing {
+            background: rgba(0, 0, 0, 0.1);
+            padding: 80px 2rem;
+        }
+
+        .pricing-container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .pricing-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 2rem;
+            margin-top: 4rem;
+        }
+
+        /* PRICING CARDS - Modify pricing plan styles */
+        .pricing-card {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 2rem;
+            text-align: center;
+            position: relative;
+        }
+
+        .pricing-card.featured {
+            border: 2px solid #ffd700;
+            transform: scale(1.05);
+        }
+
+        .popular-badge {
+            position: absolute;
+            top: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #ffd700;
+            color: #2d5a4f;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        .price {
+            font-size: 3rem;
+            font-weight: 700;
+            color: #ffd700;
+            margin: 1rem 0;
+        }
+
+        .price-period {
+            font-size: 1rem;
+            opacity: 0.7;
+        }
+
+        .features-list {
+            list-style: none;
+            margin: 2rem 0;
+            text-align: left;
+        }
+
+        .features-list li {
+            padding: 0.5rem 0;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .features-list li::before {
+            content: "✓";
+            color: #ffd700;
+            font-weight: bold;
+        }
+
+        /* CTA SECTION */
+        .cta {
+            padding: 80px 2rem;
+            text-align: center;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .cta h2 {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+
+        .cta p {
+            font-size: 1.2rem;
+            opacity: 0.8;
+            margin-bottom: 2rem;
+        }
+
+        .cta-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+        }
+
+        /* FOOTER */
+        .footer {
+            background: rgba(0, 0, 0, 0.2);
+            padding: 60px 2rem 20px;
+        }
+
+        .footer-container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .footer-content {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr;
+            gap: 4rem;
+            margin-bottom: 2rem;
+        }
+
+        .footer-links {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .footer-links a {
+            color: rgba(255, 255, 255, 0.7);
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+
+        .footer-links a:hover {
+            color: #ffd700;
+        }
+
+        .footer-bottom {
+            text-align: center;
+            padding-top: 2rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            opacity: 0.6;
+        }
+
+        /* MOBILE HAMBURGER MENU */
+        .mobile-menu-toggle {
+            display: none;
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+
+        .mobile-menu {
+            display: none;
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: rgba(45, 90, 79, 0.98);
+            backdrop-filter: blur(10px);
+            padding: 2rem;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .mobile-menu.active {
+            display: flex;
+        }
+
+        /* RESPONSIVE DESIGN - Modify breakpoints here */
+        @media (max-width: 768px) {
+            .nav-links, .nav-buttons {
+                display: none;
+            }
+            
+            .mobile-menu-toggle {
+                display: block;
+            }
+
+            .hero {
+                grid-template-columns: 1fr;
+                gap: 2rem;
+                padding: 100px 1rem 40px;
+                text-align: center;
+            }
+
+            .hero-content h1 {
+                font-size: 2.5rem;
+            }
+
+            .hero-buttons {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .stats {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 1rem;
+            }
+
+            .features-grid {
+                grid-template-columns: 1fr;
+                gap: 1.5rem;
+            }
+
+            .process-steps {
+                grid-template-columns: 1fr;
+                gap: 2rem;
+            }
+
+            .testimonials-grid {
+                grid-template-columns: 1fr;
+                gap: 1.5rem;
+            }
+
+            .pricing-grid {
+                grid-template-columns: 1fr;
+                gap: 1.5rem;
+            }
+
+            .pricing-card.featured {
+                transform: none;
+            }
+
+            .footer-content {
+                grid-template-columns: 1fr;
+                gap: 2rem;
+                text-align: center;
+            }
+
+            .cta-buttons {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .section-title h2 {
+                font-size: 2.5rem;
+            }
+
+            .cta h2 {
+                font-size: 2.5rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .navbar {
+                padding: 1rem;
+            }
+
+            .hero-content h1 {
+                font-size: 2rem;
+            }
+
+            .stats {
+                grid-template-columns: 1fr;
+            }
+
+            .section-title h2 {
+                font-size: 2rem;
+            }
+
+            .cta h2 {
+                font-size: 2rem;
+            }
+
+            .btn {
+                padding: 0.75rem 1rem;
+                width: 100%;
+                text-align: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="main-bg">
+        <!-- NAVIGATION - Change links and logo here -->
+        <nav class="navbar">
+            <div class="logo">
+                <div class="logo-icon">📍</div>
+                <div>
+                    <div style="font-weight: bold; font-size: 1.2rem;">ICHE</div>
+                    <div style="font-size: 0.9rem; opacity: 0.8;">Audio City Tours</div>
+                </div>
+            </div>
+            
+            <ul class="nav-links">
+                <li><a href="#features">Features</a></li>
+                <li><a href="#how-it-works">How it Works</a></li>
+                <li><a href="#pricing">Pricing</a></li>
+                <li><a href="#reviews">Reviews</a></li>
+            </ul>
+            
+            <div class="nav-buttons">
+                <a href="#" class="btn btn-primary">Try App</a>
+                <a href="#" class="btn btn-secondary">CMS Login</a>
+            </div>
+
+            <button class="mobile-menu-toggle">☰</button>
+            <div class="mobile-menu">
+                <a href="#features">Features</a>
+                <a href="#how-it-works">How it Works</a>
+                <a href="#pricing">Pricing</a>
+                <a href="#reviews">Reviews</a>
+                <a href="#" class="btn btn-primary">Try App</a>
+                <a href="#" class="btn btn-secondary">CMS Login</a>
+            </div>
+        </nav>
+
+        <!-- HERO SECTION - Change main content here -->
+        <section class="hero">
+            <div class="hero-content">
+                <div style="display: inline-block; background: rgba(255, 215, 0, 0.2); color: #ffd700; padding: 0.5rem 1rem; border-radius: 20px; font-size: 0.9rem; margin-bottom: 1rem;">
+                    🆕 New: AI-Powered Personalized Tours
+                </div>
+                <h1>
+                    Discover Cities<br>
+                    Through <span class="highlight">Audio Stories</span>
+                </h1>
+                <p>Transform your city exploration with immersive audio tours. Perfect for seniors, tourists, and locals wanting to discover hidden gems with professional narration.</p>
+                
+                <div class="hero-buttons">
+                    <a href="#" class="btn btn-primary">▶ Start Your First Tour</a>
+                    <a href="#" class="btn btn-secondary">View Demo</a>
+                </div>
+
+                <div class="stats">
+                    <div class="stat-item">
+                        <span class="stat-number">50K+</span>
+                        <span class="stat-label">Active Users</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-number">200+</span>
+                        <span class="stat-label">Tours Available</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-number">25+</span>
+                        <span class="stat-label">Cities Covered</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-number">4.8/5</span>
+                        <span class="stat-label">User Rating</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- HERO IMAGE - Replace src with your tour guide image -->
+            <div class="hero-image">
+                <img src="https://images.unsplash.com/photo-1544711719-9a76c34c8450?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" alt="Tour guide with audio device" />
+            </div>
+        </section>
+
+        <!-- FEATURES SECTION -->
+        <section class="features" id="features">
+            <div class="section-title">
+                <h2>Why Choose <span class="highlight">ICHE</span>?</h2>
+                <p>Designed specifically for older adults and accessibility-conscious travelers, with large fonts, clear audio, and intuitive navigation.</p>
+            </div>
+
+            <div class="features-grid">
+                <!-- FEATURE CARDS - Modify individual feature content -->
+                <div class="feature-card">
+                    <div class="feature-icon">📍</div>
+                    <h3>Interactive Audio Tours</h3>
+                    <p>Immersive GPS-guided tours with professional narration and local insights</p>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">📱</div>
+                    <h3>Mobile-First Design</h3>
+                    <p>Optimized for smartphones with intuitive navigation and accessibility features</p>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">👥</div>
+                    <h3>Multi-Language Support</h3>
+                    <p>Tours available in multiple languages to reach international visitors</p>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">📱</div>
+                    <h3>Offline Capability</h3>
+                    <p>Download tours for offline use, perfect for areas with limited connectivity</p>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">⏰</div>
+                    <h3>Flexible Timing</h3>
+                    <p>Self-paced tours that adapt to your schedule and walking speed</p>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">🎧</div>
+                    <h3>High-Quality Audio</h3>
+                    <p>Crystal-clear narration with ambient sounds for an immersive experience</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- PROCESS SECTION -->
+        <section class="process" id="how-it-works">
+            <div class="process-container">
+                <div class="section-title">
+                    <h2>Simple as <span class="highlight">1-2-3</span></h2>
+                    <p>Get started with ICHE in just three easy steps</p>
+                </div>
+
+                <div class="process-steps">
+                    <div class="process-step">
+                        <div class="step-number">1</div>
+                        <div class="step-icon">📍</div>
+                        <h3>Choose Your Tour</h3>
+                        <p>Browse our curated collection of audio tours in your city</p>
+                    </div>
+                    
+                    <div class="process-step">
+                        <div class="step-number">2</div>
+                        <div class="step-icon">✈️</div>
+                        <h3>Start Walking</h3>
+                        <p>Follow the GPS-guided route at your own pace</p>
+                    </div>
+                    
+                    <div class="process-step">
+                        <div class="step-number">3</div>
+                        <div class="step-icon">🎧</div>
+                        <h3>Listen & Learn</h3>
+                        <p>Enjoy rich stories and local insights at each stop</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- TESTIMONIALS SECTION -->
+        <section class="testimonials" id="reviews">
+            <div class="section-title">
+                <h2>What Our Users <span class="highlight">Say</span></h2>
+                <p>Join thousands of satisfied explorers across Europe</p>
+            </div>
+
+            <div class="testimonials-grid">
+                <!-- TESTIMONIAL CARDS - Change customer reviews here -->
+                <div class="testimonial-card">
+                    <div class="stars">⭐⭐⭐⭐⭐</div>
+                    <p class="testimonial-text">"ICHE transformed my city exploration. The stories were captivating and the audio quality exceptional!"</p>
+                    <div class="testimonial-author">
+                        <div class="author-avatar">SC</div>
+                        <div>
+                            <div style="font-weight: bold;">Sarah Chen</div>
+                            <div style="opacity: 0.7; font-size: 0.9rem;">Travel Blogger • Prague</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="testimonial-card">
+                    <div class="stars">⭐⭐⭐⭐⭐</div>
+                    <p class="testimonial-text">"Even as a local, I discovered hidden gems and fascinating history I never knew about my own city."</p>
+                    <div class="testimonial-author">
+                        <div class="author-avatar">MW</div>
+                        <div>
+                            <div style="font-weight: bold;">Marcus Weber</div>
+                            <div style="opacity: 0.7; font-size: 0.9rem;">Local Tourist • Vienna</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="testimonial-card">
+                    <div class="stars">⭐⭐⭐⭐⭐</div>
+                    <p class="testimonial-text">"The accessibility features made it perfect for me. Large fonts, clear audio, and easy navigation."</p>
+                    <div class="testimonial-author">
+                        <div class="author-avatar">ET</div>
+                        <div>
+                            <div style="font-weight: bold;">Emma Thompson</div>
+                            <div style="opacity: 0.7; font-size: 0.9rem;">Senior Citizen • Brno</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- PRICING SECTION -->
+        <section class="pricing" id="pricing">
+            <div class="pricing-container">
+                <div class="section-title">
+                    <h2>Choose Your <span class="highlight">Adventure</span></h2>
+                    <p>Flexible pricing for every type of explorer</p>
+                </div>
+
+                <div class="pricing-grid">
+                    <!-- PRICING PLANS - Change prices and features here -->
+                    <div class="pricing-card">
+                        <h3>Basic</h3>
+                        <div class="price">€9.99<span class="price-period">/month</span></div>
+                        <p>Perfect for casual explorers</p>
+                        <ul class="features-list">
+                            <li>Access to 5 tours per month</li>
+                            <li>Basic GPS navigation</li>
+                            <li>Standard audio quality</li>
+                            <li>Mobile app access</li>
+                            <li>Email support</li>
+                        </ul>
+                        <a href="#" class="btn btn-secondary" style="width: 100%;">Get Started</a>
+                    </div>
+                    
+                    <div class="pricing-card featured">
+                        <div class="popular-badge">Most Popular</div>
+                        <h3>Pro</h3>
+                        <div class="price">€19.99<span class="price-period">/month</span></div>
+                        <p>For frequent travelers and locals</p>
+                        <ul class="features-list">
+                            <li>Unlimited tours access</li>
+                            <li>Advanced GPS with offline maps</li>
+                            <li>High-quality audio & narration</li>
+                            <li>Multi-language support</li>
+                            <li>Priority support</li>
+                            <li>Exclusive early access to new tours</li>
+                        </ul>
+                        <a href="#" class="btn btn-primary" style="width: 100%;">Get Started</a>
+                    </div>
+                    
+                    <div class="pricing-card">
+                        <h3>Enterprise</h3>
+                        <div class="price" style="color: #ffd700;">Custom</div>
+                        <p>For tourism businesses & organizations</p>
+                        <ul class="features-list">
+                            <li>Custom tour creation tools</li>
+                            <li>White-label solution</li>
+                            <li>Analytics dashboard</li>
+                            <li>Multi-admin management</li>
+                            <li>API access</li>
+                            <li>Dedicated account manager</li>
+                        </ul>
+                        <a href="#" class="btn btn-secondary" style="width: 100%;">Contact Sales</a>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- CTA SECTION -->
+        <section class="cta">
+            <h2>Ready to Explore Your City?</h2>
+            <p>Join thousands of users discovering hidden gems and fascinating stories in their cities.</p>
+            
+            <div class="cta-buttons">
+                <a href="#" class="btn btn-primary">▶ Start Your First Tour</a>
+                <a href="#" class="btn btn-secondary">🌍 View Available Cities</a>
+            </div>
+        </section>
+
+        <!-- FOOTER - Change contact info and links -->
+        <footer class="footer">
+            <div class="footer-container">
+                <div class="footer-content">
+                    <div>
+                        <div class="logo" style="margin-bottom: 1rem;">
+                            <div class="logo-icon">📍</div>
+                            <div>
+                                <div style="font-weight: bold; font-size: 1.2rem;">ICHE</div>
+                                <div style="font-size: 0.9rem; opacity: 0.8;">Audio City Tours</div>
+                            </div>
+                        </div>
+                        <p>Discover your city through immersive audio stories. Designed with accessibility in mind for users of all ages.</p>
+                    </div>
+                    
+                    <div>
+                        <h4 style="margin-bottom: 1rem; color: #ffd700;">Quick Links</h4>
+                        <div class="footer-links">
+                            <a href="#features">Features</a>
+                            <a href="#pricing">Pricing</a>
+                            <a href="#reviews">Reviews</a>
+                            <a href="#" onclick="showCMSLogin()">CMS Login</a>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <h4 style="margin-bottom: 1rem; color: #ffd700;">Support</h4>
+                        <div class="footer-links">
+                            <a href="#">Help Center</a>
+                            <a href="#">Contact Us</a>
+                            <a href="#">Privacy Policy</a>
+                            <a href="#">Terms of Service</a>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="footer-bottom">
+                    <p>© 2024 ICHE Audio City Tours. All rights reserved.</p>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <script>
+        // MOBILE MENU FUNCTIONALITY
+        document.querySelector('.mobile-menu-toggle').addEventListener('click', function() {
+            const mobileMenu = document.querySelector('.mobile-menu');
+            mobileMenu.classList.toggle('active');
+        });
+
+        // SMOOTH SCROLLING FOR NAVIGATION LINKS
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+                // Close mobile menu if open
+                document.querySelector('.mobile-menu').classList.remove('active');
+            });
+        });
+
+        // NAVBAR BACKGROUND ON SCROLL
+        window.addEventListener('scroll', function() {
+            const navbar = document.querySelector('.navbar');
+            if (window.scrollY > 100) {
+                navbar.style.background = 'rgba(45, 90, 79, 0.98)';
+            } else {
+                navbar.style.background = 'rgba(45, 90, 79, 0.95)';
+            }
+        });
+
+        // CMS LOGIN PLACEHOLDER FUNCTION
+        function showCMSLogin() {
+            alert('CMS Login functionality would be integrated here. This would typically redirect to a secure admin panel.');
+        }
+
+        // INTERSECTION OBSERVER FOR ANIMATIONS
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: '0px 0px -50px 0px'
+        };
+
+        const observer = new IntersectionObserver(function(entries) {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.opacity = '1';
+                    entry.target.style.transform = 'translateY(0)';
+                }
+            });
+        }, observerOptions);
+
+        // Apply fade-in animation to cards
+        document.addEventListener('DOMContentLoaded', function() {
+            const cards = document.querySelectorAll('.feature-card, .testimonial-card, .pricing-card, .process-step');
+            cards.forEach((card, index) => {
+                card.style.opacity = '0';
+                card.style.transform = 'translateY(30px)';
+                card.style.transition = `opacity 0.6s ease ${index * 0.1}s, transform 0.6s ease ${index * 0.1}s`;
+                observer.observe(card);
+            });
+        });
+    </script>
+</body>
+</html>
