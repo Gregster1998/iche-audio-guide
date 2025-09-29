@@ -505,7 +505,120 @@
             By signing up, you agree to our <a href="#">Terms of Service</a> and <a href="#">Privacy Policy</a>
         </div>
     </div>
+<div style="position: fixed; bottom: 10px; right: 10px; background: rgba(0,0,0,0.8); color: white; padding: 10px; border-radius: 8px; font-size: 12px; max-width: 300px;">
+    <h4 style="margin: 0 0 10px 0;">Debug Info</h4>
+    <div id="debug-info"></div>
+    <button onclick="testSupabaseConnection()" style="margin-top: 10px; padding: 5px 10px; background: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer;">Test Supabase</button>
+    <button onclick="checkGoogleAuth()" style="margin-top: 5px; padding: 5px 10px; background: #4285f4; color: white; border: none; border-radius: 4px; cursor: pointer;">Check Google Auth</button>
+</div>
 
+<script>
+// Debug functions - Remove after fixing issues
+async function testSupabaseConnection() {
+    const debugDiv = document.getElementById('debug-info');
+    let debugHtml = '<strong>Testing Supabase...</strong><br>';
+    
+    // Check if config is loaded
+    if (window.APP_CONFIG) {
+        debugHtml += `✓ Config loaded<br>`;
+        debugHtml += `URL: ${window.APP_CONFIG.SUPABASE_URL?.substring(0, 30)}...<br>`;
+        debugHtml += `Key: ${window.APP_CONFIG.SUPABASE_ANON_KEY?.substring(0, 20)}...<br>`;
+    } else {
+        debugHtml += `✗ Config not loaded<br>`;
+    }
+    
+    // Check if Supabase client exists
+    if (supabaseClient) {
+        debugHtml += `✓ Supabase client initialized<br>`;
+        
+        // Test connection
+        try {
+            const { data, error } = await supabaseClient.auth.getSession();
+            if (error) {
+                debugHtml += `✗ Session check failed: ${error.message}<br>`;
+            } else {
+                debugHtml += `✓ Can connect to Supabase<br>`;
+                debugHtml += data.session ? `✓ Active session found<br>` : `No active session<br>`;
+            }
+            
+            // Test signup (dry run)
+            const testEmail = `test${Date.now()}@example.com`;
+            const { error: signupError } = await supabaseClient.auth.signUp({
+                email: testEmail,
+                password: 'TestPassword123!',
+                options: {
+                    data: { full_name: 'Test User' }
+                }
+            });
+            
+            if (signupError) {
+                debugHtml += `✗ Signup test failed: ${signupError.message}<br>`;
+            } else {
+                debugHtml += `✓ Signup endpoint works<br>`;
+                debugHtml += `Check Supabase dashboard for user: ${testEmail}<br>`;
+            }
+            
+        } catch (err) {
+            debugHtml += `✗ Error: ${err.message}<br>`;
+        }
+    } else {
+        debugHtml += `✗ Supabase client not initialized<br>`;
+    }
+    
+    debugDiv.innerHTML = debugHtml;
+}
+
+async function checkGoogleAuth() {
+    const debugDiv = document.getElementById('debug-info');
+    let debugHtml = '<strong>Checking Google Auth...</strong><br>';
+    
+    if (!supabaseClient) {
+        debugHtml += `✗ Supabase client not initialized<br>`;
+        debugDiv.innerHTML = debugHtml;
+        return;
+    }
+    
+    try {
+        // Get the Google OAuth URL
+        const { data, error } = await supabaseClient.auth.signInWithOAuth({
+            provider: 'google',
+            options: {
+                redirectTo: window.location.origin + '/discover.html',
+                skipBrowserRedirect: true // Just get URL, don't redirect
+            }
+        });
+        
+        if (error) {
+            debugHtml += `✗ Google OAuth error: ${error.message}<br>`;
+            debugHtml += `<br><strong>Fix:</strong><br>`;
+            debugHtml += `1. Go to Supabase Dashboard<br>`;
+            debugHtml += `2. Authentication → Providers<br>`;
+            debugHtml += `3. Enable Google<br>`;
+            debugHtml += `4. Add Google Client ID & Secret<br>`;
+        } else if (data?.url) {
+            debugHtml += `✓ Google OAuth URL generated<br>`;
+            debugHtml += `<a href="${data.url}" target="_blank" style="color: #4285f4;">Test Google Login</a><br>`;
+        }
+    } catch (err) {
+        debugHtml += `✗ Error: ${err.message}<br>`;
+    }
+    
+    debugDiv.innerHTML = debugHtml;
+}
+
+// Auto-run debug on load
+document.addEventListener('DOMContentLoaded', function() {
+    setTimeout(() => {
+        const debugDiv = document.getElementById('debug-info');
+        if (debugDiv) {
+            let status = '';
+            status += `Supabase Client: ${supabaseClient ? '✓' : '✗'}<br>`;
+            status += `Config Loaded: ${window.APP_CONFIG ? '✓' : '✗'}<br>`;
+            debugDiv.innerHTML = status;
+        }
+    }, 1000);
+});
+</script>
     <!-- Load config.js first -->
     <script src="config.js"></script>
     
