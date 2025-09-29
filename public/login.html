@@ -1,0 +1,837 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - ICHE Audio City Tours</title>
+    <script src="config.js"></script>
+    <style>
+        /* GLOBAL STYLES - Same as main website */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            line-height: 1.6;
+            color: #ffffff;
+            background: linear-gradient(135deg, #2d5a4f 0%, #1e3d35 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* LOGIN CONTAINER */
+        .login-container {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 3rem;
+            width: 100%;
+            max-width: 500px;
+            margin: 2rem;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        /* LOGO SECTION */
+        .logo {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 2rem;
+        }
+
+        .logo-icon {
+            width: 60px;
+            height: 60px;
+            background: #ffd700;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            color: #2d5a4f;
+        }
+
+        .logo-text {
+            text-align: left;
+        }
+
+        .logo-text h1 {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 0.25rem;
+        }
+
+        .logo-text p {
+            color: #ffd700;
+            font-weight: 500;
+            opacity: 0.9;
+        }
+
+        /* WELCOME TEXT */
+        .welcome-text {
+            text-align: center;
+            margin-bottom: 2rem;
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        /* FORM STYLES */
+        .auth-form {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .form-title {
+            text-align: center;
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+        }
+
+        /* DEMO ACCOUNT BUTTON */
+        .demo-btn {
+            background: #ffd700;
+            color: #2d5a4f;
+            border: none;
+            padding: 1rem;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .demo-btn:hover {
+            background: #ffed4e;
+            transform: translateY(-2px);
+        }
+
+        /* DIVIDER */
+        .divider {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin: 1rem 0;
+        }
+
+        .divider::before,
+        .divider::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .divider span {
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 0.9rem;
+        }
+
+        /* INPUT STYLES */
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .form-group label {
+            font-weight: 500;
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        .input-wrapper {
+            position: relative;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 1rem 1rem 1rem 3rem;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            color: white;
+            font-size: 1rem;
+            transition: all 0.3s;
+        }
+
+        .form-input::placeholder {
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: #ffd700;
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        .input-icon {
+            position: absolute;
+            left: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        .password-toggle {
+            position: absolute;
+            right: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: rgba(255, 255, 255, 0.5);
+            cursor: pointer;
+            padding: 0.25rem;
+        }
+
+        /* BUTTON STYLES */
+        .btn {
+            padding: 1rem 2rem;
+            border-radius: 10px;
+            border: none;
+            font-weight: 600;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .btn-primary {
+            background: #ffd700;
+            color: #2d5a4f;
+        }
+
+        .btn-primary:hover {
+            background: #ffed4e;
+            transform: translateY(-2px);
+        }
+
+        .btn-primary:disabled {
+            background: rgba(255, 215, 0, 0.5);
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-google {
+            background: #4285f4;
+            color: white;
+            margin-bottom: 1rem;
+        }
+
+        .btn-google:hover {
+            background: #357ae8;
+            transform: translateY(-2px);
+        }
+
+        /* LINKS */
+        .auth-links {
+            text-align: center;
+            margin-top: 1.5rem;
+        }
+
+        .auth-links a {
+            color: #ffd700;
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .auth-links a:hover {
+            text-decoration: underline;
+        }
+
+        /* BENEFITS LIST */
+        .benefits {
+            margin-top: 2rem;
+            padding-top: 2rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .benefits-title {
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 0.95rem;
+            margin-bottom: 1rem;
+            text-align: center;
+        }
+
+        .benefits-list {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .benefits-list li {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 0.9rem;
+        }
+
+        .benefits-list li::before {
+            content: "●";
+            color: #ffd700;
+            font-size: 1.2rem;
+        }
+
+        /* TERMS */
+        .terms {
+            text-align: center;
+            margin-top: 2rem;
+            font-size: 0.85rem;
+            color: rgba(255, 255, 255, 0.6);
+            line-height: 1.5;
+        }
+
+        .terms a {
+            color: #ffd700;
+            text-decoration: none;
+        }
+
+        .terms a:hover {
+            text-decoration: underline;
+        }
+
+        /* LOADING SPINNER */
+        .spinner {
+            width: 20px;
+            height: 20px;
+            border: 2px solid transparent;
+            border-top: 2px solid #2d5a4f;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* ERROR/SUCCESS MESSAGES */
+        .message {
+            padding: 1rem;
+            border-radius: 10px;
+            margin-bottom: 1rem;
+            font-weight: 500;
+        }
+
+        .message.error {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            color: #fca5a5;
+        }
+
+        .message.success {
+            background: rgba(34, 197, 94, 0.1);
+            border: 1px solid rgba(34, 197, 94, 0.3);
+            color: #86efac;
+        }
+
+        /* RESPONSIVE */
+        @media (max-width: 480px) {
+            .login-container {
+                padding: 2rem 1.5rem;
+                margin: 1rem;
+            }
+
+            .logo-text h1 {
+                font-size: 1.7rem;
+            }
+
+            .form-input {
+                padding: 0.9rem 0.9rem 0.9rem 2.5rem;
+            }
+
+            .input-icon {
+                left: 0.8rem;
+            }
+        }
+    </style>
+    <!-- Supabase JS -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+    <div class="login-container">
+        <!-- LOGO SECTION -->
+        <div class="logo">
+            <div class="logo-icon">📍</div>
+            <div class="logo-text">
+                <h1>ICHE</h1>
+                <p>Audio City Tours</p>
+            </div>
+        </div>
+
+        <div class="welcome-text">Welcome back!</div>
+
+        <!-- ERROR/SUCCESS MESSAGES -->
+        <div id="message-container"></div>
+
+        <!-- LOGIN FORM -->
+        <div id="login-form" class="auth-form">
+            <h2 class="form-title">Sign In</h2>
+            
+            <!-- DEMO ACCOUNT BUTTON -->
+            <button class="demo-btn" onclick="loginWithDemo()">
+                👤 Try Demo Account
+            </button>
+
+            <div class="divider">
+                <span>or</span>
+            </div>
+
+            <!-- GOOGLE LOGIN -->
+            <button class="btn btn-google" onclick="loginWithGoogle()">
+                <img src="https://developers.google.com/identity/images/g-logo.png" alt="Google" style="width: 20px; height: 20px;">
+                Continue with Google
+            </button>
+
+            <!-- EMAIL/PASSWORD FORM -->
+            <div class="form-group">
+                <label for="email">Email</label>
+                <div class="input-wrapper">
+                    <span class="input-icon">✉️</span>
+                    <input type="email" id="email" class="form-input" placeholder="Enter your email" required>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="password">Password</label>
+                <div class="input-wrapper">
+                    <span class="input-icon">🔒</span>
+                    <input type="password" id="password" class="form-input" placeholder="Enter your password" required>
+                    <button type="button" class="password-toggle" onclick="togglePassword('password')">👁️</button>
+                </div>
+            </div>
+
+            <button class="btn btn-primary" onclick="loginWithEmail()" id="login-btn">
+                Sign In
+            </button>
+
+            <div class="auth-links">
+                Don't have an account? <a href="#" id="register-link">Sign up</a>
+            </div>
+        </div>
+
+        <!-- REGISTER FORM (Initially Hidden) -->
+        <div id="register-form" class="auth-form" style="display: none;">
+            <h2 class="form-title">Create Account</h2>
+            
+            <!-- DEMO ACCOUNT BUTTON -->
+            <button class="demo-btn" onclick="loginWithDemo()">
+                👤 Try Demo Account
+            </button>
+
+            <div class="divider">
+                <span>or</span>
+            </div>
+
+            <!-- GOOGLE LOGIN -->
+            <button class="btn btn-google" onclick="loginWithGoogle()">
+                <img src="https://developers.google.com/identity/images/g-logo.png" alt="Google" style="width: 20px; height: 20px;">
+                Continue with Google
+            </button>
+
+            <!-- REGISTRATION FORM -->
+            <div class="form-group">
+                <label for="fullName">Full Name</label>
+                <div class="input-wrapper">
+                    <span class="input-icon">👤</span>
+                    <input type="text" id="fullName" class="form-input" placeholder="Enter your full name" required>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="registerEmail">Email</label>
+                <div class="input-wrapper">
+                    <span class="input-icon">✉️</span>
+                    <input type="email" id="registerEmail" class="form-input" placeholder="Enter your email" required>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="registerPassword">Password</label>
+                <div class="input-wrapper">
+                    <span class="input-icon">🔒</span>
+                    <input type="password" id="registerPassword" class="form-input" placeholder="Enter your password" required>
+                    <button type="button" class="password-toggle" onclick="togglePassword('registerPassword')">👁️</button>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="confirmPassword">Confirm Password</label>
+                <div class="input-wrapper">
+                    <span class="input-icon">🔒</span>
+                    <input type="password" id="confirmPassword" class="form-input" placeholder="Confirm your password" required>
+                    <button type="button" class="password-toggle" onclick="togglePassword('confirmPassword')">👁️</button>
+                </div>
+            </div>
+
+            <button class="btn btn-primary" onclick="registerWithEmail()" id="register-btn">
+                Create Account
+            </button>
+
+            <div class="auth-links">
+                Already have an account? <a href="#" id="login-link">Sign in</a>
+            </div>
+        </div>
+
+        <!-- BENEFITS SECTION -->
+        <div class="benefits">
+            <div class="benefits-title">With your account you can:</div>
+            <ul class="benefits-list">
+                <li>Save favorite tours and stops</li>
+                <li>Track your exploration progress</li>
+                <li>Access exclusive content</li>
+                <li>Sync across devices</li>
+            </ul>
+        </div>
+
+        <!-- TERMS -->
+        <div class="terms">
+            By signing up, you agree to our <a href="#">Terms of Service</a> and <a href="#">Privacy Policy</a>
+        </div>
+    </div>
+
+    <script>
+        // CONFIGURATION - Use environment variables or fallback
+        const CONFIG = window.APP_CONFIG || {
+            SUPABASE_URL: 'YOUR_SUPABASE_URL',
+            SUPABASE_ANON_KEY: 'YOUR_SUPABASE_ANON_KEY',
+            KLAVIYO_PUBLIC_KEY: 'YOUR_KLAVIYO_PUBLIC_KEY'
+        };
+
+        // Initialize Supabase client
+        let supabaseClient = null;
+        if (CONFIG.SUPABASE_URL && CONFIG.SUPABASE_URL !== 'YOUR_SUPABASE_URL') {
+            const { createClient } = supabase;
+            supabaseClient = createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY);
+        }
+
+        // UTILITY FUNCTIONS
+        function showMessage(message, type = 'error') {
+            const container = document.getElementById('message-container');
+            container.innerHTML = `<div class="message ${type}">${message}</div>`;
+            setTimeout(() => container.innerHTML = '', 5000);
+        }
+
+        function showLoading(buttonId, show = true) {
+            const btn = document.getElementById(buttonId);
+            if (show) {
+                btn.innerHTML = '<div class="spinner"></div> Loading...';
+                btn.disabled = true;
+            } else {
+                btn.disabled = false;
+                if (buttonId === 'login-btn') {
+                    btn.innerHTML = 'Sign In';
+                } else if (buttonId === 'register-btn') {
+                    btn.innerHTML = 'Create Account';
+                }
+            }
+        }
+
+        function togglePassword(inputId) {
+            const input = document.getElementById(inputId);
+            const button = input.nextElementSibling;
+            
+            if (input.type === 'password') {
+                input.type = 'text';
+                button.textContent = '🙈';
+            } else {
+                input.type = 'password';
+                button.textContent = '👁️';
+            }
+        }
+
+        // KLAVIYO INTEGRATION - Send user data to Klaviyo
+        async function sendToKlaviyo(userData) {
+            if (!CONFIG.KLAVIYO_PUBLIC_KEY || CONFIG.KLAVIYO_PUBLIC_KEY === 'YOUR_KLAVIYO_PUBLIC_KEY') {
+                console.log('Klaviyo not configured, skipping user sync');
+                return;
+            }
+
+            try {
+                const response = await fetch('https://a.klaviyo.com/api/profiles/', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Klaviyo-API-Key ${CONFIG.KLAVIYO_PUBLIC_KEY}`,
+                        'Content-Type': 'application/json',
+                        'revision': '2024-02-15'
+                    },
+                    body: JSON.stringify({
+                        data: {
+                            type: 'profile',
+                            attributes: {
+                                email: userData.email,
+                                first_name: userData.firstName,
+                                last_name: userData.lastName,
+                                properties: {
+                                    source: 'ICHE_website',
+                                    registration_date: new Date().toISOString(),
+                                    user_type: 'audio_tour_explorer'
+                                }
+                            }
+                        }
+                    })
+                });
+                
+                if (response.ok) {
+                    console.log('User added to Klaviyo successfully');
+                }
+            } catch (error) {
+                console.error('Error sending to Klaviyo:', error);
+            }
+        }
+
+        // AUTHENTICATION FUNCTIONS
+
+        // Demo Account Login
+        function loginWithDemo() {
+            showMessage('Demo account loaded! Redirecting to tours...', 'success');
+            setTimeout(() => {
+                window.location.href = 'discover.html?demo=true';
+            }, 1500);
+        }
+
+        // Google OAuth Login
+        async function loginWithGoogle() {
+            if (!supabaseClient) {
+                showMessage('Authentication not configured. Please try email login or contact support.');
+                return;
+            }
+
+            try {
+                const { data, error } = await supabaseClient.auth.signInWithOAuth({
+                    provider: 'google',
+                    options: {
+                        redirectTo: `${window.location.origin}/discover.html`
+                    }
+                });
+
+                if (error) {
+                    console.error('Google OAuth error:', error);
+                    showMessage('Google login failed. Please try again or use email login.');
+                } else {
+                    showMessage('Redirecting to Google...', 'success');
+                }
+            } catch (error) {
+                console.error('Google login error:', error);
+                showMessage('An error occurred during Google login. Please try email login.');
+            }
+        }
+
+        // Email/Password Login
+        async function loginWithEmail() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+
+            if (!email || !password) {
+                showMessage('Please fill in all fields.');
+                return;
+            }
+
+            if (!supabaseClient) {
+                showMessage('Authentication not configured. Please contact support.');
+                return;
+            }
+
+            showLoading('login-btn', true);
+
+            try {
+                const { data, error } = await supabaseClient.auth.signInWithPassword({
+                    email: email,
+                    password: password,
+                });
+
+                if (error) {
+                    console.error('Login error:', error);
+                    if (error.message.includes('Invalid login credentials')) {
+                        showMessage('Invalid email or password. Please try again.');
+                    } else if (error.message.includes('Email not confirmed')) {
+                        showMessage('Please check your email and click the confirmation link.');
+                    } else {
+                        showMessage(error.message);
+                    }
+                } else {
+                    showMessage('Login successful! Redirecting...', 'success');
+                    setTimeout(() => {
+                        window.location.href = 'discover.html';
+                    }, 1500);
+                }
+            } catch (error) {
+                showMessage('An error occurred during login. Please try again.');
+                console.error('Login error:', error);
+            } finally {
+                showLoading('login-btn', false);
+            }
+        }
+
+        // Email/Password Registration
+        async function registerWithEmail() {
+            const fullName = document.getElementById('fullName').value;
+            const email = document.getElementById('registerEmail').value;
+            const password = document.getElementById('registerPassword').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+
+            if (!fullName || !email || !password || !confirmPassword) {
+                showMessage('Please fill in all fields.');
+                return;
+            }
+
+            if (password !== confirmPassword) {
+                showMessage('Passwords do not match.');
+                return;
+            }
+
+            if (password.length < 6) {
+                showMessage('Password must be at least 6 characters long.');
+                return;
+            }
+
+            if (!supabaseClient) {
+                showMessage('Authentication not configured. Please contact support.');
+                return;
+            }
+
+            showLoading('register-btn', true);
+
+            try {
+                const { data, error } = await supabaseClient.auth.signUp({
+                    email: email,
+                    password: password,
+                    options: {
+                        data: {
+                            full_name: fullName,
+                        }
+                    }
+                });
+
+                if (error) {
+                    console.error('Registration error:', error);
+                    if (error.message.includes('User already registered')) {
+                        showMessage('An account with this email already exists. Try signing in instead.');
+                        setTimeout(() => {
+                            toggleAuthForm();
+                        }, 2000);
+                    } else {
+                        showMessage(error.message);
+                    }
+                } else {
+                    showMessage('Account created successfully! Please check your email to verify your account.', 'success');
+                    
+                    // Send user data to Klaviyo
+                    const [firstName, ...lastNameParts] = fullName.split(' ');
+                    await sendToKlaviyo({
+                        email: email,
+                        firstName: firstName,
+                        lastName: lastNameParts.join(' ')
+                    });
+                    
+                    // Switch to login form after short delay
+                    setTimeout(() => {
+                        toggleAuthForm();
+                        showMessage('Please check your email and verify your account, then sign in.', 'success');
+                    }, 3000);
+                }
+            } catch (error) {
+                showMessage('An error occurred during registration. Please try again.');
+                console.error('Registration error:', error);
+            } finally {
+                showLoading('register-btn', false);
+            }
+        }
+
+        // Toggle between login and register forms
+        function toggleAuthForm() {
+            const loginForm = document.getElementById('login-form');
+            const registerForm = document.getElementById('register-form');
+            const welcomeText = document.querySelector('.welcome-text');
+            const isLogin = loginForm.style.display !== 'none';
+            
+            if (isLogin) {
+                loginForm.style.display = 'none';
+                registerForm.style.display = 'flex';
+                welcomeText.textContent = 'Join thousands of explorers';
+            } else {
+                loginForm.style.display = 'flex';
+                registerForm.style.display = 'none';
+                welcomeText.textContent = 'Welcome back!';
+            }
+            
+            // Clear any existing messages
+            document.getElementById('message-container').innerHTML = '';
+        }
+
+        // EVENT LISTENERS
+        document.addEventListener('DOMContentLoaded', function() {
+            // Check if user is already logged in
+            if (supabaseClient) {
+                supabaseClient.auth.getSession().then(({ data: { session } }) => {
+                    if (session) {
+                        window.location.href = 'discover.html';
+                    }
+                });
+            }
+
+            // Form toggle links
+            document.getElementById('register-link').addEventListener('click', function(e) {
+                e.preventDefault();
+                toggleAuthForm();
+            });
+
+            document.getElementById('login-link').addEventListener('click', function(e) {
+                e.preventDefault();
+                toggleAuthForm();
+            });
+
+            // Enter key submission
+            document.getElementById('email').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') loginWithEmail();
+            });
+
+            document.getElementById('password').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') loginWithEmail();
+            });
+
+            document.getElementById('confirmPassword').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') registerWithEmail();
+            });
+        });
+
+        // Handle OAuth callback
+        if (supabaseClient) {
+            supabaseClient.auth.onAuthStateChange(async (event, session) => {
+                if (event === 'SIGNED_IN' && session) {
+                    // Send user data to Klaviyo for OAuth users
+                    if (session.user.user_metadata) {
+                        await sendToKlaviyo({
+                            email: session.user.email,
+                            firstName: session.user.user_metadata.full_name?.split(' ')[0] || '',
+                            lastName: session.user.user_metadata.full_name?.split(' ').slice(1).join(' ') || ''
+                        });
+                    }
+                    
+                    // Redirect to discover page
+                    if (!window.location.pathname.includes('discover.html')) {
+                        window.location.href = 'discover.html';
+                    }
+                }
+            });
+        }
+    </script>
+</body>
+</html>
