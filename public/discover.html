@@ -153,7 +153,7 @@
 
         .filters-grid {
             display: grid;
-            grid-template-columns: 2fr 1fr 1fr 1fr 1fr;
+            grid-template-columns: 2fr 1fr 1fr 1fr;
             gap: 1rem;
             margin-bottom: 1rem;
         }
@@ -231,15 +231,15 @@
             border-color: #ffd700;
         }
 
-        /* TOURS GRID */
-        .tours-grid {
+        /* ROUTES GRID */
+        .routes-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
             gap: 2rem;
         }
 
-        /* TOUR CARDS */
-        .tour-card {
+        /* ROUTE CARDS */
+        .route-card {
             background: rgba(255, 255, 255, 0.05);
             backdrop-filter: blur(10px);
             border: 1px solid rgba(255, 255, 255, 0.1);
@@ -250,31 +250,32 @@
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
         }
 
-        .tour-card:hover {
+        .route-card:hover {
             transform: translateY(-5px);
             border-color: rgba(255, 215, 0, 0.3);
             box-shadow: 0 16px 48px rgba(0, 0, 0, 0.2);
         }
 
-        .tour-image-container {
+        .route-image-container {
             position: relative;
             width: 100%;
             height: 200px;
             overflow: hidden;
+            background: linear-gradient(45deg, #2d5a4f, #1e3d35);
         }
 
-        .tour-image {
+        .route-image {
             width: 100%;
             height: 100%;
             object-fit: cover;
             transition: transform 0.3s;
         }
 
-        .tour-card:hover .tour-image {
+        .route-card:hover .route-image {
             transform: scale(1.05);
         }
 
-        .tour-city-badge {
+        .route-city-badge {
             position: absolute;
             top: 1rem;
             left: 1rem;
@@ -286,36 +287,33 @@
             font-weight: 600;
         }
 
-        .tour-favorite {
+        .route-status {
             position: absolute;
             top: 1rem;
             right: 1rem;
-            width: 40px;
-            height: 40px;
-            background: rgba(0, 0, 0, 0.5);
-            backdrop-filter: blur(5px);
-            border: none;
-            border-radius: 50%;
-            color: white;
-            font-size: 1.2rem;
-            cursor: pointer;
-            transition: all 0.3s;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
         }
 
-        .tour-favorite:hover, .tour-favorite.active {
-            background: rgba(255, 215, 0, 0.9);
-            color: #2d5a4f;
-            transform: scale(1.1);
+        .route-status.published {
+            background: rgba(34, 197, 94, 0.2);
+            border: 1px solid rgba(34, 197, 94, 0.5);
+            color: #86efac;
         }
 
-        .tour-content {
+        .route-status.draft {
+            background: rgba(251, 191, 36, 0.2);
+            border: 1px solid rgba(251, 191, 36, 0.5);
+            color: #fcd34d;
+        }
+
+        .route-content {
             padding: 1.5rem;
         }
 
-        .tour-title {
+        .route-title {
             font-size: 1.3rem;
             font-weight: 600;
             margin-bottom: 0.5rem;
@@ -323,7 +321,7 @@
             line-height: 1.3;
         }
 
-        .tour-description {
+        .route-description {
             color: rgba(255, 255, 255, 0.8);
             font-size: 0.9rem;
             line-height: 1.5;
@@ -334,7 +332,7 @@
             overflow: hidden;
         }
 
-        .tour-meta {
+        .route-meta {
             display: flex;
             align-items: center;
             gap: 1.5rem;
@@ -344,20 +342,20 @@
             flex-wrap: wrap;
         }
 
-        .tour-meta span {
+        .route-meta span {
             display: flex;
             align-items: center;
             gap: 0.25rem;
         }
 
-        .tour-tags {
+        .route-tags {
             display: flex;
             gap: 0.5rem;
             margin-bottom: 1rem;
             flex-wrap: wrap;
         }
 
-        .tour-tag {
+        .route-tag {
             padding: 0.25rem 0.75rem;
             background: rgba(255, 215, 0, 0.2);
             border: 1px solid rgba(255, 215, 0, 0.3);
@@ -367,30 +365,30 @@
             font-weight: 500;
         }
 
-        .tour-tag.easy { 
+        .route-tag.easy { 
             background: rgba(34, 197, 94, 0.2); 
             border-color: rgba(34, 197, 94, 0.3); 
             color: #86efac; 
         }
 
-        .tour-tag.medium { 
+        .route-tag.medium { 
             background: rgba(251, 191, 36, 0.2); 
             border-color: rgba(251, 191, 36, 0.3); 
             color: #fcd34d; 
         }
 
-        .tour-tag.hard { 
+        .route-tag.hard { 
             background: rgba(239, 68, 68, 0.2); 
             border-color: rgba(239, 68, 68, 0.3); 
             color: #fca5a5; 
         }
 
-        .tour-actions {
+        .route-actions {
             display: flex;
             gap: 0.75rem;
         }
 
-        .tour-actions .btn {
+        .route-actions .btn {
             flex: 1;
             justify-content: center;
             font-size: 0.85rem;
@@ -501,17 +499,6 @@
             opacity: 0.8;
         }
 
-        /* MOBILE HAMBURGER MENU */
-        .mobile-menu-toggle {
-            display: none;
-            background: none;
-            border: none;
-            color: white;
-            font-size: 1.5rem;
-            cursor: pointer;
-            padding: 0.5rem;
-        }
-
         /* RESPONSIVE DESIGN */
         @media (max-width: 768px) {
             .navbar {
@@ -522,10 +509,6 @@
             .nav-left, .nav-right {
                 flex: 1;
                 min-width: fit-content;
-            }
-
-            .mobile-menu-toggle {
-                display: block;
             }
 
             .main-container {
@@ -543,7 +526,7 @@
                 align-items: stretch;
             }
 
-            .tours-grid {
+            .routes-grid {
                 grid-template-columns: 1fr;
             }
 
@@ -551,7 +534,7 @@
                 grid-template-columns: repeat(2, 1fr);
             }
 
-            .tour-meta {
+            .route-meta {
                 flex-direction: column;
                 align-items: flex-start;
                 gap: 0.5rem;
@@ -572,7 +555,7 @@
                 padding: 1rem;
             }
 
-            .tour-content {
+            .route-content {
                 padding: 1rem;
             }
 
@@ -580,7 +563,7 @@
                 grid-template-columns: 1fr;
             }
 
-            .tour-actions {
+            .route-actions {
                 flex-direction: column;
             }
 
@@ -602,8 +585,8 @@
             <div class="page-title">
                 <div class="logo-icon">📍</div>
                 <div class="page-info">
-                    <h1>All Tours</h1>
-                    <p id="tours-count">Loading tours...</p>
+                    <h1>All Routes</h1>
+                    <p id="routes-count">Loading routes...</p>
                 </div>
             </div>
         </div>
@@ -619,7 +602,6 @@
                 </div>
             </div>
         </div>
-        <button class="mobile-menu-toggle">☰</button>
     </nav>
 
     <!-- MAIN CONTENT -->
@@ -629,7 +611,7 @@
             <div class="filters-grid">
                 <!-- SEARCH INPUT -->
                 <div class="filter-group">
-                    <label for="search">Search tours...</label>
+                    <label for="search">Search routes...</label>
                     <input type="text" id="search" class="filter-input" placeholder="Search by name or description" oninput="applyFilters()">
                 </div>
 
@@ -643,8 +625,8 @@
 
                 <!-- DIFFICULTY FILTER -->
                 <div class="filter-group">
-                    <label for="level-filter">All Levels</label>
-                    <select id="level-filter" class="filter-select" onchange="applyFilters()">
+                    <label for="difficulty-filter">All Levels</label>
+                    <select id="difficulty-filter" class="filter-select" onchange="applyFilters()">
                         <option value="">All Levels</option>
                         <option value="easy">Easy</option>
                         <option value="medium">Medium</option>
@@ -665,24 +647,13 @@
                         <option value="art">Art & Museums</option>
                     </select>
                 </div>
-
-                <!-- DURATION FILTER -->
-                <div class="filter-group">
-                    <label for="duration-filter">Duration</label>
-                    <select id="duration-filter" class="filter-select" onchange="applyFilters()">
-                        <option value="">Any Duration</option>
-                        <option value="short">Short (< 2 hours)</option>
-                        <option value="medium">Medium (2-4 hours)</option>
-                        <option value="long">Long (4+ hours)</option>
-                    </select>
-                </div>
             </div>
         </div>
 
         <!-- RESULTS HEADER -->
         <div class="results-header">
             <div class="results-count" id="results-count">
-                Loading tours...
+                Loading routes...
             </div>
             <div class="view-controls">
                 <button class="view-btn active" onclick="setView('grid')" title="Grid View">⊞</button>
@@ -690,23 +661,23 @@
             </div>
         </div>
 
-        <!-- TOURS CONTAINER -->
-        <div id="tours-container">
+        <!-- ROUTES CONTAINER -->
+        <div id="routes-container">
             <div class="loading">
                 <div class="spinner"></div>
-                <div class="loading-text">Loading amazing tours...</div>
+                <div class="loading-text">Loading amazing routes...</div>
             </div>
         </div>
 
         <!-- STATS SECTION -->
         <div class="stats-section">
-            <h2 class="stats-title">Discover Amazing <span class="highlight">Audio Tours</span></h2>
-            <p class="stats-description">Explore cities through immersive audio experiences designed for all ages. Our carefully curated tours combine fascinating stories with easy navigation, making city exploration accessible and enjoyable for everyone.</p>
+            <h2 class="stats-title">Discover Amazing <span class="highlight">Audio Routes</span></h2>
+            <p class="stats-description">Explore cities through immersive audio experiences designed for all ages. Our carefully curated routes combine fascinating stories with easy navigation, making city exploration accessible and enjoyable for everyone.</p>
             
             <div class="stats-grid">
                 <div class="stat-item">
-                    <span class="stat-number" id="total-tours">0</span>
-                    <span class="stat-label">Tours Available</span>
+                    <span class="stat-number" id="total-routes">0</span>
+                    <span class="stat-label">Routes Available</span>
                 </div>
                 <div class="stat-item">
                     <span class="stat-number" id="total-cities">0</span>
@@ -740,15 +711,14 @@
         }
 
         // GLOBAL VARIABLES
-        let allTours = [];
-        let filteredTours = [];
+        let allRoutes = [];
+        let filteredRoutes = [];
         let currentUser = null;
-        let favorites = new Set();
 
         // INITIALIZATION
         document.addEventListener('DOMContentLoaded', async function() {
             await checkUserSession();
-            await loadTours();
+            await loadRoutes();
             populateFilters();
             applyFilters();
         });
@@ -764,7 +734,6 @@
                         document.getElementById('login-btn').style.display = 'none';
                         document.getElementById('user-info').style.display = 'flex';
                         document.getElementById('user-name').textContent = `Hi, ${currentUser.user_metadata?.full_name || currentUser.email}!`;
-                        await loadUserFavorites();
                     }
                 } 
                 
@@ -791,167 +760,83 @@
             }
         }
 
-        // LOAD TOURS FROM SUPABASE OR MOCK DATA
-        async function loadTours() {
+        // LOAD ROUTES FROM SUPABASE
+        async function loadRoutes() {
             try {
-                // If Supabase is configured, use it, otherwise use mock data
                 if (supabaseClient) {
-                    // Uncomment and modify this when your Supabase table is ready:
-                    // const { data, error } = await supabaseClient.from('tours').select('*');
-                    // if (error) throw error;
-                    // allTours = data;
+                    console.log('Loading routes from Supabase...');
                     
-                    // For now, use mock data
-                    allTours = await getMockTours();
+                    // Load routes from your actual database structure
+                    const { data, error } = await supabaseClient
+                        .from('routes')
+                        .select(`
+                            id,
+                            route_id,
+                            name,
+                            city,
+                            category,
+                            difficulty,
+                            estimated_duration,
+                            distance,
+                            description,
+                            color,
+                            image_url,
+                            image_position,
+                            audio_folder,
+                            published,
+                            created_at,
+                            updated_at
+                        `)
+                        .eq('published', true)  // Only show published routes
+                        .order('created_at', { ascending: false });
+
+                    if (error) {
+                        console.error('Supabase error:', error);
+                        throw error;
+                    }
+
+                    console.log('Raw data from Supabase:', data);
+                    allRoutes = data || [];
+                    
+                    // Also get route points count for each route
+                    if (allRoutes.length > 0) {
+                        for (let route of allRoutes) {
+                            const { data: pointsData, error: pointsError } = await supabaseClient
+                                .from('route_points')
+                                .select('id')
+                                .eq('route_id', route.route_id);
+                            
+                            if (!pointsError && pointsData) {
+                                route.stops = pointsData.length;
+                            } else {
+                                route.stops = 0;
+                            }
+                        }
+                    }
                 } else {
-                    allTours = await getMockTours();
+                    console.log('Supabase not configured, showing error');
+                    throw new Error('Supabase configuration missing');
                 }
                 
                 // Update stats
-                document.getElementById('total-tours').textContent = allTours.length;
-                const cities = new Set(allTours.map(tour => tour.city));
+                document.getElementById('total-routes').textContent = allRoutes.length;
+                const cities = new Set(allRoutes.map(route => route.city).filter(Boolean));
                 document.getElementById('total-cities').textContent = cities.size;
                 
-                console.log('Loaded tours:', allTours);
+                console.log('Processed routes:', allRoutes);
             } catch (error) {
-                console.error('Error loading tours:', error);
-                showEmptyState('Error loading tours. Please try again later.');
-            }
-        }
-
-        // MOCK DATA - Replace with actual Supabase query
-        async function getMockTours() {
-            // Simulate loading delay
-            await new Promise(resolve => setTimeout(resolve, 1000));
-            
-            return [
-                {
-                    id: 1,
-                    title: "Brno Old Town Highlights",
-                    description: "Discover the charming old town of Brno, Czech Republic's second-largest city with its rich history and stunning architecture.",
-                    city: "Brno",
-                    country: "Czech Republic",
-                    duration: 1.5,
-                    stops: 6,
-                    difficulty: "easy",
-                    categories: ["cultural", "historical"],
-                    rating: 4.2,
-                    image: "https://images.unsplash.com/photo-1504019347908-b45f9b0b8dd5?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-                    languages: ["English", "Czech", "German"],
-                    price: "free"
-                },
-                {
-                    id: 2,
-                    title: "Prague Castle & Lesser Town",
-                    description: "Explore the historic heart of Prague, from the iconic Charles Bridge to the magnificent Prague Castle complex.",
-                    city: "Prague",
-                    country: "Czech Republic",
-                    duration: 2.5,
-                    stops: 8,
-                    difficulty: "easy",
-                    categories: ["historical", "architecture"],
-                    rating: 4.8,
-                    image: "https://images.unsplash.com/photo-1541849546-216549ae216d?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-                    languages: ["English", "Czech", "German", "Spanish"],
-                    price: "premium"
-                },
-                {
-                    id: 3,
-                    title: "Vienna Ringstrasse Grand Tour",
-                    description: "Journey along Vienna's famous Ringstrasse, discovering imperial palaces and architectural masterpieces.",
-                    city: "Vienna",
-                    country: "Austria",
-                    duration: 3,
-                    stops: 12,
-                    difficulty: "medium",
-                    categories: ["architecture", "cultural"],
-                    rating: 4.6,
-                    image: "https://images.unsplash.com/photo-1516550893923-42d28e5677af?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-                    languages: ["English", "German", "Italian"],
-                    price: "premium"
-                },
-                {
-                    id: 4,
-                    title: "Florence Renaissance Walk",
-                    description: "Walk through the birthplace of Renaissance art and culture, visiting world-famous museums and landmarks.",
-                    city: "Florence",
-                    country: "Italy",
-                    duration: 4,
-                    stops: 15,
-                    difficulty: "hard",
-                    categories: ["art", "historical", "cultural"],
-                    rating: 4.9,
-                    image: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-                    languages: ["English", "Italian", "French"],
-                    price: "premium"
-                },
-                {
-                    id: 5,
-                    title: "Barcelona Gothic Quarter",
-                    description: "Explore the medieval streets of Barcelona's Gothic Quarter, filled with hidden squares and ancient buildings.",
-                    city: "Barcelona",
-                    country: "Spain",
-                    duration: 2,
-                    stops: 10,
-                    difficulty: "medium",
-                    categories: ["historical", "architecture"],
-                    rating: 4.4,
-                    image: "https://images.unsplash.com/photo-1539037116277-4db20889f2d4?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-                    languages: ["English", "Spanish", "Catalan"],
-                    price: "free"
-                }
-            ];
-        }
-
-        // LOAD USER FAVORITES
-        async function loadUserFavorites() {
-            if (!currentUser || !supabaseClient) return;
-            
-            try {
-                // Uncomment when Supabase table is ready:
-                // const { data, error } = await supabaseClient
-                //     .from('user_favorites')
-                //     .select('tour_id')
-                //     .eq('user_id', currentUser.id);
-                
-                // Mock favorites for demo
-                favorites = new Set([1, 2]);
-            } catch (error) {
-                console.error('Error loading favorites:', error);
-            }
-        }
-
-        // TOGGLE FAVORITE
-        async function toggleFavorite(tourId) {
-            if (!currentUser) {
-                alert('Please login to save favorites');
-                return;
-            }
-
-            try {
-                if (favorites.has(tourId)) {
-                    favorites.delete(tourId);
-                    // await supabaseClient.from('user_favorites').delete().eq('user_id', currentUser.id).eq('tour_id', tourId);
-                } else {
-                    favorites.add(tourId);
-                    // await supabaseClient.from('user_favorites').insert([{ user_id: currentUser.id, tour_id: tourId }]);
-                }
-                
-                // Update UI
-                const favoriteBtn = document.querySelector(`[data-tour-id="${tourId}"] .tour-favorite`);
-                if (favoriteBtn) {
-                    favoriteBtn.classList.toggle('active', favorites.has(tourId));
-                    favoriteBtn.innerHTML = favorites.has(tourId) ? '❤️' : '🤍';
-                }
-            } catch (error) {
-                console.error('Error toggling favorite:', error);
+                console.error('Error loading routes:', error);
+                showEmptyState('Error loading routes. Please check your database connection and configuration.');
             }
         }
 
         // POPULATE FILTER DROPDOWNS
         function populateFilters() {
-            const cities = [...new Set(allTours.map(tour => tour.city))].sort();
+            const cities = [...new Set(allRoutes.map(route => route.city).filter(Boolean))].sort();
             const cityFilter = document.getElementById('city-filter');
+            
+            // Clear existing options except "All Cities"
+            cityFilter.innerHTML = '<option value="">All Cities</option>';
             
             cities.forEach(city => {
                 const option = document.createElement('option');
@@ -965,79 +850,93 @@
         function applyFilters() {
             const search = document.getElementById('search').value.toLowerCase();
             const city = document.getElementById('city-filter').value;
-            const level = document.getElementById('level-filter').value;
+            const difficulty = document.getElementById('difficulty-filter').value;
             const category = document.getElementById('category-filter').value;
-            const duration = document.getElementById('duration-filter').value;
 
-            filteredTours = allTours.filter(tour => {
+            filteredRoutes = allRoutes.filter(route => {
                 const matchesSearch = !search || 
-                    tour.title.toLowerCase().includes(search) || 
-                    tour.description.toLowerCase().includes(search);
+                    (route.name && route.name.toLowerCase().includes(search)) || 
+                    (route.description && route.description.toLowerCase().includes(search));
 
-                const matchesCity = !city || tour.city.toLowerCase() === city;
-                const matchesLevel = !level || tour.difficulty === level;
-                const matchesCategory = !category || tour.categories.includes(category);
+                const matchesCity = !city || (route.city && route.city.toLowerCase() === city);
+                const matchesDifficulty = !difficulty || route.difficulty === difficulty;
+                const matchesCategory = !category || route.category === category;
 
-                const matchesDuration = !duration || 
-                    (duration === 'short' && tour.duration < 2) ||
-                    (duration === 'medium' && tour.duration >= 2 && tour.duration <= 4) ||
-                    (duration === 'long' && tour.duration > 4);
-
-                return matchesSearch && matchesCity && matchesLevel && matchesCategory && matchesDuration;
+                return matchesSearch && matchesCity && matchesDifficulty && matchesCategory;
             });
 
-            displayTours();
+            displayRoutes();
             updateResultsCount();
         }
 
-        // DISPLAY TOURS
-        function displayTours() {
-            const container = document.getElementById('tours-container');
+        // DISPLAY ROUTES
+        function displayRoutes() {
+            const container = document.getElementById('routes-container');
             
-            if (filteredTours.length === 0) {
+            if (filteredRoutes.length === 0) {
                 showEmptyState();
                 return;
             }
 
-            const toursHTML = filteredTours.map(tour => createTourCard(tour)).join('');
-            container.innerHTML = `<div class="tours-grid">${toursHTML}</div>`;
+            const routesHTML = filteredRoutes.map(route => createRouteCard(route)).join('');
+            container.innerHTML = `<div class="routes-grid">${routesHTML}</div>`;
         }
 
-        // CREATE TOUR CARD HTML
-        function createTourCard(tour) {
-            const isFavorite = favorites.has(tour.id);
-            const difficultyClass = tour.difficulty;
+        // CREATE ROUTE CARD HTML
+        function createRouteCard(route) {
+            // Parse estimated_duration to get hours
+            let duration = 'Unknown';
+            if (route.estimated_duration) {
+                // Handle different duration formats
+                const durationStr = route.estimated_duration.toString();
+                if (durationStr.includes('hour')) {
+                    duration = durationStr;
+                } else {
+                    // Assume it's in minutes and convert
+                    const minutes = parseInt(durationStr);
+                    if (!isNaN(minutes)) {
+                        if (minutes >= 60) {
+                            const hours = (minutes / 60).toFixed(1);
+                            duration = `${hours} hours`;
+                        } else {
+                            duration = `${minutes} minutes`;
+                        }
+                    }
+                }
+            }
+
+            const imageUrl = route.image_url || 'https://images.unsplash.com/photo-1477959858617-67f85cf4f1df?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80';
             
             return `
-                <div class="tour-card" data-tour-id="${tour.id}" onclick="viewTour(${tour.id})">
-                    <div class="tour-image-container">
-                        <img src="${tour.image}" alt="${tour.title}" class="tour-image">
-                        <div class="tour-city-badge">${tour.city}</div>
-                        <button class="tour-favorite ${isFavorite ? 'active' : ''}" onclick="event.stopPropagation(); toggleFavorite(${tour.id})">
-                            ${isFavorite ? '❤️' : '🤍'}
-                        </button>
+                <div class="route-card" data-route-id="${route.id}" onclick="viewRoute('${route.route_id}')">
+                    <div class="route-image-container">
+                        <img src="${imageUrl}" alt="${route.name}" class="route-image" onerror="this.src='https://images.unsplash.com/photo-1477959858617-67f85cf4f1df?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80'">
+                        <div class="route-city-badge">${route.city || 'Unknown City'}</div>
+                        <div class="route-status ${route.published ? 'published' : 'draft'}">
+                            ${route.published ? 'Published' : 'Draft'}
+                        </div>
                     </div>
-                    <div class="tour-content">
-                        <h3 class="tour-title">${tour.title}</h3>
-                        <p class="tour-description">${tour.description}</p>
+                    <div class="route-content">
+                        <h3 class="route-title">${route.name || 'Untitled Route'}</h3>
+                        <p class="route-description">${route.description || 'No description available.'}</p>
                         
-                        <div class="tour-meta">
-                            <span>⏱️ ${tour.duration} hours</span>
-                            <span>📍 ${tour.stops} stops</span>
-                            <span>⭐ ${tour.rating}/5</span>
+                        <div class="route-meta">
+                            <span>⏱️ ${duration}</span>
+                            <span>📍 ${route.stops || 0} stops</span>
+                            <span>📏 ${route.distance || 'Unknown distance'}</span>
                         </div>
                         
-                        <div class="tour-tags">
-                            <span class="tour-tag ${difficultyClass}">${tour.difficulty}</span>
-                            ${tour.categories.map(cat => `<span class="tour-tag">${cat}</span>`).join('')}
+                        <div class="route-tags">
+                            ${route.difficulty ? `<span class="route-tag ${route.difficulty}">${route.difficulty}</span>` : ''}
+                            ${route.category ? `<span class="route-tag">${route.category}</span>` : ''}
                         </div>
                         
-                        <div class="tour-actions">
-                            <button class="btn btn-secondary" onclick="event.stopPropagation(); previewTour(${tour.id})">
+                        <div class="route-actions">
+                            <button class="btn btn-secondary" onclick="event.stopPropagation(); previewRoute('${route.route_id}')">
                                 👁️ Preview
                             </button>
-                            <button class="btn btn-primary" onclick="event.stopPropagation(); startTour(${tour.id})">
-                                ▶️ Start Tour
+                            <button class="btn btn-primary" onclick="event.stopPropagation(); startRoute('${route.route_id}')">
+                                ▶️ Start Route
                             </button>
                         </div>
                     </div>
@@ -1047,19 +946,19 @@
 
         // UPDATE RESULTS COUNT
         function updateResultsCount() {
-            const count = filteredTours.length;
+            const count = filteredRoutes.length;
             document.getElementById('results-count').textContent = 
-                `${count} ${count === 1 ? 'tour' : 'tours'} found`;
-            document.getElementById('tours-count').textContent = 
-                `${count} tours available`;
+                `${count} ${count === 1 ? 'route' : 'routes'} found`;
+            document.getElementById('routes-count').textContent = 
+                `${count} routes available`;
         }
 
         // SHOW EMPTY STATE
-        function showEmptyState(message = 'No tours found matching your criteria.') {
-            document.getElementById('tours-container').innerHTML = `
+        function showEmptyState(message = 'No routes found matching your criteria.') {
+            document.getElementById('routes-container').innerHTML = `
                 <div class="empty-state">
-                    <div class="empty-state-icon">🔍</div>
-                    <h3>No Tours Found</h3>
+                    <div class="empty-state-icon">🗺️</div>
+                    <h3>No Routes Found</h3>
                     <p>${message}</p>
                     <button class="btn btn-primary" onclick="clearFilters()">Clear Filters</button>
                 </div>
@@ -1070,9 +969,8 @@
         function clearFilters() {
             document.getElementById('search').value = '';
             document.getElementById('city-filter').value = '';
-            document.getElementById('level-filter').value = '';
+            document.getElementById('difficulty-filter').value = '';
             document.getElementById('category-filter').value = '';
-            document.getElementById('duration-filter').value = '';
             applyFilters();
         }
 
@@ -1082,7 +980,7 @@
             buttons.forEach(btn => btn.classList.remove('active'));
             event.target.classList.add('active');
             
-            const grid = document.querySelector('.tours-grid');
+            const grid = document.querySelector('.routes-grid');
             if (grid) {
                 if (viewType === 'list') {
                     grid.style.gridTemplateColumns = '1fr';
@@ -1092,30 +990,29 @@
             }
         }
 
-        // TOUR ACTIONS
-        function viewTour(tourId) {
-            // For now, show an alert. Later, redirect to tour detail page
-            const tour = allTours.find(t => t.id === tourId);
-            alert(`Viewing ${tour.title}\n\nThis would redirect to: tour-detail.html?id=${tourId}`);
+        // ROUTE ACTIONS
+        function viewRoute(routeId) {
+            console.log('Viewing route:', routeId);
+            alert(`Viewing route ${routeId}\n\nThis would redirect to: route-detail.html?id=${routeId}`);
         }
 
-        function previewTour(tourId) {
-            const tour = allTours.find(t => t.id === tourId);
-            alert(`Preview for "${tour.title}"\n\nThis would show a preview modal with tour highlights, route map, and sample audio.`);
+        function previewRoute(routeId) {
+            console.log('Previewing route:', routeId);
+            alert(`Preview for route ${routeId}\n\nThis would show a preview modal with route highlights, map, and sample audio.`);
         }
 
-        function startTour(tourId) {
+        function startRoute(routeId) {
             const urlParams = new URLSearchParams(window.location.search);
             
             if (!currentUser && urlParams.get('demo') !== 'true') {
-                if (confirm('Please login to start a tour. Would you like to go to the login page?')) {
+                if (confirm('Please login to start a route. Would you like to go to the login page?')) {
                     window.location.href = 'login.html';
                 }
                 return;
             }
             
-            const tour = allTours.find(t => t.id === tourId);
-            alert(`Starting "${tour.title}"\n\nThis would redirect to: tour-player.html?id=${tourId}`);
+            console.log('Starting route:', routeId);
+            alert(`Starting route ${routeId}\n\nThis would redirect to: route-player.html?id=${routeId}`);
         }
 
         // SHARE FUNCTIONALITY
@@ -1124,7 +1021,7 @@
             if (navigator.share) {
                 navigator.share({
                     title: 'ICHE Audio City Tours',
-                    text: 'Discover amazing audio tours with ICHE!',
+                    text: 'Discover amazing audio routes with ICHE!',
                     url: url
                 });
             } else {
@@ -1142,17 +1039,6 @@
             }
             if (e.key === 'Escape') {
                 document.getElementById('search').blur();
-            }
-        });
-
-        // MOBILE MENU TOGGLE
-        document.addEventListener('DOMContentLoaded', function() {
-            const mobileToggle = document.querySelector('.mobile-menu-toggle');
-            if (mobileToggle) {
-                mobileToggle.addEventListener('click', function() {
-                    // Add mobile menu functionality here if needed
-                    console.log('Mobile menu clicked');
-                });
             }
         });
     </script>
