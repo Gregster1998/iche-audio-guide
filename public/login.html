@@ -4,9 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - ICHE Audio City Tours</title>
-    <script src="config.js"></script>
     <style>
-        /* GLOBAL STYLES - Same as main website */
+        /* GLOBAL STYLES */
         * {
             margin: 0;
             padding: 0;
@@ -284,7 +283,7 @@
         }
 
         .benefits-list li::before {
-            content: "●";
+            content: "✓";
             color: #ffd700;
             font-size: 1.2rem;
         }
@@ -369,7 +368,7 @@
     <div class="login-container">
         <!-- LOGO SECTION -->
         <div class="logo">
-            <div class="logo-icon">📍</div>
+            <div class="logo-icon">🎧</div>
             <div class="logo-text">
                 <h1>ICHE</h1>
                 <p>Audio City Tours</p>
@@ -395,7 +394,7 @@
             </div>
 
             <!-- GOOGLE LOGIN -->
-            <button class="btn btn-google" onclick="loginWithGoogle()">
+            <button class="btn btn-google" onclick="loginWithGoogle()" id="google-login-btn">
                 <img src="https://developers.google.com/identity/images/g-logo.png" alt="Google" style="width: 20px; height: 20px;">
                 Continue with Google
             </button>
@@ -467,7 +466,7 @@
                 <label for="registerPassword">Password</label>
                 <div class="input-wrapper">
                     <span class="input-icon">🔒</span>
-                    <input type="password" id="registerPassword" class="form-input" placeholder="Enter your password" required>
+                    <input type="password" id="registerPassword" class="form-input" placeholder="Enter your password (min 6 characters)" required>
                     <button type="button" class="password-toggle" onclick="togglePassword('registerPassword')">👁️</button>
                 </div>
             </div>
@@ -507,30 +506,94 @@
         </div>
     </div>
 
+    <!-- Load config.js first -->
+    <script src="config.js"></script>
+    
     <script>
-        // CONFIGURATION - Use environment variables or fallback
-        const CONFIG = window.APP_CONFIG || {
-            SUPABASE_URL: 'YOUR_SUPABASE_URL',
-            SUPABASE_ANON_KEY: 'YOUR_SUPABASE_ANON_KEY',
-            KLAVIYO_PUBLIC_KEY: 'YOUR_KLAVIYO_PUBLIC_KEY'
-        };
-
-        // Initialize Supabase client
+        // GLOBAL VARIABLES
         let supabaseClient = null;
-        if (CONFIG.SUPABASE_URL && CONFIG.SUPABASE_URL !== 'YOUR_SUPABASE_URL') {
-            const { createClient } = supabase;
-            supabaseClient = createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY);
+
+        // Initialize the app
+        async function initializeApp() {
+            console.log('Initializing app...');
+            
+            // Wait for config to be loaded
+            if (!window.APP_CONFIG || window.APP_CONFIG.SUPABASE_URL === '{{SUPABASE_URL}}') {
+                // Config not loaded yet, try to fetch from API
+                try {
+                    const response = await fetch('/api/config');
+                    if (response.ok) {
+                        window.APP_CONFIG = await response.json();
+                        console.log('Configuration loaded from API');
+                    }
+                } catch (error) {
+                    console.error('Error loading config:', error);
+                }
+            }
+
+            // Initialize Supabase if config is available
+            if (window.APP_CONFIG && window.APP_CONFIG.SUPABASE_URL && 
+                !window.APP_CONFIG.SUPABASE_URL.includes('YOUR_DEV') && 
+                !window.APP_CONFIG.SUPABASE_URL.includes('{{')) {
+                
+                try {
+                    const { createClient } = supabase;
+                    supabaseClient = createClient(
+                        window.APP_CONFIG.SUPABASE_URL, 
+                        window.APP_CONFIG.SUPABASE_ANON_KEY
+                    );
+                    console.log('Supabase initialized successfully');
+                    
+                    // Check for existing session
+                    const { data: { session } } = await supabaseClient.auth.getSession();
+                    if (session) {
+                        console.log('Existing session found, redirecting...');
+                        window.location.href = 'discover.html';
+                    }
+                    
+                    // Setup auth state change listener
+                    supabaseClient.auth.onAuthStateChange(async (event, session) => {
+                        console.log('Auth state changed:', event);
+                        
+                        if (event === 'SIGNED_IN' && session) {
+                            // Send to Klaviyo if configured
+                            if (session.user.user_metadata) {
+                                await sendToKlaviyo({
+                                    email: session.user.email,
+                                    firstName: session.user.user_metadata.full_name?.split(' ')[0] || '',
+                                    lastName: session.user.user_metadata.full_name?.split(' ').slice(1).join(' ') || ''
+                                });
+                            }
+                            
+                            showMessage('Login successful! Redirecting...', 'success');
+                            setTimeout(() => {
+                                window.location.href = 'discover.html';
+                            }, 1500);
+                        }
+                    });
+                } catch (error) {
+                    console.error('Error initializing Supabase:', error);
+                    showMessage('Authentication system is temporarily unavailable. Please try the demo account.', 'error');
+                }
+            } else {
+                console.warn('Supabase configuration not available');
+                showMessage('Authentication is not fully configured. You can still use the demo account.', 'error');
+            }
         }
 
         // UTILITY FUNCTIONS
         function showMessage(message, type = 'error') {
             const container = document.getElementById('message-container');
             container.innerHTML = `<div class="message ${type}">${message}</div>`;
-            setTimeout(() => container.innerHTML = '', 5000);
+            if (type !== 'success') {
+                setTimeout(() => container.innerHTML = '', 5000);
+            }
         }
 
         function showLoading(buttonId, show = true) {
             const btn = document.getElementById(buttonId);
+            if (!btn) return;
+            
             if (show) {
                 btn.innerHTML = '<div class="spinner"></div> Loading...';
                 btn.disabled = true;
@@ -540,6 +603,8 @@
                     btn.innerHTML = 'Sign In';
                 } else if (buttonId === 'register-btn') {
                     btn.innerHTML = 'Create Account';
+                } else if (buttonId === 'google-login-btn') {
+                    btn.innerHTML = '<img src="https://developers.google.com/identity/images/g-logo.png" alt="Google" style="width: 20px; height: 20px;"> Continue with Google';
                 }
             }
         }
@@ -557,41 +622,37 @@
             }
         }
 
-        // KLAVIYO INTEGRATION - Send user data to Klaviyo
+        // KLAVIYO INTEGRATION
         async function sendToKlaviyo(userData) {
-            if (!CONFIG.KLAVIYO_PUBLIC_KEY || CONFIG.KLAVIYO_PUBLIC_KEY === 'YOUR_KLAVIYO_PUBLIC_KEY') {
-                console.log('Klaviyo not configured, skipping user sync');
+            if (!window.APP_CONFIG?.KLAVIYO_PUBLIC_KEY || 
+                window.APP_CONFIG.KLAVIYO_PUBLIC_KEY.includes('YOUR_DEV') ||
+                window.APP_CONFIG.KLAVIYO_PUBLIC_KEY.includes('{{')) {
+                console.log('Klaviyo not configured');
                 return;
             }
 
             try {
-                const response = await fetch('https://a.klaviyo.com/api/profiles/', {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': `Klaviyo-API-Key ${CONFIG.KLAVIYO_PUBLIC_KEY}`,
-                        'Content-Type': 'application/json',
-                        'revision': '2024-02-15'
+                const data = {
+                    token: window.APP_CONFIG.KLAVIYO_PUBLIC_KEY,
+                    event: 'User Signup',
+                    customer_properties: {
+                        $email: userData.email,
+                        $first_name: userData.firstName,
+                        $last_name: userData.lastName
                     },
-                    body: JSON.stringify({
-                        data: {
-                            type: 'profile',
-                            attributes: {
-                                email: userData.email,
-                                first_name: userData.firstName,
-                                last_name: userData.lastName,
-                                properties: {
-                                    source: 'ICHE_website',
-                                    registration_date: new Date().toISOString(),
-                                    user_type: 'audio_tour_explorer'
-                                }
-                            }
-                        }
-                    })
+                    properties: {
+                        source: 'ICHE_website',
+                        signup_date: new Date().toISOString()
+                    }
+                };
+
+                // Send to Klaviyo track endpoint
+                const response = await fetch(`https://a.klaviyo.com/api/track?data=${btoa(JSON.stringify(data))}`, {
+                    method: 'GET',
+                    mode: 'no-cors'
                 });
                 
-                if (response.ok) {
-                    console.log('User added to Klaviyo successfully');
-                }
+                console.log('User data sent to Klaviyo');
             } catch (error) {
                 console.error('Error sending to Klaviyo:', error);
             }
@@ -602,6 +663,12 @@
         // Demo Account Login
         function loginWithDemo() {
             showMessage('Demo account loaded! Redirecting to tours...', 'success');
+            
+            // Set demo flag in localStorage
+            localStorage.setItem('isDemoUser', 'true');
+            localStorage.setItem('demoUserEmail', 'demo@iche-tours.com');
+            localStorage.setItem('userName', 'Demo User');
+            
             setTimeout(() => {
                 window.location.href = 'discover.html?demo=true';
             }, 1500);
@@ -610,9 +677,11 @@
         // Google OAuth Login
         async function loginWithGoogle() {
             if (!supabaseClient) {
-                showMessage('Authentication not configured. Please try email login or contact support.');
+                showMessage('Google authentication is not configured. Please use email login or demo account.');
                 return;
             }
+
+            showLoading('google-login-btn', true);
 
             try {
                 const { data, error } = await supabaseClient.auth.signInWithOAuth({
@@ -624,19 +693,21 @@
 
                 if (error) {
                     console.error('Google OAuth error:', error);
-                    showMessage('Google login failed. Please try again or use email login.');
+                    showMessage('Google login is not configured. Please use email login or demo account.');
                 } else {
                     showMessage('Redirecting to Google...', 'success');
                 }
             } catch (error) {
                 console.error('Google login error:', error);
-                showMessage('An error occurred during Google login. Please try email login.');
+                showMessage('An error occurred. Please try email login or demo account.');
+            } finally {
+                showLoading('google-login-btn', false);
             }
         }
 
         // Email/Password Login
         async function loginWithEmail() {
-            const email = document.getElementById('email').value;
+            const email = document.getElementById('email').value.trim();
             const password = document.getElementById('password').value;
 
             if (!email || !password) {
@@ -644,8 +715,15 @@
                 return;
             }
 
+            // Email validation
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(email)) {
+                showMessage('Please enter a valid email address.');
+                return;
+            }
+
             if (!supabaseClient) {
-                showMessage('Authentication not configured. Please contact support.');
+                showMessage('Authentication unavailable. Please try the demo account.');
                 return;
             }
 
@@ -664,16 +742,23 @@
                     } else if (error.message.includes('Email not confirmed')) {
                         showMessage('Please check your email and click the confirmation link.');
                     } else {
-                        showMessage(error.message);
+                        showMessage(`Login failed: ${error.message}`);
                     }
                 } else {
                     showMessage('Login successful! Redirecting...', 'success');
+                    
+                    // Store user info
+                    localStorage.setItem('userEmail', email);
+                    if (data.user?.user_metadata?.full_name) {
+                        localStorage.setItem('userName', data.user.user_metadata.full_name);
+                    }
+                    
                     setTimeout(() => {
                         window.location.href = 'discover.html';
                     }, 1500);
                 }
             } catch (error) {
-                showMessage('An error occurred during login. Please try again.');
+                showMessage('An error occurred. Please try again.');
                 console.error('Login error:', error);
             } finally {
                 showLoading('login-btn', false);
@@ -682,13 +767,20 @@
 
         // Email/Password Registration
         async function registerWithEmail() {
-            const fullName = document.getElementById('fullName').value;
-            const email = document.getElementById('registerEmail').value;
+            const fullName = document.getElementById('fullName').value.trim();
+            const email = document.getElementById('registerEmail').value.trim();
             const password = document.getElementById('registerPassword').value;
             const confirmPassword = document.getElementById('confirmPassword').value;
 
             if (!fullName || !email || !password || !confirmPassword) {
                 showMessage('Please fill in all fields.');
+                return;
+            }
+
+            // Email validation
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(email)) {
+                showMessage('Please enter a valid email address.');
                 return;
             }
 
@@ -703,7 +795,7 @@
             }
 
             if (!supabaseClient) {
-                showMessage('Authentication not configured. Please contact support.');
+                showMessage('Registration unavailable. Please try the demo account.');
                 return;
             }
 
@@ -723,17 +815,15 @@
                 if (error) {
                     console.error('Registration error:', error);
                     if (error.message.includes('User already registered')) {
-                        showMessage('An account with this email already exists. Try signing in instead.');
-                        setTimeout(() => {
-                            toggleAuthForm();
-                        }, 2000);
+                        showMessage('An account with this email already exists. Try signing in.');
+                        setTimeout(() => toggleAuthForm(), 2000);
                     } else {
-                        showMessage(error.message);
+                        showMessage(`Registration failed: ${error.message}`);
                     }
                 } else {
-                    showMessage('Account created successfully! Please check your email to verify your account.', 'success');
+                    showMessage('Account created! Please check your email to verify your account.', 'success');
                     
-                    // Send user data to Klaviyo
+                    // Send to Klaviyo
                     const [firstName, ...lastNameParts] = fullName.split(' ');
                     await sendToKlaviyo({
                         email: email,
@@ -741,14 +831,19 @@
                         lastName: lastNameParts.join(' ')
                     });
                     
-                    // Switch to login form after short delay
+                    // Clear form
+                    document.getElementById('fullName').value = '';
+                    document.getElementById('registerEmail').value = '';
+                    document.getElementById('registerPassword').value = '';
+                    document.getElementById('confirmPassword').value = '';
+                    
                     setTimeout(() => {
                         toggleAuthForm();
-                        showMessage('Please check your email and verify your account, then sign in.', 'success');
+                        document.getElementById('email').value = email;
                     }, 3000);
                 }
             } catch (error) {
-                showMessage('An error occurred during registration. Please try again.');
+                showMessage('An error occurred. Please try again.');
                 console.error('Registration error:', error);
             } finally {
                 showLoading('register-btn', false);
@@ -772,66 +867,45 @@
                 welcomeText.textContent = 'Welcome back!';
             }
             
-            // Clear any existing messages
             document.getElementById('message-container').innerHTML = '';
         }
 
         // EVENT LISTENERS
         document.addEventListener('DOMContentLoaded', function() {
-            // Check if user is already logged in
-            if (supabaseClient) {
-                supabaseClient.auth.getSession().then(({ data: { session } }) => {
-                    if (session) {
-                        window.location.href = 'discover.html';
-                    }
-                });
-            }
+            // Initialize app after a short delay to ensure config.js loads
+            setTimeout(initializeApp, 100);
 
             // Form toggle links
-            document.getElementById('register-link').addEventListener('click', function(e) {
+            document.getElementById('register-link')?.addEventListener('click', function(e) {
                 e.preventDefault();
                 toggleAuthForm();
             });
 
-            document.getElementById('login-link').addEventListener('click', function(e) {
+            document.getElementById('login-link')?.addEventListener('click', function(e) {
                 e.preventDefault();
                 toggleAuthForm();
             });
 
             // Enter key submission
-            document.getElementById('email').addEventListener('keypress', function(e) {
+            document.getElementById('email')?.addEventListener('keypress', function(e) {
                 if (e.key === 'Enter') loginWithEmail();
             });
 
-            document.getElementById('password').addEventListener('keypress', function(e) {
+            document.getElementById('password')?.addEventListener('keypress', function(e) {
                 if (e.key === 'Enter') loginWithEmail();
             });
 
-            document.getElementById('confirmPassword').addEventListener('keypress', function(e) {
+            document.getElementById('confirmPassword')?.addEventListener('keypress', function(e) {
                 if (e.key === 'Enter') registerWithEmail();
             });
         });
 
-        // Handle OAuth callback
-        if (supabaseClient) {
-            supabaseClient.auth.onAuthStateChange(async (event, session) => {
-                if (event === 'SIGNED_IN' && session) {
-                    // Send user data to Klaviyo for OAuth users
-                    if (session.user.user_metadata) {
-                        await sendToKlaviyo({
-                            email: session.user.email,
-                            firstName: session.user.user_metadata.full_name?.split(' ')[0] || '',
-                            lastName: session.user.user_metadata.full_name?.split(' ').slice(1).join(' ') || ''
-                        });
-                    }
-                    
-                    // Redirect to discover page
-                    if (!window.location.pathname.includes('discover.html')) {
-                        window.location.href = 'discover.html';
-                    }
-                }
-            });
-        }
+        // Make functions global for onclick handlers
+        window.loginWithDemo = loginWithDemo;
+        window.loginWithGoogle = loginWithGoogle;
+        window.loginWithEmail = loginWithEmail;
+        window.registerWithEmail = registerWithEmail;
+        window.togglePassword = togglePassword;
     </script>
 </body>
 </html>
