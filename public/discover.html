@@ -294,22 +294,31 @@
             updateResultsCount();
         }
 
-        function displayRoutes() {
-            const container = document.getElementById('routes-container');
-            
-            if (!container) {
-                console.error('Routes container not found');
-                return;
-            }
-            
-            if (filteredRoutes.length === 0) {
-                showEmptyState();
-                return;
-            }
+function displayRoutes() {
+    // Try both possible container IDs to match your HTML
+    let container = document.getElementById('routes-container') || document.getElementById('routesContainer');
+    
+    if (!container) {
+        console.error('Routes container not found - checking available containers...');
+        // Debug: show what containers exist
+        const possibleContainers = ['routes-container', 'routesContainer', 'routes_container'];
+        possibleContainers.forEach(id => {
+            const el = document.getElementById(id);
+            console.log(`Container ${id}:`, el ? 'found' : 'not found');
+        });
+        return;
+    }
+    
+    if (filteredRoutes.length === 0) {
+        showEmptyState();
+        return;
+    }
 
-            const routesHTML = filteredRoutes.map(route => createRouteCard(route)).join('');
-            container.innerHTML = `<div class="routes-grid">${routesHTML}</div>`;
-        }
+    const routesHTML = filteredRoutes.map(route => createRouteCard(route)).join('');
+    container.innerHTML = `<div class="routes-grid">${routesHTML}</div>`;
+    
+    console.log(`✅ Displayed ${filteredRoutes.length} routes in container`);
+}
 
         function createRouteCard(route) {
             // Parse duration like dashboard
@@ -344,7 +353,7 @@
                             ${route.published ? 'Published' : 'Draft'}
                         </div>
                         <button class="route-favorite ${isFavorite ? 'active' : ''}" onclick="event.stopPropagation(); toggleFavorite('${routeId}')" title="${isFavorite ? 'Remove from favorites' : 'Add to favorites'}">
-                            ${isFavorite ? '❤️' : '🤍'}
+                            ${isFavorite ? '❤️ ' : '🤍'}
                         </button>
                     </div>
                     <div class="route-content">
