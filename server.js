@@ -54,38 +54,7 @@ const createDirectories = () => {
 
 // Initialize directories
 createDirectories();
-// Add this endpoint to your server.js file to serve configuration to the client
 
-// Configuration endpoint - serves public keys only (safe for client-side)
-app.get('/api/config', (req, res) => {
-    res.json({
-        SUPABASE_URL: process.env.SUPABASE_URL,
-        SUPABASE_ANON_KEY: process.env.SUPABASE_ANON_KEY,
-        KLAVIYO_PUBLIC_KEY: process.env.KLAVIYO_PUBLIC_KEY
-    });
-});
-
-// If you're using a static file server, you might need to process config.js dynamically
-// Alternative approach - serve config.js with actual values:
-app.get('/config.js', (req, res) => {
-    const configScript = `
-        window.APP_CONFIG = {
-            SUPABASE_URL: '${process.env.SUPABASE_URL || ''}',
-            SUPABASE_ANON_KEY: '${process.env.SUPABASE_ANON_KEY || ''}',
-            KLAVIYO_PUBLIC_KEY: '${process.env.KLAVIYO_PUBLIC_KEY || ''}'
-        };
-    `;
-    res.type('application/javascript');
-    res.send(configScript);
-});
-
-app.get('/api/config', (req, res) => {
-    res.json({
-        SUPABASE_URL: process.env.SUPABASE_URL,
-        SUPABASE_ANON_KEY: process.env.SUPABASE_ANON_KEY,
-        KLAVIYO_PUBLIC_KEY: process.env.KLAVIYO_PUBLIC_KEY
-    });
-});
 // Configure multer for file uploads
 const storage = multer.memoryStorage();
 const upload = multer({
@@ -122,9 +91,8 @@ const upload = multer({
 app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
-// Add this to your server.js to serve config from Render environment variables
 
-// Serve configuration to client (only public keys)
+// Configuration endpoint - serves public keys only (safe for client-side)
 app.get('/api/config', (req, res) => {
     res.json({
         SUPABASE_URL: process.env.SUPABASE_URL || '',
@@ -133,22 +101,21 @@ app.get('/api/config', (req, res) => {
     });
 });
 
-// Also serve the config.js file dynamically with actual values
-app.get('/js/config.js', (req, res) => {
+// Serve config.js with actual values from environment
+app.get('/config.js', (req, res) => {
     const configScript = `
-
 window.APP_CONFIG = {
     SUPABASE_URL: '${process.env.SUPABASE_URL || ''}',
     SUPABASE_ANON_KEY: '${process.env.SUPABASE_ANON_KEY || ''}',
     KLAVIYO_PUBLIC_KEY: '${process.env.KLAVIYO_PUBLIC_KEY || ''}'
 };
-
 window.CONFIG_LOADED = true;
-console.log('Config loaded from server');
-`;
+console.log('✅ Config loaded from server');
+    `;
     res.type('application/javascript');
     res.send(configScript);
 });
+
 // Helper function to generate unique filename
 function generateUniqueFilename(originalname, fieldname) {
     const timestamp = Date.now();
@@ -238,41 +205,7 @@ app.post('/api/upload/audio', upload.single('audio'), async (req, res) => {
         res.status(500).json({ error: 'Failed to upload audio file: ' + error.message });
     }
 });
-// Get all cities
-app.get('/api/cities', async (req, res) => {
-    try {
-        const { data: cities, error } = await supabase
-            .from('cities')
-            .select('*')
-            .order('name');
-        
-        if (error) throw error;
-        res.json(cities || []);
-    } catch (error) {
-        console.error('Error loading cities:', error);
-        res.status(500).json({ error: 'Failed to load cities' });
-    }
-});
 
-// Add new city
-app.post('/api/cities', async (req, res) => {
-    try {
-        const { name } = req.body;
-        if (!name) throw new Error('City name is required');
-        
-        const { data: city, error } = await supabase
-            .from('cities')
-            .insert([{ name: name.trim() }])
-            .select()
-            .single();
-        
-        if (error) throw error;
-        res.json(city);
-    } catch (error) {
-        console.error('Error adding city:', error);
-        res.status(500).json({ error: 'Failed to add city' });
-    }
-});
 app.post('/api/upload/image', upload.single('image'), async (req, res) => {
     try {
         if (!req.file) {
@@ -334,12 +267,11 @@ app.post('/api/upload/image', upload.single('image'), async (req, res) => {
     }
 });
 
-// API HEALTH ENDPOINT - Shows database connection status
+// API HEALTH ENDPOINT
 app.get('/api/health', async (req, res) => {
     console.log('Health check requested');
     
     try {
-        // Test Supabase connection and get route count
         const { count: totalRoutes, error: routesError } = await supabase
             .from('routes')
             .select('*', { count: 'exact', head: true });
@@ -419,7 +351,6 @@ app.get('/api/routes', async (req, res) => {
 
         console.log(`Found ${routes?.length || 0} routes in database`);
 
-        // Transform data to match expected frontend format
         const transformedRoutes = (routes || []).map(route => ({
             id: route.route_id,
             name: route.name,
@@ -530,7 +461,6 @@ app.post('/api/routes', async (req, res) => {
     try {
         console.log('POST /api/routes - creating route:', req.body.name);
 
-        // Generate unique route ID
         const routeId = 'route_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
 
         const routeData = {
@@ -549,7 +479,6 @@ app.post('/api/routes', async (req, res) => {
             published: Boolean(req.body.published)
         };
 
-        // Insert route into database
         const { data: route, error: routeError } = await supabase
             .from('routes')
             .insert([routeData])
@@ -563,7 +492,6 @@ app.post('/api/routes', async (req, res) => {
 
         console.log('Route created in database:', routeId);
 
-        // Insert points if provided
         if (req.body.points && req.body.points.length > 0) {
             console.log(`Adding ${req.body.points.length} points to route`);
             
@@ -592,7 +520,6 @@ app.post('/api/routes', async (req, res) => {
             console.log(`✅ Added ${req.body.points.length} points to route`);
         }
 
-        // Transform response to match frontend expectations
         const response = {
             id: route.route_id,
             name: route.name,
@@ -642,7 +569,6 @@ app.put('/api/routes/:id', async (req, res) => {
             updated_at: new Date().toISOString()
         };
 
-        // Update route
         const { data: route, error: routeError } = await supabase
             .from('routes')
             .update(updateData)
@@ -652,9 +578,7 @@ app.put('/api/routes/:id', async (req, res) => {
 
         if (routeError) throw routeError;
 
-        // Update points if provided
         if (req.body.points) {
-            // Delete existing points
             const { error: deleteError } = await supabase
                 .from('route_points')
                 .delete()
@@ -662,7 +586,6 @@ app.put('/api/routes/:id', async (req, res) => {
 
             if (deleteError) throw deleteError;
 
-            // Insert new points
             if (req.body.points.length > 0) {
                 const pointsData = req.body.points.map((point, index) => ({
                     route_id: routeId,
@@ -718,7 +641,6 @@ app.delete('/api/routes/:id', async (req, res) => {
         const routeId = req.params.id;
         console.log('Deleting route from database:', routeId);
 
-        // Delete route (points will be cascade deleted due to foreign key)
         const { error } = await supabase
             .from('routes')
             .delete()
@@ -789,7 +711,6 @@ app.get('/api/analytics', async (req, res) => {
 
         const unpublishedRoutes = (totalRoutes || 0) - (publishedRoutes || 0);
 
-        // Get routes by city
         const { data: routesByCity } = await supabase
             .from('routes')
             .select('city')
@@ -801,7 +722,6 @@ app.get('/api/analytics', async (req, res) => {
             .eq('published', true)
             .not('city', 'is', null);
 
-        // Count routes per city
         const cityStats = {};
         routesByCity?.forEach(route => {
             if (route.city) {
@@ -851,7 +771,6 @@ app.post('/api/regenerate-routes', async (req, res) => {
 });
 
 // CITIES ENDPOINTS
-// Get all cities
 app.get('/api/cities', async (req, res) => {
     try {
         console.log('Getting all cities from database...');
@@ -878,7 +797,6 @@ app.get('/api/cities', async (req, res) => {
     }
 });
 
-// Get routes by city
 app.get('/api/routes/city/:cityName', async (req, res) => {
     try {
         const cityName = req.params.cityName;
@@ -891,7 +809,7 @@ app.get('/api/routes/city/:cityName', async (req, res) => {
                 route_points (*)
             `)
             .eq('published', true)
-            .ilike('city', cityName) // Case-insensitive match
+            .ilike('city', cityName)
             .order('created_at', { ascending: false });
 
         if (error) {
@@ -942,7 +860,6 @@ app.get('/api/routes/city/:cityName', async (req, res) => {
     }
 });
 
-// Add new city (for CMS)
 app.post('/api/cities', async (req, res) => {
     try {
         console.log('POST /api/cities - creating city:', req.body.name);
@@ -960,7 +877,7 @@ app.post('/api/cities', async (req, res) => {
             .single();
 
         if (error) {
-            if (error.code === '23505') { // Unique violation
+            if (error.code === '23505') {
                 return res.status(400).json({ error: 'City already exists' });
             }
             throw error;
@@ -1023,11 +940,10 @@ app.listen(PORT, '0.0.0.0', async () => {
     console.log(`🚀 Server running on port ${PORT}`);
     console.log(`📊 Database: Supabase PostgreSQL`);
     console.log(`💾 Storage: Hybrid (Supabase + Local fallback)`);
-    console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
+    console.log(`🌐 Environment: ${process.env.NODE_ENV || 'development'}`);
     console.log(`🔗 Supabase URL: ${supabaseUrl}`);
-    console.log(`🔑 Service Key configured: ${supabaseServiceKey ? 'Yes' : 'No'}`);
+    console.log(`🔐 Service Key configured: ${supabaseServiceKey ? 'Yes' : 'No'}`);
     
-    // Test database connection on startup
     console.log('Testing Supabase connection...');
     const connectionWorking = await testSupabaseConnection();
     
