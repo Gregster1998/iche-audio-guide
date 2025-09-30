@@ -551,7 +551,20 @@ app.post('/api/routes', async (req, res) => {
 app.put('/api/routes/:id', async (req, res) => {
     try {
         const routeId = req.params.id;
-        console.log('PUT /api/routes/' + routeId + ' - updating route');
+        console.log('=== UPDATE ROUTE DEBUG ===');
+        console.log('Route ID from URL:', routeId);
+        console.log('Route ID length:', routeId.length);
+        console.log('Route ID type:', typeof routeId);
+
+        // First, let's see what routes exist
+        const { data: allRoutes, error: listError } = await supabase
+            .from('routes')
+            .select('route_id, name');
+        
+        console.log('All route IDs in database:', allRoutes?.map(r => r.route_id));
+        
+        const exactMatch = allRoutes?.find(r => r.route_id === routeId);
+        console.log('Exact match found:', exactMatch);
 
         const updateData = {
             name: req.body.name,
@@ -569,19 +582,24 @@ app.put('/api/routes/:id', async (req, res) => {
             updated_at: new Date().toISOString()
         };
 
+        console.log('Attempting update with route_id:', routeId);
+
         const { data: routes, error: routeError } = await supabase
             .from('routes')
             .update(updateData)
             .eq('route_id', routeId)
             .select();
 
+        console.log('Update result - data:', routes);
+        console.log('Update result - error:', routeError);
+
         if (routeError) throw routeError;
         
         if (!routes || routes.length === 0) {
-            throw new Error('Route not found');
+            throw new Error(`Route not found: ${routeId}`);
         }
 
-        const route = routes[0]; // Take first result instead of using .single()
+        const route = routes[0];
 
         // Update points
         if (req.body.points) {
@@ -630,7 +648,7 @@ app.put('/api/routes/:id', async (req, res) => {
             points: req.body.points || []
         };
 
-        console.log('Route updated successfully:', routeId);
+        console.log('✅ Route updated successfully:', routeId);
         res.json(response);
 
     } catch (error) {
