@@ -54,7 +54,38 @@ const createDirectories = () => {
 
 // Initialize directories
 createDirectories();
+// Add this endpoint to your server.js file to serve configuration to the client
 
+// Configuration endpoint - serves public keys only (safe for client-side)
+app.get('/api/config', (req, res) => {
+    res.json({
+        SUPABASE_URL: process.env.SUPABASE_URL,
+        SUPABASE_ANON_KEY: process.env.SUPABASE_ANON_KEY,
+        KLAVIYO_PUBLIC_KEY: process.env.KLAVIYO_PUBLIC_KEY
+    });
+});
+
+// If you're using a static file server, you might need to process config.js dynamically
+// Alternative approach - serve config.js with actual values:
+app.get('/config.js', (req, res) => {
+    const configScript = `
+        window.APP_CONFIG = {
+            SUPABASE_URL: '${process.env.SUPABASE_URL || ''}',
+            SUPABASE_ANON_KEY: '${process.env.SUPABASE_ANON_KEY || ''}',
+            KLAVIYO_PUBLIC_KEY: '${process.env.KLAVIYO_PUBLIC_KEY || ''}'
+        };
+    `;
+    res.type('application/javascript');
+    res.send(configScript);
+});
+
+app.get('/api/config', (req, res) => {
+    res.json({
+        SUPABASE_URL: process.env.SUPABASE_URL,
+        SUPABASE_ANON_KEY: process.env.SUPABASE_ANON_KEY,
+        KLAVIYO_PUBLIC_KEY: process.env.KLAVIYO_PUBLIC_KEY
+    });
+});
 // Configure multer for file uploads
 const storage = multer.memoryStorage();
 const upload = multer({
@@ -91,7 +122,33 @@ const upload = multer({
 app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
+// Add this to your server.js to serve config from Render environment variables
 
+// Serve configuration to client (only public keys)
+app.get('/api/config', (req, res) => {
+    res.json({
+        SUPABASE_URL: process.env.SUPABASE_URL || '',
+        SUPABASE_ANON_KEY: process.env.SUPABASE_ANON_KEY || '',
+        KLAVIYO_PUBLIC_KEY: process.env.KLAVIYO_PUBLIC_KEY || ''
+    });
+});
+
+// Also serve the config.js file dynamically with actual values
+app.get('/js/config.js', (req, res) => {
+    const configScript = `
+
+window.APP_CONFIG = {
+    SUPABASE_URL: '${process.env.SUPABASE_URL || ''}',
+    SUPABASE_ANON_KEY: '${process.env.SUPABASE_ANON_KEY || ''}',
+    KLAVIYO_PUBLIC_KEY: '${process.env.KLAVIYO_PUBLIC_KEY || ''}'
+};
+
+window.CONFIG_LOADED = true;
+console.log('Config loaded from server');
+`;
+    res.type('application/javascript');
+    res.send(configScript);
+});
 // Helper function to generate unique filename
 function generateUniqueFilename(originalname, fieldname) {
     const timestamp = Date.now();

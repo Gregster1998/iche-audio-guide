@@ -79,6 +79,40 @@ if (typeof window !== 'undefined') {
     window.waitForRoutes = waitForRoutes;
     window.debugRoutes = debugRoutes;
 }
-
+app.get('/api/config', (req, res) => {
+    res.json({
+        SUPABASE_URL: process.env.SUPABASE_URL,
+        SUPABASE_ANON_KEY: process.env.SUPABASE_ANON_KEY,
+        KLAVIYO_PUBLIC_KEY: process.env.KLAVIYO_PUBLIC_KEY
+    });
+});
 // Auto-load routes when script loads
 loadRoutes();
+// Add this to your server.js to serve config from Render environment variables
+
+// Serve configuration to client (only public keys)
+app.get('/api/config', (req, res) => {
+    res.json({
+        SUPABASE_URL: process.env.SUPABASE_URL || '',
+        SUPABASE_ANON_KEY: process.env.SUPABASE_ANON_KEY || '',
+        KLAVIYO_PUBLIC_KEY: process.env.KLAVIYO_PUBLIC_KEY || ''
+    });
+});
+
+// Also serve the config.js file dynamically with actual values
+app.get('/js/config.js', (req, res) => {
+    const configScript = `
+// Dynamically generated config from server environment variables
+window.APP_CONFIG = {
+    SUPABASE_URL: '${process.env.SUPABASE_URL || ''}',
+    SUPABASE_ANON_KEY: '${process.env.SUPABASE_ANON_KEY || ''}',
+    KLAVIYO_PUBLIC_KEY: '${process.env.KLAVIYO_PUBLIC_KEY || ''}'
+};
+
+// Mark config as loaded
+window.CONFIG_LOADED = true;
+console.log('Config loaded from server');
+`;
+    res.type('application/javascript');
+    res.send(configScript);
+});

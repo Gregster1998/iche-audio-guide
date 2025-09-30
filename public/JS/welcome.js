@@ -147,17 +147,29 @@ startAppBtn.addEventListener("click", async () => {
     ];
     
     let routesFound = false;
+    let routeCount = 0;
     
     for (const endpoint of routeCheckEndpoints) {
       try {
+        console.log(`Testing route endpoint: ${endpoint}`);
         const response = await fetch(endpoint);
+        console.log(`Route check response status: ${response.status}`);
+        
         if (response.ok) {
           const routes = await response.json();
-          if (routes && routes.length > 0) {
+          console.log(`Routes response:`, routes);
+          
+          if (routes && Array.isArray(routes) && routes.length > 0) {
             routesFound = true;
+            routeCount = routes.length;
             console.log(`✅ Found ${routes.length} routes for ${city}`);
             break;
+          } else if (routes && Array.isArray(routes)) {
+            console.log(`⚠️ Endpoint returned empty array for ${city}`);
           }
+        } else {
+          const errorText = await response.text();
+          console.log(`Route check failed with status ${response.status}: ${errorText}`);
         }
       } catch (error) {
         console.log(`Route check failed for ${endpoint}:`, error.message);
@@ -170,6 +182,8 @@ startAppBtn.addEventListener("click", async () => {
       if (!proceed) {
         return;
       }
+    } else {
+      console.log(`✅ Route availability confirmed: ${routeCount} routes for ${city}`);
     }
     
   } catch (error) {

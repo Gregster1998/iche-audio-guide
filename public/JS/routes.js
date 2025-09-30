@@ -8,21 +8,33 @@ const fs = require('fs');
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-// Supabase configuration
+// Supabase configuration - MUST be set in Render environment variables
 const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_KEY;
 
+console.log('=== SERVER STARTUP ===');
+console.log('Node ENV:', process.env.NODE_ENV || 'development');
+console.log('Port:', PORT);
+console.log('Supabase URL configured:', !!supabaseUrl);
+console.log('Supabase Service Key configured:', !!supabaseServiceKey);
+
 if (!supabaseUrl || !supabaseServiceKey) {
-    console.error('Missing Supabase configuration. Please set SUPABASE_URL and SUPABASE_SERVICE_KEY environment variables.');
+    console.error('❌ MISSING SUPABASE CONFIGURATION');
+    console.error('Please set these environment variables in Render:');
+    console.error('- SUPABASE_URL: Your Supabase project URL');
+    console.error('- SUPABASE_SERVICE_KEY: Your Supabase service role key');
     process.exit(1);
 }
 
+// Initialize Supabase client
 const supabase = createClient(supabaseUrl, supabaseServiceKey, {
     auth: {
         autoRefreshToken: false,
         persistSession: false
     }
 });
+
+console.log('✅ Supabase client initialized');
 
 // Create local upload directories for fallback
 const createDirectories = () => {
@@ -43,7 +55,7 @@ const createDirectories = () => {
 // Initialize directories
 createDirectories();
 
-// Configure multer for file uploads (both local and Supabase)
+// Configure multer for file uploads
 const storage = multer.memoryStorage();
 const upload = multer({
     storage: storage,
@@ -88,6 +100,26 @@ function generateUniqueFilename(originalname, fieldname) {
     return `${fieldname}-${timestamp}-${random}${ext}`;
 }
 
+// Test Supabase connection
+async function testSupabaseConnection() {
+    try {
+        const { data, error } = await supabase
+            .from('routes')
+            .select('count', { count: 'exact', head: true });
+        
+        if (error) {
+            console.error('❌ Supabase connection test failed:', error.message);
+            return false;
+        }
+        
+        console.log('✅ Supabase connection test successful');
+        return true;
+    } catch (error) {
+        console.error('❌ Supabase connection error:', error.message);
+        return false;
+    }
+}
+
 // FILE UPLOAD ENDPOINTS
 app.post('/api/upload/audio', upload.single('audio'), async (req, res) => {
     try {
@@ -121,7 +153,7 @@ app.post('/api/upload/audio', upload.single('audio'), async (req, res) => {
                 storage: 'supabase'
             };
 
-            console.log('Audio uploaded to Supabase successfully:', response);
+            console.log('Audio uploaded to Supabase successfully:', filename);
             res.json(response);
 
         } catch (supabaseError) {
@@ -140,7 +172,7 @@ app.post('/api/upload/audio', upload.single('audio'), async (req, res) => {
                 storage: 'local'
             };
 
-            console.log('Audio uploaded locally:', response);
+            console.log('Audio uploaded locally:', filename);
             res.json(response);
         }
 
@@ -182,7 +214,7 @@ app.post('/api/upload/image', upload.single('image'), async (req, res) => {
                 storage: 'supabase'
             };
 
-            console.log('Image uploaded to Supabase successfully:', response);
+            console.log('Image uploaded to Supabase successfully:', filename);
             res.json(response);
 
         } catch (supabaseError) {
@@ -201,7 +233,7 @@ app.post('/api/upload/image', upload.single('image'), async (req, res) => {
                 storage: 'local'
             };
 
-            console.log('Image uploaded locally:', response);
+            console.log('Image uploaded locally:', filename);
             res.json(response);
         }
 
@@ -211,48 +243,76 @@ app.post('/api/upload/image', upload.single('image'), async (req, res) => {
     }
 });
 
-// API ENDPOINTS
+// API HEALTH ENDPOINT - Shows database connection status
 app.get('/api/health', async (req, res) => {
+    console.log('Health check requested');
+    
     try {
-        const { count } = await supabase
+        // Test Supabase connection and get route count
+        const { count: totalRoutes, error: routesError } = await supabase
             .from('routes')
             .select('*', { count: 'exact', head: true });
 
-        const { count: publishedCount } = await supabase
+        const { count: publishedRoutes, error: publishedError } = await supabase
             .from('routes')
             .select('*', { count: 'exact', head: true })
             .eq('published', true);
 
-        res.json({
+        if (routesError || publishedError) {
+            throw new Error(routesError?.message || publishedError?.message);
+        }
+
+        const healthResponse = {
             status: 'ok',
-            routes: count || 0,
-            publishedRoutes: publishedCount || 0,
+            routes: totalRoutes || 0,
+            publishedRoutes: publishedRoutes || 0,
             timestamp: new Date().toISOString(),
-            server: 'Supabase-powered with hybrid file storage',
+            server: 'Supabase Database Connected',
             database: 'Supabase PostgreSQL',
+            storage: 'Hybrid (Supabase + Local fallback)',
             supabase: {
                 url: supabaseUrl,
-                connected: true
-            }
-        });
+                connected: true,
+                tablesAccessible: true
+            },
+            environment: process.env.NODE_ENV || 'development'
+        };
+
+        console.log('✅ Health check successful:', healthResponse);
+        res.json(healthResponse);
+
     } catch (error) {
-        console.error('Health check error:', error);
-        res.status(500).json({ 
+        console.error('❌ Health check failed:', error);
+        
+        const errorResponse = {
             status: 'error',
-            error: 'Health check failed',
-            database: 'Connection failed',
+            error: error.message,
+            routes: 0,
+            publishedRoutes: 0,
+            timestamp: new Date().toISOString(),
+            server: 'Database Connection Failed',
+            database: 'Connection Error',
             supabase: {
                 url: supabaseUrl || 'not configured',
                 connected: false,
                 error: error.message
+            },
+            troubleshooting: {
+                checkEnvironmentVariables: 'Ensure SUPABASE_URL and SUPABASE_SERVICE_KEY are set in Render',
+                checkSupabaseTables: 'Ensure routes and route_points tables exist in your Supabase database',
+                checkSupabasePermissions: 'Ensure service key has proper permissions'
             }
-        });
+        };
+        
+        res.status(500).json(errorResponse);
     }
 });
 
 // Get all routes (for CMS)
 app.get('/api/routes', async (req, res) => {
     try {
+        console.log('Getting all routes from database...');
+        
         const { data: routes, error } = await supabase
             .from('routes')
             .select(`
@@ -261,10 +321,15 @@ app.get('/api/routes', async (req, res) => {
             `)
             .order('created_at', { ascending: false });
 
-        if (error) throw error;
+        if (error) {
+            console.error('Database error:', error);
+            throw error;
+        }
 
-        // Transform data to match expected format
-        const transformedRoutes = routes.map(route => ({
+        console.log(`Found ${routes?.length || 0} routes in database`);
+
+        // Transform data to match expected frontend format
+        const transformedRoutes = (routes || []).map(route => ({
             id: route.route_id,
             name: route.name,
             city: route.city,
@@ -280,7 +345,7 @@ app.get('/api/routes', async (req, res) => {
             published: route.published,
             createdAt: route.created_at,
             updatedAt: route.updated_at,
-            points: route.route_points
+            points: (route.route_points || [])
                 .sort((a, b) => a.point_index - b.point_index)
                 .map(point => ({
                     name: point.name,
@@ -299,13 +364,18 @@ app.get('/api/routes', async (req, res) => {
 
     } catch (error) {
         console.error('Error loading routes from database:', error);
-        res.status(500).json({ error: 'Failed to load routes: ' + error.message });
+        res.status(500).json({ 
+            error: 'Failed to load routes from database: ' + error.message,
+            hint: 'Check that your Supabase tables exist and environment variables are correct'
+        });
     }
 });
 
 // Get only published routes (for app/dashboard)
 app.get('/api/app/routes', async (req, res) => {
     try {
+        console.log('Getting published routes from database...');
+        
         const { data: routes, error } = await supabase
             .from('routes')
             .select(`
@@ -315,9 +385,14 @@ app.get('/api/app/routes', async (req, res) => {
             .eq('published', true)
             .order('created_at', { ascending: false });
 
-        if (error) throw error;
+        if (error) {
+            console.error('Database error:', error);
+            throw error;
+        }
 
-        const transformedRoutes = routes.map(route => ({
+        console.log(`Found ${routes?.length || 0} published routes in database`);
+
+        const transformedRoutes = (routes || []).map(route => ({
             id: route.route_id,
             name: route.name,
             city: route.city,
@@ -333,7 +408,7 @@ app.get('/api/app/routes', async (req, res) => {
             published: route.published,
             createdAt: route.created_at,
             updatedAt: route.updated_at,
-            points: route.route_points
+            points: (route.route_points || [])
                 .sort((a, b) => a.point_index - b.point_index)
                 .map(point => ({
                     name: point.name,
@@ -352,7 +427,10 @@ app.get('/api/app/routes', async (req, res) => {
 
     } catch (error) {
         console.error('Error loading published routes:', error);
-        res.status(500).json({ error: 'Failed to load published routes: ' + error.message });
+        res.status(500).json({ 
+            error: 'Failed to load published routes: ' + error.message,
+            hint: 'Check database connection and table structure'
+        });
     }
 });
 
@@ -380,17 +458,24 @@ app.post('/api/routes', async (req, res) => {
             published: Boolean(req.body.published)
         };
 
-        // Insert route
+        // Insert route into database
         const { data: route, error: routeError } = await supabase
             .from('routes')
             .insert([routeData])
             .select()
             .single();
 
-        if (routeError) throw routeError;
+        if (routeError) {
+            console.error('Route creation error:', routeError);
+            throw routeError;
+        }
+
+        console.log('Route created in database:', routeId);
 
         // Insert points if provided
         if (req.body.points && req.body.points.length > 0) {
+            console.log(`Adding ${req.body.points.length} points to route`);
+            
             const pointsData = req.body.points.map((point, index) => ({
                 route_id: routeId,
                 point_index: index,
@@ -408,7 +493,12 @@ app.post('/api/routes', async (req, res) => {
                 .from('route_points')
                 .insert(pointsData);
 
-            if (pointsError) throw pointsError;
+            if (pointsError) {
+                console.error('Points creation error:', pointsError);
+                throw pointsError;
+            }
+
+            console.log(`✅ Added ${req.body.points.length} points to route`);
         }
 
         // Transform response to match frontend expectations
@@ -430,7 +520,7 @@ app.post('/api/routes', async (req, res) => {
             points: req.body.points || []
         };
 
-        console.log('Route created successfully in database:', routeId);
+        console.log('✅ Route created successfully:', routeId);
         res.json(response);
 
     } catch (error) {
@@ -474,10 +564,12 @@ app.put('/api/routes/:id', async (req, res) => {
         // Update points if provided
         if (req.body.points) {
             // Delete existing points
-            await supabase
+            const { error: deleteError } = await supabase
                 .from('route_points')
                 .delete()
                 .eq('route_id', routeId);
+
+            if (deleteError) throw deleteError;
 
             // Insert new points
             if (req.body.points.length > 0) {
@@ -520,7 +612,7 @@ app.put('/api/routes/:id', async (req, res) => {
             points: req.body.points || []
         };
 
-        console.log('Route updated successfully in database:', routeId);
+        console.log('✅ Route updated successfully in database:', routeId);
         res.json(response);
 
     } catch (error) {
@@ -533,8 +625,9 @@ app.put('/api/routes/:id', async (req, res) => {
 app.delete('/api/routes/:id', async (req, res) => {
     try {
         const routeId = req.params.id;
+        console.log('Deleting route from database:', routeId);
 
-        // Delete route (points will be cascade deleted)
+        // Delete route (points will be cascade deleted due to foreign key)
         const { error } = await supabase
             .from('routes')
             .delete()
@@ -542,7 +635,7 @@ app.delete('/api/routes/:id', async (req, res) => {
 
         if (error) throw error;
 
-        console.log('Route deleted from database:', routeId);
+        console.log('✅ Route deleted from database:', routeId);
         res.json({ message: 'Route deleted successfully' });
 
     } catch (error) {
@@ -556,6 +649,7 @@ app.post('/api/routes/:id/publish', async (req, res) => {
     try {
         const routeId = req.params.id;
         const shouldPublish = Boolean(req.body.published);
+        console.log(`${shouldPublish ? 'Publishing' : 'Unpublishing'} route:`, routeId);
 
         const { data: route, error } = await supabase
             .from('routes')
@@ -574,7 +668,7 @@ app.post('/api/routes/:id/publish', async (req, res) => {
             .select('*', { count: 'exact', head: true })
             .eq('published', true);
 
-        console.log(`Route "${route.name}" ${shouldPublish ? 'published' : 'unpublished'}`);
+        console.log(`✅ Route "${route.name}" ${shouldPublish ? 'published' : 'unpublished'}`);
         res.json({
             route: {
                 id: route.route_id,
@@ -590,7 +684,7 @@ app.post('/api/routes/:id/publish', async (req, res) => {
     }
 });
 
-// Get analytics
+// Get analytics with city breakdown
 app.get('/api/analytics', async (req, res) => {
     try {
         const { count: totalRoutes } = await supabase
@@ -604,10 +698,38 @@ app.get('/api/analytics', async (req, res) => {
 
         const unpublishedRoutes = (totalRoutes || 0) - (publishedRoutes || 0);
 
+        // Get routes by city
+        const { data: routesByCity } = await supabase
+            .from('routes')
+            .select('city')
+            .not('city', 'is', null);
+
+        const { data: publishedRoutesByCity } = await supabase
+            .from('routes')
+            .select('city')
+            .eq('published', true)
+            .not('city', 'is', null);
+
+        // Count routes per city
+        const cityStats = {};
+        routesByCity?.forEach(route => {
+            if (route.city) {
+                cityStats[route.city] = cityStats[route.city] || { total: 0, published: 0 };
+                cityStats[route.city].total++;
+            }
+        });
+
+        publishedRoutesByCity?.forEach(route => {
+            if (route.city && cityStats[route.city]) {
+                cityStats[route.city].published++;
+            }
+        });
+
         res.json({
             totalRoutes: totalRoutes || 0,
             publishedRoutes: publishedRoutes || 0,
             unpublishedRoutes: unpublishedRoutes,
+            cityBreakdown: cityStats,
             lastUpdate: new Date().toISOString()
         });
 
@@ -634,6 +756,131 @@ app.post('/api/regenerate-routes', async (req, res) => {
     } catch (error) {
         console.error('Error regenerating routes:', error);
         res.status(500).json({ error: 'Failed to regenerate routes' });
+    }
+});
+
+// CITIES ENDPOINTS
+// Get all cities
+app.get('/api/cities', async (req, res) => {
+    try {
+        console.log('Getting all cities from database...');
+        
+        const { data: cities, error } = await supabase
+            .from('cities')
+            .select('*')
+            .order('name', { ascending: true });
+
+        if (error) {
+            console.error('Database error:', error);
+            throw error;
+        }
+
+        console.log(`Found ${cities?.length || 0} cities in database`);
+        res.json(cities || []);
+
+    } catch (error) {
+        console.error('Error loading cities from database:', error);
+        res.status(500).json({ 
+            error: 'Failed to load cities from database: ' + error.message,
+            hint: 'Check that your cities table exists'
+        });
+    }
+});
+
+// Get routes by city
+app.get('/api/routes/city/:cityName', async (req, res) => {
+    try {
+        const cityName = req.params.cityName;
+        console.log(`Getting routes for city: ${cityName}`);
+        
+        const { data: routes, error } = await supabase
+            .from('routes')
+            .select(`
+                *,
+                route_points (*)
+            `)
+            .eq('published', true)
+            .ilike('city', cityName) // Case-insensitive match
+            .order('created_at', { ascending: false });
+
+        if (error) {
+            console.error('Database error:', error);
+            throw error;
+        }
+
+        console.log(`Found ${routes?.length || 0} published routes for ${cityName}`);
+
+        const transformedRoutes = (routes || []).map(route => ({
+            id: route.route_id,
+            name: route.name,
+            city: route.city,
+            category: route.category,
+            difficulty: route.difficulty,
+            estimatedDuration: route.estimated_duration,
+            distance: route.distance,
+            description: route.description,
+            color: route.color,
+            imageUrl: route.image_url,
+            imagePosition: route.image_position,
+            audioFolder: route.audio_folder,
+            published: route.published,
+            createdAt: route.created_at,
+            updatedAt: route.updated_at,
+            points: (route.route_points || [])
+                .sort((a, b) => a.point_index - b.point_index)
+                .map(point => ({
+                    name: point.name,
+                    description: point.description,
+                    coordinates: point.coordinates,
+                    radius: point.radius,
+                    type: point.point_type,
+                    audioFile: point.audio_file,
+                    audioDuration: point.audio_duration,
+                    imageUrl: point.image_url
+                }))
+        }));
+
+        console.log(`GET /api/routes/city/${cityName} - returning ${transformedRoutes.length} routes`);
+        res.json(transformedRoutes);
+
+    } catch (error) {
+        console.error(`Error loading routes for city ${req.params.cityName}:`, error);
+        res.status(500).json({ 
+            error: `Failed to load routes for ${req.params.cityName}: ` + error.message
+        });
+    }
+});
+
+// Add new city (for CMS)
+app.post('/api/cities', async (req, res) => {
+    try {
+        console.log('POST /api/cities - creating city:', req.body.name);
+
+        const cityData = {
+            name: req.body.name,
+            country: req.body.country,
+            description: req.body.description
+        };
+
+        const { data: city, error } = await supabase
+            .from('cities')
+            .insert([cityData])
+            .select()
+            .single();
+
+        if (error) {
+            if (error.code === '23505') { // Unique violation
+                return res.status(400).json({ error: 'City already exists' });
+            }
+            throw error;
+        }
+
+        console.log('City created successfully:', city.name);
+        res.json(city);
+
+    } catch (error) {
+        console.error('Error creating city:', error);
+        res.status(500).json({ error: 'Failed to create city: ' + error.message });
     }
 });
 
@@ -680,11 +927,30 @@ app.get('*', (req, res) => {
 });
 
 // START SERVER
-app.listen(PORT, '0.0.0.0', () => {
-    console.log(`Server running on port ${PORT}`);
-    console.log(`Database: Supabase PostgreSQL`);
-    console.log(`Storage: Hybrid (Supabase + Local fallback)`);
-    console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
-    console.log(`Supabase URL: ${supabaseUrl}`);
-    console.log(`Service Key configured: ${supabaseServiceKey ? 'Yes' : 'No'}`);
+app.listen(PORT, '0.0.0.0', async () => {
+    console.log('=== SERVER STARTED ===');
+    console.log(`🚀 Server running on port ${PORT}`);
+    console.log(`📊 Database: Supabase PostgreSQL`);
+    console.log(`💾 Storage: Hybrid (Supabase + Local fallback)`);
+    console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
+    console.log(`🔗 Supabase URL: ${supabaseUrl}`);
+    console.log(`🔑 Service Key configured: ${supabaseServiceKey ? 'Yes' : 'No'}`);
+    
+    // Test database connection on startup
+    console.log('Testing Supabase connection...');
+    const connectionWorking = await testSupabaseConnection();
+    
+    if (connectionWorking) {
+        console.log('✅ Database connection successful');
+        console.log('🎯 Ready to receive requests');
+        console.log('📝 CMS available at: /cms');
+        console.log('📊 Dashboard available at: /dashboard');
+        console.log('🔍 Health check: /api/health');
+    } else {
+        console.log('❌ Database connection failed');
+        console.log('⚠️  Server running but database operations will fail');
+        console.log('🔧 Check your Render environment variables');
+    }
+    
+    console.log('========================');
 });
