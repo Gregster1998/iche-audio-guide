@@ -550,9 +550,9 @@ app.post('/api/routes', async (req, res) => {
 // Update existing route
 app.put('/api/routes/:id', async (req, res) => {
     try {
-        console.log('PUT /api/routes/' + req.params.id + ' - updating route');
-
         const routeId = req.params.id;
+        console.log('PUT /api/routes/' + routeId + ' - updating route');
+
         const updateData = {
             name: req.body.name,
             city: req.body.city,
@@ -569,22 +569,26 @@ app.put('/api/routes/:id', async (req, res) => {
             updated_at: new Date().toISOString()
         };
 
-        const { data: route, error: routeError } = await supabase
+        const { data: routes, error: routeError } = await supabase
             .from('routes')
             .update(updateData)
             .eq('route_id', routeId)
-            .select()
-            .single();
+            .select();
 
         if (routeError) throw routeError;
+        
+        if (!routes || routes.length === 0) {
+            throw new Error('Route not found');
+        }
 
+        const route = routes[0]; // Take first result instead of using .single()
+
+        // Update points
         if (req.body.points) {
-            const { error: deleteError } = await supabase
+            await supabase
                 .from('route_points')
                 .delete()
                 .eq('route_id', routeId);
-
-            if (deleteError) throw deleteError;
 
             if (req.body.points.length > 0) {
                 const pointsData = req.body.points.map((point, index) => ({
@@ -626,7 +630,7 @@ app.put('/api/routes/:id', async (req, res) => {
             points: req.body.points || []
         };
 
-        console.log('✅ Route updated successfully in database:', routeId);
+        console.log('Route updated successfully:', routeId);
         res.json(response);
 
     } catch (error) {
