@@ -1644,79 +1644,90 @@
         }
 
         async function saveRoute() {
-            const form = document.getElementById('route-form');
-            const formData = new FormData(form);
-            
-            const routeData = {};
-            for (let [key, value] of formData.entries()) {
-                routeData[key] = value;
-            }
+    const form = document.getElementById('route-form');
+    const formData = new FormData(form);
+    
+    const routeData = {};
+    for (let [key, value] of formData.entries()) {
+        routeData[key] = value;
+    }
 
-            // Handle city selection - check if we're adding a new city
-            const dropdownContainer = document.getElementById('cityDropdownContainer');
-            const addCityContainer = document.getElementById('addCityContainer');
-            
-            if (addCityContainer.style.display !== 'none') {
-                // Adding new city
-                const newCityInput = document.getElementById('newCityInput');
-                const newCityName = newCityInput.value.trim();
-                
-                if (!newCityName) {
-                    showError('Please enter a city name or select from existing cities');
-                    return;
-                }
-                
-                const addedCity = await addNewCity(newCityName);
-                if (!addedCity) {
-                    showError('Failed to add new city');
-                    return;
-                }
-                routeData.city = addedCity;
-            } else {
-                // Using existing city from dropdown
-                const cityDropdown = document.getElementById('cityDropdown');
-                routeData.city = cityDropdown.value;
-            }
-
-            routeData.points = editingRouteStops;
-
-            if (!routeData.name || !routeData.city) {
-                showError('Name and City are required fields');
-                return;
-            }
-
-            try {
-                let response;
-                if (editingRoute) {
-                    response = await fetch(`${API_BASE}/routes/${editingRoute}`, {
-                        method: 'PUT',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(routeData)
-                    });
-                } else {
-                    response = await fetch(`${API_BASE}/routes`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(routeData)
-                    });
-                }
-
-                if (!response.ok) {
-                    const errorData = await response.json();
-                    throw new Error(errorData.error || `HTTP ${response.status}`);
-                }
-
-                const savedRoute = await response.json();
-
-                closeModal('route-modal');
-                showSuccess(`Route "${routeData.name}" saved successfully!`);
-                await loadRoutes();
-
-            } catch (error) {
-                console.error('Error saving route:', error);
-                showError(`Failed to save route: ${error.message}`);
-            }
+    // Handle city selection
+    const dropdownContainer = document.getElementById('cityDropdownContainer');
+    const addCityContainer = document.getElementById('addCityContainer');
+    
+    if (addCityContainer.style.display !== 'none') {
+        const newCityInput = document.getElementById('newCityInput');
+        const newCityName = newCityInput.value.trim();
+        
+        if (!newCityName) {
+            showError('Please enter a city name or select from existing cities');
+            return;
         }
+        
+        const addedCity = await addNewCity(newCityName);
+        if (!addedCity) {
+            showError('Failed to add new city');
+            return;
+        }
+        routeData.city = addedCity;
+    } else {
+        const cityDropdown = document.getElementById('cityDropdown');
+        routeData.city = cityDropdown.value;
+    }
+
+    routeData.points = editingRouteStops;
+
+    // CRITICAL FIX: Preserve published status when editing
+    if (editingRoute) {
+        const existingRoute = currentRoutes.find(r => r.id === editingRoute);
+        routeData.published = existingRoute ? existingRoute.published : false;
+    } else {
+        routeData.published = false; // New routes start as draft
+    }
+
+    if (!routeData.name || !routeData.city) {
+        showError('Name and City are required fields');
+        return;
+    }
+
+    console.log('Saving route:', editingRoute ? 'UPDATE' : 'CREATE');
+    console.log('Route data:', routeData);
+
+    try {
+        let response;
+        if (editingRoute) {
+            response = await fetch(`${API_BASE}/routes/${editingRoute}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(routeData)
+            });
+        } else {
+            response = await fetch(`${API_BASE}/routes`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(routeData)
+            });
+        }
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error('Server response:', errorText);
+            throw new Error(errorText || `HTTP ${response.status}`);
+        }
+
+        const savedRoute = await response.json();
+        console.log('Saved successfully:', savedRoute);
+
+        closeModal('route-modal');
+        showSuccess(`Route "${routeData.name}" saved successfully!`);
+        await loadRoutes();
+
+    } catch (error) {
+        console.error('Error saving route:', error);
+        showError(`Failed to save route: ${error.message}`);
+    }
+}
 
         async function deleteRoute(routeId) {
             const route = currentRoutes.find(r => r.id === routeId);
