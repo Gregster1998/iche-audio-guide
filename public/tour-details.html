@@ -431,9 +431,64 @@
                 grid-template-columns: 1fr;
             }
         }
+        .navbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(10px);
+            padding: 1rem 2rem;
+            z-index: 1000;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .navbar-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .back-button {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s;
+            text-decoration: none;
+        }
+
+        .back-button:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateX(-5px);
+        }
+
+        body {
+            padding-top: 80px;
+        }
     </style>
 </head>
 <body>
+    <nav class="navbar">
+        <div class="navbar-content">
+            <a href="discover.html" class="back-button">
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                    <path d="M12.5 15L7.5 10L12.5 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                Back to Tours
+            </a>
+            <div style="color: rgba(255,255,255,0.6); font-size: 14px;">Tour Details</div>
+        </div>
+    </nav>
+
     <div class="container">
         <div class="main-content">
             <div class="hero-card">
@@ -493,9 +548,9 @@
         <div class="sidebar">
             <div class="start-card">
                 <h3 class="sidebar-title">Start Your Journey</h3>
-                <button class="start-button" onclick="startTour()">
+                <button class="start-button" onclick="handleStartTour()">
                     <span>✈️</span>
-                    <span>Login to Start</span>
+                    <span id="startButtonText">Login to Start</span>
                 </button>
                 <p class="info-text">Free to start • Premium features available</p>
 
@@ -590,6 +645,9 @@
                 showError('No route specified');
                 return;
             }
+            
+            // Check login status to update button
+            checkLoginStatus();
             
             try {
                 await loadTourDetails(routeId);
@@ -779,9 +837,38 @@
             `;
         }
 
+        function handleStartTour() {
+            // Check if user is logged in
+            const authToken = localStorage.getItem('authToken');
+            const isDemoUser = localStorage.getItem('isDemoUser');
+            
+            if (!authToken && !isDemoUser) {
+                // Not logged in - redirect to login
+                window.location.href = 'login.html';
+            } else {
+                // Logged in - start the tour
+                startTour();
+            }
+        }
+
         function startTour() {
             if (currentRoute) {
                 window.location.href = `audioguide.html?route=${currentRoute.id || currentRoute.route_id}`;
+            }
+        }
+
+        // Check login status on page load and update button text
+        function checkLoginStatus() {
+            const authToken = localStorage.getItem('authToken');
+            const userName = localStorage.getItem('userName');
+            const isDemoUser = localStorage.getItem('isDemoUser');
+            
+            const startButtonText = document.getElementById('startButtonText');
+            
+            if (authToken || isDemoUser) {
+                if (startButtonText) {
+                    startButtonText.textContent = 'Start Tour';
+                }
             }
         }
     </script>
