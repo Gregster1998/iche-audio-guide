@@ -79,19 +79,27 @@
             gap: 0.5rem;
             padding: 1rem;
             background: rgba(0, 0, 0, 0.3);
+            overflow-x: auto;
         }
 
         .thumbnail {
             width: 80px;
             height: 80px;
+            min-width: 80px;
             border-radius: 8px;
             overflow: hidden;
             cursor: pointer;
             border: 2px solid transparent;
+            transition: all 0.3s;
         }
 
         .thumbnail.active {
             border-color: #FFD700;
+            transform: scale(1.05);
+        }
+
+        .thumbnail:hover {
+            border-color: rgba(255, 215, 0, 0.5);
         }
 
         .thumbnail img {
@@ -493,7 +501,7 @@
         <div class="main-content">
             <div class="hero-card">
                 <div class="hero-image-container">
-                    <img id="heroImage" class="hero-image" src="" alt="Tour">
+                    <img id="heroImage" class="hero-image fade-in" src="" alt="Tour">
                     <button class="favorite-btn">♡</button>
                 </div>
                 <div class="image-thumbnails" id="thumbnails">
@@ -636,6 +644,9 @@
         let currentRoute = null;
         let mainMap = null;
         let miniMap = null;
+        let galleryImages = [];
+        let currentImageIndex = 0;
+        let galleryInterval = null;
 
         document.addEventListener('DOMContentLoaded', async function() {
             const urlParams = new URLSearchParams(window.location.search);
@@ -678,10 +689,28 @@
         }
 
         function populateTourDetails(route) {
-            // Hero image
-            const heroImage = document.getElementById('heroImage');
+            // Collect all images from route and stops
+            galleryImages = [];
+            
+            // Add main route image
             if (route.imageUrl || route.image_url) {
-                heroImage.src = route.imageUrl || route.image_url;
+                galleryImages.push(route.imageUrl || route.image_url);
+            }
+            
+            // Add stop images
+            const points = route.points || [];
+            points.forEach(point => {
+                if (point.imageUrl || point.image_url) {
+                    galleryImages.push(point.imageUrl || point.image_url);
+                }
+            });
+            
+            // Set initial hero image
+            const heroImage = document.getElementById('heroImage');
+            if (galleryImages.length > 0) {
+                heroImage.src = galleryImages[0];
+                populateThumbnails();
+                startGalleryAutoplay();
             }
 
             // Basic info
@@ -720,6 +749,81 @@
             
             populateStops(route);
             initializeMiniMap(route);
+        }
+
+        function populateThumbnails() {
+            const container = document.getElementById('thumbnails');
+            if (!container || galleryImages.length === 0) return;
+            
+            const thumbnailsHTML = galleryImages.map((img, index) => `
+                <div class="thumbnail ${index === 0 ? 'active' : ''}" onclick="changeImage(${index})">
+                    <img src="${img}" alt="Image ${index + 1}">
+                </div>
+            `).join('');
+            
+            container.innerHTML = thumbnailsHTML;
+        }
+
+        function changeImage(index) {
+            if (index === currentImageIndex) return;
+            
+            const heroImage = document.getElementById('heroImage');
+            
+            // Fade out current image
+            heroImage.classList.remove('fade-in');
+            heroImage.classList.add('fade-out');
+            
+            setTimeout(() => {
+                // Change image
+                heroImage.src = galleryImages[index];
+                currentImageIndex = index;
+                
+                // Fade in new image
+                heroImage.classList.remove('fade-out');
+                heroImage.classList.add('fade-in');
+                
+                // Update thumbnails
+                updateThumbnailActive(index);
+            }, 250);
+            
+            // Reset autoplay timer
+            if (galleryInterval) {
+                clearInterval(galleryInterval);
+                startGalleryAutoplay();
+            }
+        }
+
+        function updateThumbnailActive(index) {
+            const thumbnails = document.querySelectorAll('.thumbnail');
+            thumbnails.forEach((thumb, i) => {
+                if (i === index) {
+                    thumb.classList.add('active');
+                } else {
+                    thumb.classList.remove('active');
+                }
+            });
+        }
+
+        function startGalleryAutoplay() {
+            if (galleryImages.length <= 1) return;
+            
+            // Clear any existing interval
+            if (galleryInterval) {
+                clearInterval(galleryInterval);
+            }
+            
+            // Start autoplay every 4 seconds
+            galleryInterval = setInterval(() => {
+                const nextIndex = (currentImageIndex + 1) % galleryImages.length;
+                changeImage(nextIndex);
+            }, 4000);
+        }
+
+        function stopGalleryAutoplay() {
+            if (galleryInterval) {
+                clearInterval(galleryInterval);
+                galleryInterval = null;
+            }
         }
 
         function getAvailableLanguages(route) {
@@ -871,6 +975,9 @@
                 }
             }
         }
+
+        // Make functions globally accessible
+        window.changeImage = changeImage;
     </script>
 </body>
 </html>
