@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tour Details - ICHE Audio City Tours</title>
+    <link rel="stylesheet" href="/public/css/tour-details.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+</head>
+<body>
+    <div class="back-nav">
+        <button class="back-button" onclick="goBack()">
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                <path d="M12.5 15L7.5 10L12.5 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            Back to Tours
+        </button>
+    </div>
+
+    <div class="hero-section" id="heroSection">
+        <div class="hero-overlay"></div>
+        <div class="hero-content">
+            <h1 class="tour-title" id="tourTitle">Loading...</h1>
+            <div class="tour-meta">
+                <span class="tour-city" id="tourCity"></span>
+                <span class="tour-category" id="tourCategory"></span>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="stats-bar">
+            <div class="stat-item">
+                <div class="stat-icon">⭐</div>
+                <div class="stat-content">
+                    <div class="stat-value" id="statRating">0.0</div>
+                    <div class="stat-label">Average Rating</div>
+                </div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-icon">👥</div>
+                <div class="stat-content">
+                    <div class="stat-value" id="statCompleted">0</div>
+                    <div class="stat-label">Completed Tours</div>
+                </div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-icon">🌍</div>
+                <div class="stat-content">
+                    <div class="stat-value" id="statLanguages">0</div>
+                    <div class="stat-label">Languages</div>
+                </div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-icon">📍</div>
+                <div class="stat-content">
+                    <div class="stat-value" id="statStops">0</div>
+                    <div class="stat-label">Stops</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="content-grid">
+            <div class="left-column">
+                <section class="info-card">
+                    <h2 class="section-title">About This Tour</h2>
+                    <p class="tour-description" id="tourDescription">Loading...</p>
+                    
+                    <div class="tour-details">
+                        <div class="detail-item">
+                            <span class="detail-icon">⏱️</span>
+                            <span class="detail-label">Duration:</span>
+                            <span class="detail-value" id="tourDuration">-</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-icon">📏</span>
+                            <span class="detail-label">Distance:</span>
+                            <span class="detail-value" id="tourDistance">-</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-icon">🎯</span>
+                            <span class="detail-label">Difficulty:</span>
+                            <span class="detail-value difficulty-badge" id="tourDifficulty">-</span>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="info-card">
+                    <h2 class="section-title">Available Languages</h2>
+                    <div class="languages-grid" id="languagesGrid">
+                        <div class="loading-spinner"></div>
+                    </div>
+                </section>
+
+                <section class="info-card">
+                    <h2 class="section-title">Route Overview</h2>
+                    <div id="routeMap" class="route-map"></div>
+                </section>
+            </div>
+
+            <div class="right-column">
+                <section class="info-card">
+                    <h2 class="section-title">Tour Stops</h2>
+                    <div id="stopsContainer" class="stops-container">
+                        <div class="loading-spinner"></div>
+                    </div>
+                </section>
+            </div>
+        </div>
+
+        <div class="action-bar">
+            <button class="btn-start-tour" id="startTourBtn" onclick="startTour()">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                    <path d="M8 5v14l11-7z" fill="currentColor"/>
+                </svg>
+                Start Tour
+            </button>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="/public/JS/tour-details.js"></script>
+</body>
+</html>

@@ -4,7 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Discover Tours - ICHE Audio City Tours</title>
-    <script src="config.js"></script>
+    <!-- CORRECT PATH -->
+<script src="/config.js"></script>
     <style>
         * {
             margin: 0;
@@ -440,6 +441,7 @@
             margin-bottom: 1.5rem;
         }
     </style>
+   
     <!-- Supabase JS -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -613,88 +615,85 @@
 
         // LOAD ROUTES FROM DATABASE - EXACT SAME APPROACH AS DASHBOARD
         async function loadRoutesFromDatabase() {
-            console.log('Loading routes from database using dashboard approach...');
-            
+    console.log('Loading routes from database using dashboard approach...');
+    
+    try {
+        const endpoints = [
+            `${window.location.origin}/api/app/routes`,
+            `${window.location.origin}/api/routes`,
+            'http://localhost:3001/api/app/routes',
+            'http://localhost:3001/api/routes'
+        ];
+        
+        let routes = null;
+        
+        for (const endpoint of endpoints) {
             try {
-                // Test multiple endpoints just like dashboard
-                const endpoints = [
-                    `${window.location.origin}/api/app/routes`,
-                    `${window.location.origin}/api/routes`,
-                    'http://localhost:3001/api/app/routes',
-                    'http://localhost:3001/api/routes'
-                ];
+                console.log(`Testing endpoint: ${endpoint}`);
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 sec timeout
                 
-                let routes = null;
+                const response = await fetch(endpoint, { signal: controller.signal });
+                clearTimeout(timeoutId);
                 
-                for (const endpoint of endpoints) {
-                    try {
-                        console.log(`Testing endpoint: ${endpoint}`);
-                        const response = await fetch(endpoint);
-                        
-                        if (response.ok) {
-                            const data = await response.json();
-                            
-                            if (data && Array.isArray(data) && data.length > 0) {
-                                routes = data;
-                                console.log(`✅ Loaded ${routes.length} routes from database`);
-                                break;
-                            }
-                        }
-                    } catch (error) {
-                        console.log(`Endpoint ${endpoint} failed:`, error.message);
+                if (response.ok) {
+                    const data = await response.json();
+                    
+                    if (data && Array.isArray(data) && data.length > 0) {
+                        routes = data;
+                        console.log(`✅ Loaded ${routes.length} routes from database`);
+                        break;
                     }
                 }
-                
-                if (!routes || routes.length === 0) {
-                    console.warn('⚠️ No routes found from database, using fallback');
-                    routes = [
-                        {
-                            id: 1,
-                            route_id: 'demo-route-1',
-                            name: 'Demo Historic City Walk',
-                            city: 'Demo City',
-                            category: 'historical',
-                            difficulty: 'easy',
-                            estimatedDuration: '90 minutes',
-                            distance: '2.5 km',
-                            description: 'A beautiful walk through the historic center of our demo city.',
-                            imageUrl: 'https://images.unsplash.com/photo-1477959858617-67f85cf4f1df?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
-                            published: true,
-                            points: [{}, {}, {}, {}, {}, {}] // 6 stops
-                        }
-                    ];
-                }
-                
-                // Transform data to match expected format
-                allRoutes = routes.map(route => ({
-                    ...route,
-                    // Map different field names to expected format
-                    route_id: route.route_id || route.id,
-                    estimated_duration: route.estimatedDuration || route.estimated_duration,
-                    image_url: route.imageUrl || route.image_url,
-                    stops: route.points ? route.points.length : (route.stops || 0)
-                }));
-                
-                // Store routes globally like dashboard
-                window.currentRoutesData = allRoutes;
-                
-                // Update stats
-                const totalRoutesEl = document.getElementById('total-routes');
-                const totalCitiesEl = document.getElementById('total-cities');
-                
-                if (totalRoutesEl) totalRoutesEl.textContent = allRoutes.length;
-                if (totalCitiesEl) {
-                    const cities = new Set(allRoutes.map(route => route.city).filter(Boolean));
-                    totalCitiesEl.textContent = cities.size;
-                }
-                
-                console.log('✅ Routes loaded and processed:', allRoutes);
-                
             } catch (error) {
-                console.error('Error loading routes from database:', error);
-                showError('Failed to load routes from database. Please check your connection.');
+                console.log(`Endpoint ${endpoint} failed:`, error.message);
             }
         }
+        
+        if (!routes || routes.length === 0) {
+            console.warn('⚠️ No routes found from database, using fallback');
+            routes = [{
+                id: 1,
+                route_id: 'demo-route-1',
+                name: 'Demo Historic City Walk',
+                city: 'Demo City',
+                category: 'historical',
+                difficulty: 'easy',
+                estimatedDuration: '90 minutes',
+                distance: '2.5 km',
+                description: 'A beautiful walk through the historic center.',
+                imageUrl: 'https://images.unsplash.com/photo-1477959858617-67f85cf4f1df?w=800',
+                published: true,
+                points: [{}, {}, {}, {}, {}, {}]
+            }];
+        }
+        
+        allRoutes = routes.map(route => ({
+            ...route,
+            route_id: route.route_id || route.id,
+            estimated_duration: route.estimatedDuration || route.estimated_duration,
+            image_url: route.imageUrl || route.image_url,
+            stops: route.points ? route.points.length : (route.stops || 0)
+        }));
+        
+        window.currentRoutesData = allRoutes;
+        
+        const totalRoutesEl = document.getElementById('total-routes');
+        const totalCitiesEl = document.getElementById('total-cities');
+        
+        if (totalRoutesEl) totalRoutesEl.textContent = allRoutes.length;
+        if (totalCitiesEl) {
+            const cities = new Set(allRoutes.map(route => route.city).filter(Boolean));
+            totalCitiesEl.textContent = cities.size;
+        }
+        
+        console.log('✅ Routes loaded and processed:', allRoutes);
+        
+    } catch (error) {
+        console.error('Error loading routes from database:', error);
+        showError('Failed to load routes from database. Please check your connection.');
+    }
+}
 
         async function loadUserFavorites() {
             if (!currentUser || !supabaseClient) return;
@@ -990,7 +989,7 @@
 
         function viewRoute(routeId) {
             // Redirect to audioguide.html with the route ID
-            window.location.href = `audioguide.html?route=${routeId}`;
+            window.location.href = `tour-details.html?route=${routeId}`;
         }
 
         function previewRoute(routeId) {
