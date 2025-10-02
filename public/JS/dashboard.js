@@ -1,4 +1,4 @@
-// Dashboard.js - Enhanced with detailed route view and map preview
+// Dashboard.js - Fixed with working detailed route modal
 console.log("Dashboard loading...");
 
 let globalRoutesData = [];
@@ -6,6 +6,7 @@ let allCitiesData = [];
 let currentUserCity = '';
 let currentUserName = '';
 let routePreviewMap = null;
+let selectedRouteForTour = null;
 
 document.addEventListener('DOMContentLoaded', async function() {
     console.log("Dashboard DOM loaded, starting initialization...");
@@ -290,6 +291,9 @@ function populateAvailableRoutes(routes) {
                     background-size: cover; 
                     background-position: ${backgroundPosition};
                     background-repeat: no-repeat;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
                 ">
                     <div style="position: relative; z-index: 1;">
                         <span style="font-size: 32px; color: white; text-shadow: 0 2px 4px rgba(0,0,0,0.8);">🎧</span>
@@ -329,29 +333,41 @@ function selectRoute(routeId) {
     
     console.log('✅ Found route:', route.name);
     
+    // Update dropdown
     const dropdown = document.getElementById('tramLineSelect');
     if (dropdown) {
         dropdown.value = routeId;
     }
     
-    showDetailedRoute(route);
+    // Store selected route
+    selectedRouteForTour = route;
     sessionStorage.setItem('selectedRouteId', routeId);
+    
+    // Show detailed view
+    showDetailedRoute(route);
 }
 
 function showDetailedRoute(route) {
     console.log('Showing detailed route:', route.name);
-    const detailedView = document.getElementById('detailedRouteView');
-    if (!detailedView) {
-        console.error('Detailed route view element not found');
+    
+    const modal = document.getElementById('detailedRouteModal');
+    if (!modal) {
+        console.error('Detailed route modal not found');
         return;
     }
     
-    const imageTag = document.getElementById('detailedRouteImageTag');
-    if (imageTag && route.imageUrl) {
-        imageTag.src = route.imageUrl;
-        imageTag.style.objectPosition = route.imagePosition || 'center';
+    // Update route image
+    const imageEl = document.getElementById('detailedRouteImage');
+    if (imageEl) {
+        if (route.imageUrl) {
+            imageEl.src = route.imageUrl;
+            imageEl.style.objectPosition = route.imagePosition || 'center';
+        } else {
+            imageEl.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjI1MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iNDAwIiBoZWlnaHQ9IjI1MCIgZmlsbD0iIzRhN2M1OSIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LXNpemU9IjQ4IiBmaWxsPSJ3aGl0ZSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZG9taW5hbnQtYmFzZWxpbmU9Im1pZGRsZSI+8J+OpzwvdGV4dD48L3N2Zz4=';
+        }
     }
     
+    // Update route info
     const nameEl = document.getElementById('detailedRouteName');
     const descEl = document.getElementById('detailedRouteDescription');
     const stopsEl = document.getElementById('detailedRouteStops');
@@ -360,18 +376,21 @@ function showDetailedRoute(route) {
     if (nameEl) nameEl.textContent = route.name;
     if (descEl) descEl.textContent = route.description || 'Journey through historical landmarks and cultural treasures.';
     if (stopsEl) stopsEl.textContent = `${route.points?.length || 0} stops`;
-    if (durEl) durEl.textContent = route.estimatedDuration || '3 hours';
+    if (durEl) durEl.textContent = route.estimatedDuration || '2-3 hours';
     
-    detailedView.style.display = 'block';
+    // Show modal
+    modal.classList.add('show');
     
+    // Initialize map after modal is visible
     setTimeout(() => {
         initializeRoutePreviewMap(route);
     }, 300);
     
-    console.log('✅ Detailed route view shown');
+    console.log('✅ Detailed route modal shown');
 }
 
 function initializeRoutePreviewMap(route) {
+    // Clean up existing map
     if (routePreviewMap) {
         routePreviewMap.remove();
         routePreviewMap = null;
@@ -384,57 +403,73 @@ function initializeRoutePreviewMap(route) {
     }
     
     const validPoints = route.points.filter(p => p.coordinates && p.coordinates.length === 2);
-    if (validPoints.length === 0) return;
-    
-    const coordinates = validPoints.map(p => [p.coordinates[1], p.coordinates[0]]);
-    const bounds = L.latLngBounds(coordinates);
-    
-    routePreviewMap = L.map('routePreviewMap', {
-        zoomControl: false,
-        attributionControl: false,
-        dragging: false,
-        scrollWheelZoom: false,
-        doubleClickZoom: false,
-        touchZoom: false
-    }).fitBounds(bounds, { padding: [20, 20] });
-    
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(routePreviewMap);
-    
-    validPoints.forEach((point, index) => {
-        const isStart = index === 0;
-        const color = isStart ? '#FF5722' : '#FFD700';
-        
-        L.circleMarker([point.coordinates[1], point.coordinates[0]], {
-            radius: 6,
-            fillColor: color,
-            color: '#fff',
-            weight: 2,
-            opacity: 1,
-            fillOpacity: 1
-        }).addTo(routePreviewMap);
-    });
-    
-    if (coordinates.length > 1) {
-        L.polyline(coordinates, {
-            color: '#FFD700',
-            weight: 3,
-            opacity: 0.7
-        }).addTo(routePreviewMap);
+    if (validPoints.length === 0) {
+        console.log('No valid coordinates found');
+        return;
     }
     
-    console.log('✅ Route preview map initialized with', validPoints.length, 'points');
+    try {
+        // Create coordinates array for Leaflet [lat, lng]
+        const coordinates = validPoints.map(p => [p.coordinates[1], p.coordinates[0]]);
+        const bounds = L.latLngBounds(coordinates);
+        
+        // Initialize map
+        routePreviewMap = L.map('routePreviewMap', {
+            zoomControl: false,
+            attributionControl: false,
+            dragging: true,
+            scrollWheelZoom: false,
+            doubleClickZoom: false,
+            touchZoom: true
+        }).fitBounds(bounds, { padding: [30, 30] });
+        
+        // Add tile layer
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(routePreviewMap);
+        
+        // Add markers for each point
+        validPoints.forEach((point, index) => {
+            const [lng, lat] = point.coordinates;
+            const isStart = index === 0;
+            const color = isStart ? '#FF5722' : '#FFD700';
+            
+            L.circleMarker([lat, lng], {
+                radius: isStart ? 8 : 6,
+                fillColor: color,
+                color: '#fff',
+                weight: 2,
+                opacity: 1,
+                fillOpacity: 1
+            }).addTo(routePreviewMap).bindPopup(point.name || `Stop ${index + 1}`);
+        });
+        
+        // Draw route line
+        if (coordinates.length > 1) {
+            L.polyline(coordinates, {
+                color: '#FFD700',
+                weight: 3,
+                opacity: 0.7
+            }).addTo(routePreviewMap);
+        }
+        
+        console.log('✅ Route preview map initialized with', validPoints.length, 'points');
+    } catch (error) {
+        console.error('Error initializing map:', error);
+    }
 }
 
 function closeDetailedView() {
-    const detailedView = document.getElementById('detailedRouteView');
-    if (detailedView) {
-        detailedView.style.display = 'none';
+    const modal = document.getElementById('detailedRouteModal');
+    if (modal) {
+        modal.classList.remove('show');
     }
     
+    // Clean up map
     if (routePreviewMap) {
         routePreviewMap.remove();
         routePreviewMap = null;
     }
+    
+    console.log('✅ Detailed view closed');
 }
 
 function showCitySelector() {
@@ -532,7 +567,20 @@ async function changeCity() {
     await loadRoutesForCity(selectedCity);
 }
 
+function startAudioTour() {
+    if (!selectedRouteForTour) {
+        alert('Please select a route first');
+        return;
+    }
+    
+    console.log('Starting audio tour for route:', selectedRouteForTour.id);
+    
+    // Navigate to audioguide with route ID
+    window.location.href = `audioguide.html?route=${selectedRouteForTour.id}`;
+}
+
 function setupEventListeners() {
+    // Dropdown change listener
     const dropdown = document.getElementById('tramLineSelect');
     if (dropdown) {
         dropdown.addEventListener('change', function() {
@@ -543,18 +591,13 @@ function setupEventListeners() {
         });
     }
     
+    // Start audio tour button
     const startButton = document.getElementById('startAudioButton');
     if (startButton) {
-        startButton.addEventListener('click', function() {
-            const selectedRouteId = sessionStorage.getItem('selectedRouteId');
-            if (selectedRouteId) {
-                window.location.href = `audioguide.html?route=${selectedRouteId}`;
-            } else {
-                alert('Please select a route first');
-            }
-        });
+        startButton.addEventListener('click', startAudioTour);
     }
     
+    // City selector
     const cityDisplay = document.getElementById('userCity');
     if (cityDisplay) {
         cityDisplay.style.cursor = 'pointer';
@@ -562,6 +605,7 @@ function setupEventListeners() {
         cityDisplay.title = 'Click to change city';
     }
     
+    // Rating stars
     const ratingStars = document.querySelectorAll('.star');
     ratingStars.forEach(star => {
         star.addEventListener('click', function() {
@@ -575,15 +619,18 @@ function setupEventListeners() {
                     s.textContent = '☆';
                 }
             });
+            console.log('Route rated:', rating, 'stars');
         });
     });
 }
 
+// Make functions globally available
 if (typeof window !== 'undefined') {
     window.selectRoute = selectRoute;
     window.showCitySelector = showCitySelector;
     window.closeCitySelector = closeCitySelector;
     window.changeCity = changeCity;
     window.closeDetailedView = closeDetailedView;
+    window.startAudioTour = startAudioTour;
     window.globalRoutesData = globalRoutesData;
 }
