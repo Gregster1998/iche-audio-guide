@@ -1,27 +1,20 @@
-// Dashboard.js - Enhanced with user name display and city filtering
+// Dashboard.js - Enhanced with detailed route view and map preview
 console.log("Dashboard loading...");
 
-// Global route storage
 let globalRoutesData = [];
 let allCitiesData = [];
 let currentUserCity = '';
 let currentUserName = '';
+let routePreviewMap = null;
 
-// Wait for routes to load, then populate the interface
 document.addEventListener('DOMContentLoaded', async function() {
     console.log("Dashboard DOM loaded, starting initialization...");
     
-    // Load user data from localStorage first
     loadUserData();
     
     try {
-        // Load cities from database
         await loadCitiesFromDatabase();
-        
-        // Load routes for the user's selected city
         await loadRoutesForCity(currentUserCity);
-        
-        // Setup event listeners
         setupEventListeners();
         
         console.log('✅ Dashboard loaded successfully');
@@ -32,11 +25,9 @@ document.addEventListener('DOMContentLoaded', async function() {
     }
 });
 
-// Load user data from localStorage and update UI
 function loadUserData() {
     console.log("Loading user data from localStorage...");
     
-    // Get user data
     currentUserName = localStorage.getItem('userName') || 'User';
     currentUserCity = localStorage.getItem('userCity') || '';
     
@@ -45,26 +36,22 @@ function loadUserData() {
         city: currentUserCity
     });
     
-    // Update welcome message
     const welcomeTitle = document.getElementById('welcomeTitle');
     if (welcomeTitle) {
         welcomeTitle.textContent = `Welcome, ${currentUserName}!`;
     }
     
-    // Update city display
     const cityDisplay = document.getElementById('userCity');
     if (cityDisplay) {
         cityDisplay.textContent = currentUserCity || 'Select City';
     }
     
-    // Update user avatar with first letter of name
     const userAvatar = document.getElementById('userAvatar');
     if (userAvatar) {
         userAvatar.textContent = currentUserName.charAt(0).toUpperCase();
     }
 }
 
-// Load cities from database
 async function loadCitiesFromDatabase() {
     console.log("Loading cities from database...");
     
@@ -113,7 +100,6 @@ async function loadCitiesFromDatabase() {
     }
 }
 
-// Load routes for a specific city
 async function loadRoutesForCity(cityName) {
     console.log(`Loading routes for city: ${cityName}`);
     
@@ -154,15 +140,11 @@ async function loadRoutesForCity(cityName) {
             return await loadAllPublishedRoutes();
         }
         
-        // Store routes globally
         globalRoutesData = routes;
         window.currentRoutesData = routes;
         
-        // Update UI
         populateRouteDropdown(routes);
         populateAvailableRoutes(routes);
-        
-        // Update progress section
         updateProgressSection(routes);
         
         console.log(`✅ Loaded ${routes.length} routes for ${cityName}`);
@@ -173,7 +155,6 @@ async function loadRoutesForCity(cityName) {
     }
 }
 
-// Fallback: load all published routes
 async function loadAllPublishedRoutes() {
     console.log('Loading all published routes as fallback...');
     
@@ -216,7 +197,6 @@ async function loadAllPublishedRoutes() {
     updateProgressSection(routes);
 }
 
-// Show error in the routes container
 function showError(message) {
     const container = document.getElementById('routesContainer');
     if (container) {
@@ -224,19 +204,14 @@ function showError(message) {
             <div style="text-align: center; padding: 40px; color: rgba(255,255,255,0.6);">
                 <h3>⚠️ Routes Loading Error</h3>
                 <p>${message}</p>
-                <p style="font-size: 12px; margin-top: 10px; opacity: 0.7;">Check the browser console (F12) for technical details</p>
                 <button onclick="location.reload()" style="background: #FFD700; color: #1B3A2E; border: none; padding: 10px 20px; border-radius: 8px; margin-top: 15px; cursor: pointer;">
                     🔄 Reload Page
-                </button>
-                <button onclick="testRouteConnection()" style="background: #4CAF50; color: white; border: none; padding: 10px 20px; border-radius: 8px; margin-top: 15px; margin-left: 10px; cursor: pointer;">
-                    🔍 Test Connection
                 </button>
             </div>
         `;
     }
 }
 
-// Update progress section based on available routes
 function updateProgressSection(routes) {
     const progressText = document.getElementById('progressText');
     const progressPercent = document.getElementById('progressPercent');
@@ -252,7 +227,6 @@ function updateProgressSection(routes) {
     }
 }
 
-// Populate the route selection dropdown
 function populateRouteDropdown(routes) {
     console.log('Populating dropdown with routes:', routes.length);
     const dropdown = document.getElementById('tramLineSelect');
@@ -261,7 +235,6 @@ function populateRouteDropdown(routes) {
         return;
     }
     
-    // Clear existing options
     dropdown.innerHTML = '<option value="">Choose a route</option>';
     
     if (!routes || routes.length === 0) {
@@ -273,19 +246,16 @@ function populateRouteDropdown(routes) {
         return;
     }
     
-    // Add each route as an option
     routes.forEach(route => {
         const option = document.createElement('option');
         option.value = route.id;
         option.textContent = route.name;
         dropdown.appendChild(option);
-        console.log(`Added route: ${route.name} (${route.id})`);
     });
     
     console.log(`✅ Added ${routes.length} routes to dropdown`);
 }
 
-// Populate the available routes section
 function populateAvailableRoutes(routes) {
     console.log('Populating route cards with routes:', routes.length);
     const container = document.getElementById('routesContainer');
@@ -298,7 +268,6 @@ function populateAvailableRoutes(routes) {
         container.innerHTML = `
             <div style="text-align: center; padding: 40px; color: rgba(255,255,255,0.6);">
                 <h3>No tours available for ${currentUserCity}</h3>
-                <p>Try switching to a different city or check the <a href="/cms" target="_blank" style="color: #FFD700;">CMS</a> to create routes for this city</p>
                 <button onclick="showCitySelector()" style="background: #FFD700; color: #1B3A2E; border: none; padding: 10px 20px; border-radius: 8px; margin-top: 15px; cursor: pointer;">
                     🌍 Change City
                 </button>
@@ -307,10 +276,7 @@ function populateAvailableRoutes(routes) {
         return;
     }
     
-    // Create route cards
     container.innerHTML = routes.map(route => {
-        console.log(`Creating card for route: ${route.name} (ID: ${route.id})`);
-        
         const backgroundImage = route.imageUrl 
             ? `url('${route.imageUrl}')` 
             : `linear-gradient(135deg, ${route.color || '#4a7c59'} 0%, #3d6b4a 100%)`;
@@ -329,7 +295,7 @@ function populateAvailableRoutes(routes) {
                         <span style="font-size: 32px; color: white; text-shadow: 0 2px 4px rgba(0,0,0,0.8);">🎧</span>
                     </div>
                 </div>
-                <div class="route-content" style="padding: 15px; margin: 10%;">
+                <div class="route-content" style="padding: 15px;">
                     <h3>${route.name}</h3>
                     <p class="route-description">${route.description || 'No description available'}</p>
                     <div class="route-stats">
@@ -341,10 +307,6 @@ function populateAvailableRoutes(routes) {
                             <span class="stat-icon">⏱️</span>
                             <span>${route.estimatedDuration || 'N/A'}</span>
                         </div>
-                        <div class="route-stat">
-                            <span class="stat-icon">📏</span>
-                            <span>${route.distance || 'N/A'}</span>
-                        </div>
                     </div>
                 </div>
             </div>
@@ -354,7 +316,6 @@ function populateAvailableRoutes(routes) {
     console.log(`✅ Added ${routes.length} route cards`);
 }
 
-// Handle route selection
 function selectRoute(routeId) {
     console.log('Route selected:', routeId);
     
@@ -368,20 +329,15 @@ function selectRoute(routeId) {
     
     console.log('✅ Found route:', route.name);
     
-    // Update the dropdown to show selected route
     const dropdown = document.getElementById('tramLineSelect');
     if (dropdown) {
         dropdown.value = routeId;
     }
     
-    // Show detailed route information
     showDetailedRoute(route);
-    
-    // Store selected route for later use
     sessionStorage.setItem('selectedRouteId', routeId);
 }
 
-// Show detailed route information
 function showDetailedRoute(route) {
     console.log('Showing detailed route:', route.name);
     const detailedView = document.getElementById('detailedRouteView');
@@ -390,40 +346,98 @@ function showDetailedRoute(route) {
         return;
     }
     
-    // Update detailed route image
-    const detailedRouteImage = document.getElementById('detailedRouteImage');
-    if (detailedRouteImage && route.imageUrl) {
-        detailedRouteImage.style.backgroundImage = `url('${route.imageUrl}')`;
-        detailedRouteImage.style.backgroundSize = 'cover';
-        detailedRouteImage.style.backgroundPosition = route.imagePosition || 'center';
-        detailedRouteImage.style.backgroundRepeat = 'no-repeat';
-    } else if (detailedRouteImage) {
-        detailedRouteImage.style.backgroundImage = `linear-gradient(135deg, ${route.color || '#4a7c59'} 0%, #3d6b4a 100%)`;
+    const imageTag = document.getElementById('detailedRouteImageTag');
+    if (imageTag && route.imageUrl) {
+        imageTag.src = route.imageUrl;
+        imageTag.style.objectPosition = route.imagePosition || 'center';
     }
     
-    // Populate detailed route information
     const nameEl = document.getElementById('detailedRouteName');
     const descEl = document.getElementById('detailedRouteDescription');
-    const distEl = document.getElementById('detailedRouteDistance');
-    const durEl = document.getElementById('detailedRouteDuration');
-    const diffEl = document.getElementById('detailedRouteDifficulty');
     const stopsEl = document.getElementById('detailedRouteStops');
+    const durEl = document.getElementById('detailedRouteDuration');
     
     if (nameEl) nameEl.textContent = route.name;
-    if (descEl) descEl.textContent = route.description || 'No description available';
-    if (distEl) distEl.textContent = route.distance || 'N/A';
-    if (durEl) durEl.textContent = route.estimatedDuration || 'N/A';
-    if (diffEl) diffEl.textContent = route.difficulty || 'Easy';
-    if (stopsEl) stopsEl.textContent = `${route.points?.length || 0} points`;
+    if (descEl) descEl.textContent = route.description || 'Journey through historical landmarks and cultural treasures.';
+    if (stopsEl) stopsEl.textContent = `${route.points?.length || 0} stops`;
+    if (durEl) durEl.textContent = route.estimatedDuration || '3 hours';
     
-    // Show the detailed view
     detailedView.style.display = 'block';
+    
+    setTimeout(() => {
+        initializeRoutePreviewMap(route);
+    }, 300);
+    
     console.log('✅ Detailed route view shown');
 }
 
-// Show city selector modal
+function initializeRoutePreviewMap(route) {
+    if (routePreviewMap) {
+        routePreviewMap.remove();
+        routePreviewMap = null;
+    }
+    
+    const mapElement = document.getElementById('routePreviewMap');
+    if (!mapElement || !route.points || route.points.length === 0) {
+        console.log('No map element or no points to display');
+        return;
+    }
+    
+    const validPoints = route.points.filter(p => p.coordinates && p.coordinates.length === 2);
+    if (validPoints.length === 0) return;
+    
+    const coordinates = validPoints.map(p => [p.coordinates[1], p.coordinates[0]]);
+    const bounds = L.latLngBounds(coordinates);
+    
+    routePreviewMap = L.map('routePreviewMap', {
+        zoomControl: false,
+        attributionControl: false,
+        dragging: false,
+        scrollWheelZoom: false,
+        doubleClickZoom: false,
+        touchZoom: false
+    }).fitBounds(bounds, { padding: [20, 20] });
+    
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(routePreviewMap);
+    
+    validPoints.forEach((point, index) => {
+        const isStart = index === 0;
+        const color = isStart ? '#FF5722' : '#FFD700';
+        
+        L.circleMarker([point.coordinates[1], point.coordinates[0]], {
+            radius: 6,
+            fillColor: color,
+            color: '#fff',
+            weight: 2,
+            opacity: 1,
+            fillOpacity: 1
+        }).addTo(routePreviewMap);
+    });
+    
+    if (coordinates.length > 1) {
+        L.polyline(coordinates, {
+            color: '#FFD700',
+            weight: 3,
+            opacity: 0.7
+        }).addTo(routePreviewMap);
+    }
+    
+    console.log('✅ Route preview map initialized with', validPoints.length, 'points');
+}
+
+function closeDetailedView() {
+    const detailedView = document.getElementById('detailedRouteView');
+    if (detailedView) {
+        detailedView.style.display = 'none';
+    }
+    
+    if (routePreviewMap) {
+        routePreviewMap.remove();
+        routePreviewMap = null;
+    }
+}
+
 function showCitySelector() {
-    // Create modal HTML
     const modalHTML = `
         <div id="citySelectorModal" style="
             position: fixed;
@@ -435,7 +449,7 @@ function showCitySelector() {
             display: flex;
             align-items: center;
             justify-content: center;
-            z-index: 1000;
+            z-index: 2000;
         ">
             <div style="
                 background: linear-gradient(135deg, #1B3A2E 0%, #0F1419 100%);
@@ -487,11 +501,9 @@ function showCitySelector() {
         </div>
     `;
     
-    // Add modal to page
     document.body.insertAdjacentHTML('beforeend', modalHTML);
 }
 
-// Close city selector modal
 function closeCitySelector() {
     const modal = document.getElementById('citySelectorModal');
     if (modal) {
@@ -499,7 +511,6 @@ function closeCitySelector() {
     }
 }
 
-// Change user's city
 async function changeCity() {
     const selector = document.getElementById('citySelector');
     const selectedCity = selector.value;
@@ -509,30 +520,19 @@ async function changeCity() {
         return;
     }
     
-    console.log(`Changing city from ${currentUserCity} to ${selectedCity}`);
-    
-    // Update localStorage
     localStorage.setItem('userCity', selectedCity);
     currentUserCity = selectedCity;
     
-    // Update UI
     const cityDisplay = document.getElementById('userCity');
     if (cityDisplay) {
         cityDisplay.textContent = selectedCity;
     }
     
-    // Close modal
     closeCitySelector();
-    
-    // Load routes for new city
     await loadRoutesForCity(selectedCity);
-    
-    console.log(`✅ City changed to ${selectedCity}`);
 }
 
-// Set up event listeners
 function setupEventListeners() {
-    // Route dropdown change
     const dropdown = document.getElementById('tramLineSelect');
     if (dropdown) {
         dropdown.addEventListener('change', function() {
@@ -543,7 +543,6 @@ function setupEventListeners() {
         });
     }
     
-    // Start audio tour button
     const startButton = document.getElementById('startAudioButton');
     if (startButton) {
         startButton.addEventListener('click', function() {
@@ -556,35 +555,35 @@ function setupEventListeners() {
         });
     }
     
-    // Make city display clickable
     const cityDisplay = document.getElementById('userCity');
     if (cityDisplay) {
         cityDisplay.style.cursor = 'pointer';
         cityDisplay.addEventListener('click', showCitySelector);
         cityDisplay.title = 'Click to change city';
     }
-}
-
-// Enhanced test function
-function testRouteConnection() {
-    console.log('=== DASHBOARD ROUTE CONNECTION TEST ===');
-    console.log('Current user city:', currentUserCity);
-    console.log('Available cities:', allCitiesData.map(c => c.name));
-    console.log('Current routes count:', globalRoutesData.length);
     
-    // Test city-specific endpoints
-    if (currentUserCity) {
-        const cityEndpoint = `${window.location.origin}/api/routes/city/${encodeURIComponent(currentUserCity)}`;
-        console.log('Testing city endpoint:', cityEndpoint);
-    }
+    const ratingStars = document.querySelectorAll('.star');
+    ratingStars.forEach(star => {
+        star.addEventListener('click', function() {
+            const rating = this.getAttribute('data-rating');
+            ratingStars.forEach((s, index) => {
+                if (index < rating) {
+                    s.classList.add('active');
+                    s.textContent = '★';
+                } else {
+                    s.classList.remove('active');
+                    s.textContent = '☆';
+                }
+            });
+        });
+    });
 }
 
-// Make functions available globally
 if (typeof window !== 'undefined') {
-    window.testRouteConnection = testRouteConnection;
     window.selectRoute = selectRoute;
     window.showCitySelector = showCitySelector;
     window.closeCitySelector = closeCitySelector;
     window.changeCity = changeCity;
+    window.closeDetailedView = closeDetailedView;
     window.globalRoutesData = globalRoutesData;
 }
