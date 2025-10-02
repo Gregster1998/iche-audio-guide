@@ -463,6 +463,34 @@
         let totalCards = 0;
 
         const DEBUG_MODE = true;
+        // Debug functions
+function debugLog(message) {
+    if (DEBUG_MODE) {
+        console.log(`[DEBUG] ${message}`);
+        updateDebugAudio(message);
+    }
+}
+
+function updateDebugLocation(message) {
+    if (DEBUG_MODE) {
+        const el = document.getElementById('debug-location');
+        if (el) el.textContent = `Location: ${message}`;
+    }
+}
+
+function updateDebugAudio(message) {
+    if (DEBUG_MODE) {
+        const el = document.getElementById('debug-audio');
+        if (el) el.textContent = `Audio: ${message}`;
+    }
+}
+
+function updateDebugProximity(message) {
+    if (DEBUG_MODE) {
+        const el = document.getElementById('debug-proximity');
+        if (el) el.textContent = `Proximity: ${message}`;
+    }
+}
 
         document.addEventListener('DOMContentLoaded', function() {
             initializeAudioguide();
@@ -1318,18 +1346,6 @@ function setupAudio() {
             `;
         }
 
-        function debugLog(message) {
-            if (DEBUG_MODE) {
-                console.log(`[DEBUG] ${message}`);
-            }
-        }
-
-        function updateDebugProximity(message) {
-            if (DEBUG_MODE) {
-                const el = document.getElementById('debug-proximity');
-                if (el) el.textContent = `Proximity: ${message}`;
-            }
-        }
 
         window.addEventListener('beforeunload', () => {
             if (geolocationWatcher) {
