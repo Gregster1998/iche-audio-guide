@@ -1629,78 +1629,43 @@
 
 
         function loadAudio(audioFile, stopIndex) {
+    if (!currentAudio) {
+        debugLog('No audio element available');
+        return;
+    }
 
-            if (!currentAudio) {
-
-                debugLog('No audio element available');
-
-                return;
-
-            }
-
-
-
-            // Determine the correct audio URL
-
-            let audioUrl;
-
-            if (audioFile.startsWith('http')) {
-
-                audioUrl = audioFile;
-
-            } else if (audioFile.startsWith('/')) {
-
-                audioUrl = audioFile;
-
-            } else {
-
-                audioUrl = `/uploads/audio/${audioFile}`;
-
-            }
-
-            
-
-            debugLog(`Loading audio: ${audioUrl}`);
-
-            
-
-            // Test if the audio file exists first
-
-            fetch(audioUrl, { method: 'HEAD' })
-
-                .then(response => {
-
-                    if (response.ok) {
-
-                        currentAudio.src = audioUrl;
-
-                        debugLog(`Audio file found: ${response.status}`);
-
-                    } else {
-
-                        debugLog(`Audio file not found: ${response.status}`);
-
-                        // Try alternative paths
-
-                        const altUrl = audioFile.startsWith('/uploads/') ? audioFile : `/uploads/audio/${audioFile.split('/').pop()}`;
-
-                        debugLog(`Trying alternative URL: ${altUrl}`);
-
-                        currentAudio.src = altUrl;
-
-                    }
-
-                })
-
-                .catch(error => {
-
-                    debugLog(`Error checking audio file: ${error.message}`);
-
-                    currentAudio.src = audioUrl; // Try loading anyway
-
-                });
-
-        }
+    console.log('=== LOAD AUDIO DEBUG ===');
+    console.log('Original audioFile value:', audioFile);
+    
+    let audioUrl;
+    
+    // Check if it's already a full URL (from Supabase)
+    if (audioFile.startsWith('http://') || audioFile.startsWith('https://')) {
+        audioUrl = audioFile;
+        console.log('Using full URL directly:', audioUrl);
+    } 
+    // Check if it's an absolute path
+    else if (audioFile.startsWith('/')) {
+        audioUrl = audioFile;
+        console.log('Using absolute path:', audioUrl);
+    } 
+    // Otherwise, assume it's a Supabase filename and construct the URL
+    else {
+        // Extract just the filename if it has a path
+        const filename = audioFile.includes('/') ? audioFile.split('/').pop() : audioFile;
+        audioUrl = `https://lfzcxfimeuetdqhxrohd.supabase.co/storage/v1/object/public/audio-files/${filename}`;
+        console.log('Constructed Supabase URL:', audioUrl);
+    }
+    
+    debugLog(`Loading audio: ${audioUrl}`);
+    
+    // Set the audio source immediately
+    currentAudio.src = audioUrl;
+    currentAudio.load();
+    
+    console.log('Audio src set to:', currentAudio.src);
+    console.log('======================');
+}
 
 
 
