@@ -8,7 +8,7 @@ const fs = require('fs');
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-// Supabase configuration - MUST be set in Render environment variables
+// Supabase configuration
 const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_KEY;
 
@@ -52,7 +52,6 @@ const createDirectories = () => {
     });
 };
 
-// Initialize directories
 createDirectories();
 
 // Configure multer for file uploads
@@ -92,7 +91,7 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Configuration endpoint - serves public keys only (safe for client-side)
+// Configuration endpoint
 app.get('/api/config', (req, res) => {
     res.json({
         SUPABASE_URL: process.env.SUPABASE_URL || '',
@@ -101,7 +100,7 @@ app.get('/api/config', (req, res) => {
     });
 });
 
-// Serve config.js with actual values from environment
+// Serve config.js with actual values
 app.get('/config.js', (req, res) => {
     const configScript = `
 window.APP_CONFIG = {
@@ -144,7 +143,7 @@ async function testSupabaseConnection() {
     }
 }
 
-// FILE UPLOAD ENDPOINTS
+// FILE UPLOAD ENDPOINTS - FIXED VERSION
 app.post('/api/upload/audio', upload.single('audio'), async (req, res) => {
     try {
         if (!req.file) {
@@ -153,16 +152,24 @@ app.post('/api/upload/audio', upload.single('audio'), async (req, res) => {
 
         const filename = generateUniqueFilename(req.file.originalname, 'audio');
         
-        // Try Supabase first, fallback to local
+        console.log('=== AUDIO UPLOAD ATTEMPT ===');
+        console.log('Filename:', filename);
+        console.log('Size:', req.file.size);
+        console.log('MIME:', req.file.mimetype);
+        
         try {
             const { data, error } = await supabase.storage
                 .from('audio-files')
                 .upload(filename, req.file.buffer, {
                     contentType: req.file.mimetype,
-                    duplex: false
+                    upsert: false
                 });
 
-            if (error) throw error;
+            if (error) {
+                console.error('❌ Supabase audio upload error:', error.message);
+                console.error('Error details:', JSON.stringify(error, null, 2));
+                throw error;
+            }
 
             const { data: urlData } = supabase.storage
                 .from('audio-files')
@@ -177,13 +184,13 @@ app.post('/api/upload/audio', upload.single('audio'), async (req, res) => {
                 storage: 'supabase'
             };
 
-            console.log('Audio uploaded to Supabase successfully:', filename);
+            console.log('✅ Audio uploaded to Supabase successfully:', urlData.publicUrl);
             res.json(response);
 
         } catch (supabaseError) {
-            console.error('Supabase upload failed, using local storage:', supabaseError);
+            console.error('❌ Supabase audio upload failed, using local storage');
+            console.error('Error:', supabaseError.message);
             
-            // Fallback to local storage
             const localPath = path.join(__dirname, 'public', 'uploads', 'audio', filename);
             fs.writeFileSync(localPath, req.file.buffer);
             
@@ -193,10 +200,11 @@ app.post('/api/upload/audio', upload.single('audio'), async (req, res) => {
                 url: `/uploads/audio/${filename}`,
                 originalName: req.file.originalname,
                 size: req.file.size,
-                storage: 'local'
+                storage: 'local',
+                warning: 'Supabase upload failed: ' + supabaseError.message
             };
 
-            console.log('Audio uploaded locally:', filename);
+            console.log('⚠️ Audio uploaded locally (fallback):', filename);
             res.json(response);
         }
 
@@ -214,16 +222,24 @@ app.post('/api/upload/image', upload.single('image'), async (req, res) => {
 
         const filename = generateUniqueFilename(req.file.originalname, 'image');
         
-        // Try Supabase first, fallback to local
+        console.log('=== IMAGE UPLOAD ATTEMPT ===');
+        console.log('Filename:', filename);
+        console.log('Size:', req.file.size);
+        console.log('MIME:', req.file.mimetype);
+        
         try {
             const { data, error } = await supabase.storage
                 .from('images')
                 .upload(filename, req.file.buffer, {
                     contentType: req.file.mimetype,
-                    duplex: false
+                    upsert: false
                 });
 
-            if (error) throw error;
+            if (error) {
+                console.error('❌ Supabase image upload error:', error.message);
+                console.error('Error details:', JSON.stringify(error, null, 2));
+                throw error;
+            }
 
             const { data: urlData } = supabase.storage
                 .from('images')
@@ -238,13 +254,13 @@ app.post('/api/upload/image', upload.single('image'), async (req, res) => {
                 storage: 'supabase'
             };
 
-            console.log('Image uploaded to Supabase successfully:', filename);
+            console.log('✅ Image uploaded to Supabase successfully:', urlData.publicUrl);
             res.json(response);
 
         } catch (supabaseError) {
-            console.error('Supabase upload failed, using local storage:', supabaseError);
+            console.error('❌ Supabase image upload failed, using local storage');
+            console.error('Error:', supabaseError.message);
             
-            // Fallback to local storage
             const localPath = path.join(__dirname, 'public', 'uploads', 'images', filename);
             fs.writeFileSync(localPath, req.file.buffer);
             
@@ -254,10 +270,11 @@ app.post('/api/upload/image', upload.single('image'), async (req, res) => {
                 url: `/uploads/images/${filename}`,
                 originalName: req.file.originalname,
                 size: req.file.size,
-                storage: 'local'
+                storage: 'local',
+                warning: 'Supabase upload failed: ' + supabaseError.message
             };
 
-            console.log('Image uploaded locally:', filename);
+            console.log('⚠️ Image uploaded locally (fallback):', filename);
             res.json(response);
         }
 
@@ -551,20 +568,8 @@ app.post('/api/routes', async (req, res) => {
 app.put('/api/routes/:id', async (req, res) => {
     try {
         const routeId = req.params.id;
-        console.log('=== UPDATE ROUTE DEBUG ===');
-        console.log('Route ID from URL:', routeId);
-        console.log('Route ID length:', routeId.length);
-        console.log('Route ID type:', typeof routeId);
-
-        // First, let's see what routes exist
-        const { data: allRoutes, error: listError } = await supabase
-            .from('routes')
-            .select('route_id, name');
-        
-        console.log('All route IDs in database:', allRoutes?.map(r => r.route_id));
-        
-        const exactMatch = allRoutes?.find(r => r.route_id === routeId);
-        console.log('Exact match found:', exactMatch);
+        console.log('=== UPDATE ROUTE ===');
+        console.log('Route ID:', routeId);
 
         const updateData = {
             name: req.body.name,
@@ -582,16 +587,11 @@ app.put('/api/routes/:id', async (req, res) => {
             updated_at: new Date().toISOString()
         };
 
-        console.log('Attempting update with route_id:', routeId);
-
         const { data: routes, error: routeError } = await supabase
             .from('routes')
             .update(updateData)
             .eq('route_id', routeId)
             .select();
-
-        console.log('Update result - data:', routes);
-        console.log('Update result - error:', routeError);
 
         if (routeError) throw routeError;
         
@@ -772,7 +772,7 @@ app.get('/api/analytics', async (req, res) => {
     }
 });
 
-// Route regeneration (for backwards compatibility)
+// Route regeneration
 app.post('/api/regenerate-routes', async (req, res) => {
     try {
         const { count: publishedCount } = await supabase
@@ -959,26 +959,26 @@ app.get('*', (req, res) => {
 // START SERVER
 app.listen(PORT, '0.0.0.0', async () => {
     console.log('=== SERVER STARTED ===');
-    console.log(`🚀 Server running on port ${PORT}`);
-    console.log(`📊 Database: Supabase PostgreSQL`);
-    console.log(`💾 Storage: Hybrid (Supabase + Local fallback)`);
-    console.log(`🌐 Environment: ${process.env.NODE_ENV || 'development'}`);
-    console.log(`🔗 Supabase URL: ${supabaseUrl}`);
-    console.log(`🔐 Service Key configured: ${supabaseServiceKey ? 'Yes' : 'No'}`);
+    console.log(`Server running on port ${PORT}`);
+    console.log(`Database: Supabase PostgreSQL`);
+    console.log(`Storage: Hybrid (Supabase + Local fallback)`);
+    console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
+    console.log(`Supabase URL: ${supabaseUrl}`);
+    console.log(`Service Key configured: ${supabaseServiceKey ? 'Yes' : 'No'}`);
     
     console.log('Testing Supabase connection...');
     const connectionWorking = await testSupabaseConnection();
     
     if (connectionWorking) {
         console.log('✅ Database connection successful');
-        console.log('🎯 Ready to receive requests');
-        console.log('📝 CMS available at: /cms');
-        console.log('📊 Dashboard available at: /dashboard');
-        console.log('🔍 Health check: /api/health');
+        console.log('Ready to receive requests');
+        console.log('CMS available at: /cms');
+        console.log('Dashboard available at: /dashboard');
+        console.log('Health check: /api/health');
     } else {
         console.log('❌ Database connection failed');
-        console.log('⚠️  Server running but database operations will fail');
-        console.log('🔧 Check your Render environment variables');
+        console.log('Server running but database operations will fail');
+        console.log('Check your Render environment variables');
     }
     
     console.log('========================');
