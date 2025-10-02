@@ -492,7 +492,7 @@ app.post('/api/routes', async (req, res) => {
             color: req.body.color || '#FFD700',
             image_url: req.body.imageUrl,
             image_position: req.body.imagePosition || 'center',
-            audio_folder: req.body.audioFolder || '/uploads/audio/',
+            audio_folder: 'https://lfzcxfimeuetdqhxrohd.supabase.co/' || '/storage/v1/object/public/audio-files/',
             published: Boolean(req.body.published)
         };
 
