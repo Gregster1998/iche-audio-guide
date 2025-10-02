@@ -1356,19 +1356,13 @@
 
                             
 
-                            <div class="audio-controls">
-
-                                <button class="control-btn" onclick="rewind()">âª</button>
-
-                                <button class="control-btn" onclick="previousTrack()">â®</button>
-
-                                <button class="control-btn play-btn" id="play-btn-${index}" onclick="togglePlayback(${index})">â–¶</button>
-
-                                <button class="control-btn" onclick="nextTrack()">â­</button>
-
-                                <button class="control-btn" onclick="forward()">â©</button>
-
-                            </div>
+<div class="audio-controls">
+    <button class="control-btn" onclick="rewind()">&#9194;</button>
+    <button class="control-btn" onclick="previousTrack()">&#9198;</button>
+    <button class="control-btn play-btn" id="play-btn-${index}" onclick="togglePlayback(${index})">&#9654;</button>
+    <button class="control-btn" onclick="nextTrack()">&#9197;</button>
+    <button class="control-btn" onclick="forward()">&#9193;</button>
+</div>
 
                             
 
@@ -1729,17 +1723,12 @@
 
 
 
-        function updatePlayButton(stopIndex) {
-
-            const playBtn = document.getElementById(`play-btn-${stopIndex}`);
-
-            if (playBtn) {
-
-                playBtn.innerHTML = isPlaying ? 'â¸' : 'â–¶';
-
-            }
-
-        }
+function updatePlayButton(stopIndex) {
+    const playBtn = document.getElementById(`play-btn-${stopIndex}`);
+    if (playBtn) {
+        playBtn.innerHTML = isPlaying ? '&#9208;' : '&#9654;';
+    }
+}
 
 
 
