@@ -1,745 +1,2549 @@
 <!DOCTYPE html>
+
 <html lang="en">
+
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ICHE - Audio Guide</title>
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-  <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
 
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      background: #2d5a3d;
-      color: white;
-      overflow: hidden;
-      height: 100vh;
-    }
+    <meta charset="UTF-8">
 
-    .container {
-      height: 100vh;
-      display: flex;
-      flex-direction: column;
-      position: relative;
-    }
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    /* Header */
-    .header {
-      background: #2d5a3d;
-      padding: 15px 20px;
-      display: flex;
-      align-items: center;
-      gap: 15px;
-      position: relative;
-      z-index: 1000;
-    }
+    <title>ICHE Audio Guide</title>
 
-    .back-button {
-      background: none;
-      border: none;
-      color: white;
-      font-size: 24px;
-      cursor: pointer;
-      padding: 5px;
-    }
+    
 
-    .route-title {
-      color: white;
-      font-size: 20px;
-      font-weight: 500;
-    }
+    <!-- Leaflet CSS -->
 
-    /* Map Container - 60% of remaining height */
-    .map-container {
-      height: 60vh;
-      position: relative;
-      background: #2d5a3d;
-    }
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 
-    #map {
-      width: 100%;
-      height: 100%;
-    }
+    
 
-    /* User location popup */
-    .user-location-popup {
-      position: absolute;
-      top: 20px;
-      left: 50%;
-      transform: translateX(-50%);
-      background: #4CAF50;
-      color: white;
-      padding: 8px 16px;
-      border-radius: 20px;
-      font-size: 14px;
-      z-index: 1000;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.3);
-    }
+    <style>
 
-    /* Info Cards Container */
-    .info-cards-container {
-      position: absolute;
-      top: calc(40vh + 80px); /* Start from where map ends + header */
-      left: 0;
-      right: 0;
-      bottom: 120px; /* Leave space for audio player */
-      z-index: 500;
-      pointer-events: none;
-    }
+        * {
 
-    .info-card {
-      position: absolute;
-      left: 5%;
-      width: 90%;
-      background: rgba(45, 90, 61, 0.95);
-      backdrop-filter: blur(10px);
-      border-radius: 16px;
-      padding: 24px;
-      transform: translateX(100vw);
-      transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-      pointer-events: auto;
-      box-shadow: 0 8px 32px rgba(0,0,0,0.3);
-    }
+            margin: 0;
 
-    .info-card.active {
-      transform: translateX(0);
-    }
+            padding: 0;
 
-    .info-card.prev {
-      transform: translateX(-100vw);
-    }
+            box-sizing: border-box;
 
-    .current-stop-label {
-      color: #FFD700;
-      font-size: 14px;
-      font-weight: 600;
-      margin-bottom: 8px;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
+        }
 
-    .stop-icon {
-      width: 20px;
-      height: 20px;
-      background: #FFD700;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 12px;
-      color: #2d5a3d;
-      font-weight: bold;
-    }
 
-    .stop-title {
-      font-size: 24px;
-      font-weight: 600;
-      color: #FFD700;
-      margin-bottom: 16px;
-    }
 
-    .stop-description {
-      font-size: 16px;
-      line-height: 1.5;
-      color: rgba(255,255,255,0.9);
-      margin-bottom: 20px;
-    }
+        body {
 
-    .stop-navigation {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      color: rgba(255,255,255,0.7);
-      font-size: 14px;
-    }
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 
-    .stop-counter {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
+            background: #2D5A3D;
 
-    .next-stop {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
+            color: white;
 
-    /* Bottom Section - Audio Player */
-    .audio-section {
-      position: fixed;
-      bottom: 0;
-      left: 0;
-      right: 0;
-      height: 120px;
-      background: #2d5a3d;
-      border-top: 1px solid rgba(255,255,255,0.1);
-    }
+            height: 100vh;
 
-    /* Progress Bar */
-    .progress-container {
-      padding: 0 20px;
-      padding-top: 16px;
-    }
+            overflow: hidden;
 
-    .progress-bar {
-      width: 100%;
-      height: 4px;
-      background: rgba(255,255,255,0.2);
-      border-radius: 2px;
-      overflow: hidden;
-      margin-bottom: 8px;
-    }
+        }
 
-    .progress-fill {
-      height: 100%;
-      background: #FFD700;
-      width: 0%;
-      transition: width 0.1s ease;
-    }
 
-    .time-display {
-      display: flex;
-      justify-content: space-between;
-      font-size: 12px;
-      color: rgba(255,255,255,0.7);
-    }
 
-    /* Audio Info */
-    .audio-info {
-      text-align: center;
-      padding: 8px 20px 0;
-    }
+        .map-container {
 
-    .audio-title {
-      font-size: 16px;
-      font-weight: 500;
-      color: white;
-      margin-bottom: 4px;
-    }
+            position: absolute;
 
-    .audio-location {
-      font-size: 14px;
-      color: rgba(255,255,255,0.7);
-    }
+            top: 0;
 
-    /* Player Controls */
-    .player-controls {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      gap: 20px;
-      padding: 12px 20px 20px;
-    }
+            left: 0;
 
-    .control-btn {
-      background: none;
-      border: none;
-      color: rgba(255,255,255,0.8);
-      font-size: 20px;
-      cursor: pointer;
-      padding: 8px;
-      border-radius: 50%;
-      transition: all 0.2s ease;
-    }
+            right: 0;
 
-    .control-btn:hover {
-      color: white;
-      background: rgba(255,255,255,0.1);
-    }
+            bottom: 0;
 
-    .play-btn {
-      width: 56px;
-      height: 56px;
-      background: #FFD700;
-      border: none;
-      border-radius: 50%;
-      color: #2d5a3d;
-      font-size: 24px;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      transition: all 0.2s ease;
-    }
+            z-index: 1;
 
-    .play-btn:hover {
-      background: #FFC107;
-      transform: scale(1.05);
-    }
+        }
 
-    /* Map markers custom styles */
-    .route-marker {
-      background: #FFD700;
-      border: 3px solid white;
-      border-radius: 50%;
-      width: 20px;
-      height: 20px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-    }
 
-    .user-marker {
-      background: #4CAF50;
-      border: 3px solid white;
-      border-radius: 50%;
-      width: 16px;
-      height: 16px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-    }
 
-    /* Touch gestures */
-    .swipe-hint {
-      position: absolute;
-      bottom: 10px;
-      left: 50%;
-      transform: translateX(-50%);
-      color: rgba(255,255,255,0.5);
-      font-size: 12px;
-      pointer-events: none;
-    }
+        .map-container .leaflet-container {
 
-    /* Responsive adjustments */
-    @media (max-width: 768px) {
-      .header {
-        padding: 12px 16px;
-      }
-      
-      .route-title {
-        font-size: 18px;
-      }
-      
-      .info-card {
-        padding: 20px;
-      }
-      
-      .stop-title {
-        font-size: 20px;
-      }
-    }
-  </style>
+            height: 100vh;
+
+            width: 100vw;
+
+            background: #2D5A3D;
+
+        }
+
+
+
+        .header {
+
+            position: fixed;
+
+            top: 0;
+
+            left: 0;
+
+            right: 0;
+
+            z-index: 1000;
+
+            background: linear-gradient(to bottom, rgba(45, 90, 61, 0.9), transparent);
+
+            padding: 20px;
+
+            display: flex;
+
+            align-items: center;
+
+            gap: 15px;
+
+        }
+
+
+
+        .back-btn {
+
+            width: 40px;
+
+            height: 40px;
+
+            border-radius: 50%;
+
+            background: rgba(255, 255, 255, 0.2);
+
+            border: none;
+
+            color: white;
+
+            font-size: 18px;
+
+            cursor: pointer;
+
+            display: flex;
+
+            align-items: center;
+
+            justify-content: center;
+
+            backdrop-filter: blur(10px);
+
+        }
+
+
+
+        .route-title {
+
+            font-size: 20px;
+
+            font-weight: 600;
+
+            color: white;
+
+        }
+
+
+
+        .location-indicator {
+
+            position: fixed;
+
+            top: 80px;
+
+            right: 20px;
+
+            z-index: 1000;
+
+            background: rgba(0, 0, 0, 0.7);
+
+            padding: 8px 12px;
+
+            border-radius: 20px;
+
+            font-size: 12px;
+
+            backdrop-filter: blur(10px);
+
+            cursor: pointer;
+
+        }
+
+
+
+        .location-indicator.active {
+
+            background: rgba(76, 175, 80, 0.8);
+
+        }
+
+
+
+        .location-indicator.disabled {
+
+            background: rgba(255, 107, 107, 0.8);
+
+        }
+
+
+
+        .cards-container {
+
+            position: fixed;
+
+            top: 0;
+
+            left: 0;
+
+            right: 0;
+
+            bottom: 0;
+
+            z-index: 999;
+
+            display: grid;
+
+            grid-template-columns: 5vw 90vw 5vw;
+
+            grid-template-rows: 1fr auto;
+
+            align-items: end;
+
+            pointer-events: none;
+
+        }
+
+
+
+        .cards-wrapper {
+
+            grid-column: 2;
+
+            grid-row: 2;
+
+            width: 90vw;
+
+            overflow: hidden;
+
+            padding: 0px 0;
+
+            pointer-events: auto;
+
+            background: rgba(0, 0, 0, 0);
+
+            border-radius: 20px 20px 0 0;
+
+            backdrop-filter: blur(15px);
+
+            border: 1px solid rgba(255, 255, 255, 0);
+
+            border-bottom: none;
+
+            margin-bottom: 0;
+
+        }
+
+
+
+        .cards-track {
+
+            display: flex;
+
+            transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+
+            width: calc(90vw * var(--total-cards, 1));
+
+            height: 100%;
+
+        }
+
+
+
+        .stop-card {
+
+            width: 90vw;
+
+            flex-shrink: 0;
+
+            background: rgba(45, 90, 61, 0.95);
+
+            border-radius: 20px;
+
+            backdrop-filter: blur(20px);
+
+            border: 1px solid rgba(255, 255, 255, 0.1);
+
+            position: relative;
+
+            box-sizing: border-box;
+
+            margin: 0;
+
+        }
+
+
+
+        .current-stop-header {
+
+            padding-left: 24px;
+
+            padding-top: 12px;
+
+            color: #FFD700;
+
+            font-size: 14px;
+
+            font-weight: 500;
+
+            margin-bottom: 8px;
+
+            display: flex;
+
+            align-items: center;
+
+            gap: 8px;
+
+        }
+
+
+
+        .stop-name {
+
+            padding-left: 24px;
+
+            font-size: 24px;
+
+            font-weight: 600;
+
+            color: #FFD700;
+
+            margin-bottom: 12px;
+
+        }
+
+
+
+        .stop-description {
+
+            color: rgba(255, 255, 255, 0.9);
+
+            font-size: 16px;
+
+            padding-left: 24px;
+
+            line-height: 1.4;
+
+        }
+
+
+
+        .stop-meta {
+
+            padding-top: 12px;
+
+            display: flex;
+
+            justify-content: space-between;
+
+            align-items: center;
+
+            margin-bottom: 20px;
+
+            font-size: 14px;
+
+            color: rgba(255, 255, 255, 0.584);
+
+        }
+
+
+
+        .stop-progress {
+
+            display: flex;
+
+            align-items: center;
+
+            gap: 8px;
+
+            padding-left: 24px;
+
+        }
+
+
+
+        .next-stop {
+
+            padding-right: 24px;
+
+            display: flex;
+
+            align-items: center;
+
+            gap: 8px;
+
+        }
+
+
+
+        .audio-player {
+
+            background: rgba(0, 0, 0, 0.3);
+
+            border-radius: 16px;
+
+            padding: 16px;
+
+            margin-top: 20px;
+
+        }
+
+
+
+        .audio-title {
+
+            text-align: center;
+
+            font-size: 18px;
+
+            font-weight: 600;
+
+            margin-bottom: 8px;
+
+        }
+
+
+
+        .audio-subtitle {
+
+            text-align: center;
+
+            font-size: 14px;
+
+            color: rgba(255, 255, 255, 0.7);
+
+            margin-bottom: 16px;
+
+        }
+
+
+
+        .audio-controls {
+
+            display: flex;
+
+            align-items: center;
+
+            justify-content: center;
+
+            gap: 15px;
+
+        }
+
+
+
+        .control-btn {
+
+            width: 36px;
+
+            height: 36px;
+
+            border-radius: 50%;
+
+            background: rgba(255, 255, 255, 0.2);
+
+            border: none;
+
+            color: white;
+
+            font-size: 14px;
+
+            cursor: pointer;
+
+            display: flex;
+
+            align-items: center;
+
+            justify-content: center;
+
+            transition: all 0.2s ease;
+
+        }
+
+
+
+        .control-btn:hover {
+
+            background: rgba(255, 255, 255, 0.3);
+
+        }
+
+
+
+        .play-btn {
+
+            width: 56px;
+
+            height: 56px;
+
+            background: #FFD700;
+
+            color: #1B3A2E;
+
+            font-size: 20px;
+
+        }
+
+
+
+        .play-btn:hover {
+
+            background: #FFC700;
+
+        }
+
+
+
+        .progress-section {
+
+            margin-top: 16px;
+
+        }
+
+
+
+        .progress-bar {
+
+            width: 100%;
+
+            height: 4px;
+
+            background: rgba(255, 255, 255, 0.2);
+
+            border-radius: 2px;
+
+            overflow: hidden;
+
+            margin-bottom: 8px;
+
+            cursor: pointer;
+
+        }
+
+
+
+        .progress-fill {
+
+            height: 100%;
+
+            background: #FFD700;
+
+            width: 0%;
+
+            transition: width 0.1s ease;
+
+        }
+
+
+
+        .time-display {
+
+            display: flex;
+
+            justify-content: space-between;
+
+            font-size: 12px;
+
+            color: rgba(255, 255, 255, 0.6);
+
+        }
+
+
+
+        .auto-play-indicator {
+
+            position: absolute;
+
+            top: -40px;
+
+            left: 50%;
+
+            transform: translateX(-50%);
+
+            background: rgba(76, 175, 80, 0.9);
+
+            color: white;
+
+            padding: 8px 16px;
+
+            border-radius: 20px;
+
+            font-size: 12px;
+
+            font-weight: 500;
+
+            opacity: 0;
+
+            transition: all 0.3s ease;
+
+            backdrop-filter: blur(10px);
+
+        }
+
+
+
+        .auto-play-indicator.show {
+
+            opacity: 1;
+
+            transform: translateX(-50%) translateY(-10px);
+
+        }
+
+
+
+        .distance-badge {
+
+            position: absolute;
+
+            top: 20px;
+
+            right: 20px;
+
+            background: rgba(0, 0, 0, 0.5);
+
+            padding: 6px 12px;
+
+            border-radius: 16px;
+
+            font-size: 12px;
+
+            font-weight: 500;
+
+            backdrop-filter: blur(10px);
+
+        }
+
+
+
+        .distance-badge.in-range {
+
+            background: rgba(76, 175, 80, 0.8);
+
+        }
+
+
+
+        .loading-card {
+
+            display: flex;
+
+            align-items: center;
+
+            justify-content: center;
+
+            height: 200px;
+
+            color: rgba(255, 255, 255, 0.6);
+
+        }
+
+
+
+        .loading-spinner {
+
+            width: 20px;
+
+            height: 20px;
+
+            border: 2px solid rgba(255, 255, 255, 0.3);
+
+            border-top: 2px solid #FFD700;
+
+            border-radius: 50%;
+
+            animation: spin 1s linear infinite;
+
+            margin-right: 10px;
+
+        }
+
+
+
+        @keyframes spin {
+
+            0% { transform: rotate(0deg); }
+
+            100% { transform: rotate(360deg); }
+
+        }
+
+
+
+        @media (max-width: 480px) {
+
+            .header {
+
+                padding: 15px;
+
+            }
+
+            
+
+            .route-title {
+
+                font-size: 18px;
+
+            }
+
+            
+
+            .current-stop-header {
+
+                padding-left: 24px;
+
+            }
+
+            
+
+            .stop-name {
+
+                padding-left: 24px;
+
+            }
+
+            
+
+            .stop-description {
+
+                padding-left: 24px;
+
+            }
+
+            
+
+            .stop-progress {
+
+                padding-left: 24px;
+
+            }
+
+            
+
+            .next-stop {
+
+                padding-right: 24px;
+
+            }
+
+            
+
+            .audio-player {
+
+                margin: 0;
+
+                border-radius: 0;
+
+                padding: 16px 24px;
+
+            }
+
+        }
+
+
+
+        .user-location-marker {
+
+            background: #2196F3;
+
+            border: 3px solid white;
+
+            border-radius: 50%;
+
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+
+        }
+
+
+
+        .stop-marker {
+
+            border: 3px solid white;
+
+            border-radius: 50%;
+
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+
+        }
+
+
+
+        .stop-marker.start {
+
+            background: #FF5722;
+
+        }
+
+
+
+        .stop-marker.regular {
+
+            background: #4CAF50;
+
+        }
+
+
+
+        .stop-marker.current {
+
+            background: #FFD700;
+
+            animation: pulse 2s infinite;
+
+        }
+
+
+
+        @keyframes pulse {
+
+            0% { box-shadow: 0 0 0 0 rgba(255, 215, 0, 0.7); }
+
+            70% { box-shadow: 0 0 0 10px rgba(255, 215, 0, 0); }
+
+            100% { box-shadow: 0 0 0 0 rgba(255, 215, 0, 0); }
+
+        }
+
+
+
+        .debug-panel {
+
+            position: fixed;
+
+            bottom: 20px;
+
+            left: 20px;
+
+            background: rgba(0, 0, 0, 0.8);
+
+            padding: 10px;
+
+            border-radius: 8px;
+
+            font-size: 12px;
+
+            z-index: 1001;
+
+            max-width: 300px;
+
+            display: none;
+
+        }
+
+
+
+        .debug-panel.show {
+
+            display: block;
+
+        }
+
+    </style>
+
 </head>
+
 <body>
 
-<div class="container">
-  <!-- Header -->
-  <div class="header">
-    <button class="back-button" onclick="goBack()">←</button>
-    <h1 class="route-title" id="routeTitle">Loading Route...</h1>
-  </div>
+    <div class="map-container">
 
-  <!-- Map Container (60% of screen) -->
-  <div class="map-container">
-    <div id="map"></div>
-    <!-- User location indicator -->
-    <div class="user-location-popup" id="userLocationPopup" style="display: none;">
-      You are here
-    </div>
-  </div>
+        <div id="audioguide-map"></div>
 
-  <!-- Swipeable Info Cards -->
-  <div class="info-cards-container" id="infoCardsContainer">
-    <!-- Cards will be generated here -->
-  </div>
-
-  <!-- Audio Player Section -->
-  <div class="audio-section">
-    <!-- Progress Bar -->
-    <div class="progress-container">
-      <div class="progress-bar">
-        <div class="progress-fill" id="progressFill"></div>
-      </div>
-      <div class="time-display">
-        <span id="currentTime">0:00</span>
-        <span id="totalTime">2:30</span>
-      </div>
     </div>
 
-    <!-- Audio Info -->
-    <div class="audio-info">
-      <div class="audio-title" id="audioTitle">Welcome to Historic Downtown Line</div>
-      <div class="audio-location" id="audioLocation">Central Station</div>
+
+
+    <div class="header">
+
+        <button class="back-btn" onclick="goBack()">â†</button>
+
+        <div class="route-title" id="route-title">Loading...</div>
+
     </div>
 
-    <!-- Player Controls -->
-    <div class="player-controls">
-      <button class="control-btn" id="rewindBtn">⟲</button>
-      <button class="control-btn" id="prevBtn">⏮</button>
-      <button class="play-btn" id="playBtn">▶</button>
-      <button class="control-btn" id="nextBtn">⏭</button>
-      <button class="control-btn" id="refreshBtn">↻</button>
+
+
+    <div class="location-indicator" id="location-indicator" onclick="toggleLocation()">
+
+        Enable Location
+
     </div>
-  </div>
-</div>
 
-<!-- Audio element -->
-<audio id="audioElement" preload="auto"></audio>
 
-<!-- Scripts -->
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script src="JS/routes.js"></script>
 
-<script>
-// Global variables
-let map;
-let currentRoute = null;
-let currentCardIndex = 0;
-let audioElement;
-let userLocation = null;
-let routeMarkers = [];
+    <div class="cards-container">
 
-// Utility functions
-function formatTime(seconds) {
-    if (isNaN(seconds) || seconds < 0) return "0:00";
-    const minutes = Math.floor(seconds / 60);
-    const secs = Math.floor(seconds % 60);
-    return `${minutes}:${secs.toString().padStart(2, '0')}`;
-}
+        <div class="cards-wrapper" id="cards-wrapper">
 
-function getRouteIdFromURL() {
-    const urlParams = new URLSearchParams(window.location.search);
-    return urlParams.get('route');
-}
+            <div class="cards-track" id="cards-track">
 
-// Initialize application
-document.addEventListener('DOMContentLoaded', function() {
-    initializeApp();
-});
+                <div class="stop-card">
 
-async function initializeApp() {
-    try {
-        // Get route ID
-        const routeId = getRouteIdFromURL();
-        if (!routeId) {
-            alert("No route selected");
-            goBack();
-            return;
-        }
+                    <div class="loading-card">
 
-        // Wait for routes to load
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        // Get route data
-        if (typeof routes !== 'undefined' && routes.length > 0) {
-            currentRoute = routes.find(r => r.id === routeId);
-        }
-        
-        if (!currentRoute) {
-            await loadRouteFromAPI(routeId);
-        }
-        
-        if (!currentRoute) {
-            alert("Route not found");
-            goBack();
-            return;
-        }
+                        <div class="loading-spinner"></div>
 
-        console.log("Route loaded:", currentRoute.name);
-        
-        // Initialize components
-        setupUI();
-        initializeMap();
-        generateInfoCards();
-        initializeAudio();
-        setupSwipeGestures();
-        requestUserLocation();
-        
-    } catch (error) {
-        console.error("Initialization error:", error);
-        alert("Failed to load audio tour");
-    }
-}
+                        Loading stops...
 
-async function loadRouteFromAPI(routeId) {
-    try {
-        const response = await fetch('/api/app/routes');
-        const allRoutes = await response.json();
-        currentRoute = allRoutes.find(r => r.id === routeId);
-    } catch (error) {
-        console.error("API load error:", error);
-    }
-}
+                    </div>
 
-function setupUI() {
-    document.getElementById('routeTitle').textContent = currentRoute.name;
-    document.getElementById('audioTitle').textContent = currentRoute.name;
-    document.getElementById('audioLocation').textContent = currentRoute.points?.[0]?.name || "Starting point";
-}
-
-function initializeMap() {
-    try {
-        if (!currentRoute.points || currentRoute.points.length === 0) {
-            console.error("No route points available");
-            return;
-        }
-
-        const firstPoint = currentRoute.points[0];
-        const lat = firstPoint.coordinates[1];
-        const lng = firstPoint.coordinates[0];
-
-        map = L.map('map', {
-            zoomControl: false,
-            attributionControl: false
-        }).setView([lat, lng], 15);
-
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
-
-        // Add route markers
-        currentRoute.points.forEach((point, index) => {
-            const marker = L.marker([point.coordinates[1], point.coordinates[0]], {
-                icon: L.divIcon({
-                    className: 'route-marker',
-                    html: '',
-                    iconSize: [20, 20]
-                })
-            }).addTo(map);
-            
-            marker.bindPopup(`<strong>${point.name}</strong>`);
-            routeMarkers.push(marker);
-        });
-
-        // Fit bounds
-        if (currentRoute.points.length > 1) {
-            const bounds = L.latLngBounds(
-                currentRoute.points.map(p => [p.coordinates[1], p.coordinates[0]])
-            );
-            map.fitBounds(bounds, {padding: [50, 50]});
-        }
-
-    } catch (error) {
-        console.error("Map initialization error:", error);
-    }
-}
-
-function generateInfoCards() {
-    const container = document.getElementById('infoCardsContainer');
-    if (!container || !currentRoute.points) return;
-
-    container.innerHTML = currentRoute.points.map((point, index) => `
-        <div class="info-card ${index === 0 ? 'active' : ''}" data-index="${index}">
-            <div class="current-stop-label">
-                <div class="stop-icon">${index + 1}</div>
-                Current Stop
-            </div>
-            <h2 class="stop-title">${point.name}</h2>
-            <p class="stop-description">${point.description}</p>
-            <div class="stop-navigation">
-                <div class="stop-counter">
-                    <span>📍</span>
-                    Stop ${index + 1} of ${currentRoute.points.length}
                 </div>
-                <div class="next-stop">
-                    <span>👥</span>
-                    ${index + 1 < currentRoute.points.length ? `Next: ${currentRoute.points[index + 1].name}` : 'Tour Complete'}
-                </div>
+
             </div>
-            <div class="swipe-hint">Swipe left/right to navigate</div>
+
         </div>
-    `).join('');
-}
 
-function showCard(index) {
-    const cards = document.querySelectorAll('.info-card');
-    cards.forEach((card, i) => {
-        card.classList.remove('active', 'prev');
-        if (i === index) {
-            card.classList.add('active');
-        } else if (i < index) {
-            card.classList.add('prev');
-        }
-    });
-    
-    currentCardIndex = index;
-    updateAudioForPoint(index);
-    focusMapOnPoint(index);
-}
+    </div>
 
-function updateAudioForPoint(index) {
-    const point = currentRoute.points[index];
-    if (!point) return;
-    
-    document.getElementById('audioTitle').textContent = currentRoute.name;
-    document.getElementById('audioLocation').textContent = point.name;
-    
-    // Load audio if available
-    if (audioElement && point.audioFile) {
-        const audioUrl = currentRoute.audioFolder + point.audioFile;
-        audioElement.src = audioUrl;
-        audioElement.load();
-    }
-}
 
-function focusMapOnPoint(index) {
-    const point = currentRoute.points[index];
-    if (map && point) {
-        map.setView([point.coordinates[1], point.coordinates[0]], 16, {
-            animate: true,
-            duration: 0.5
+
+    <!-- Debug Panel -->
+
+    <div class="debug-panel" id="debug-panel">
+
+        <div>Debug Info:</div>
+
+        <div id="debug-location">Location: Not available</div>
+
+        <div id="debug-audio">Audio: Not loaded</div>
+
+        <div id="debug-proximity">Proximity: Checking...</div>
+
+    </div>
+
+
+
+    <audio id="audio-element" preload="metadata"></audio>
+
+
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+
+
+    <script>
+
+        // Global variables
+
+        let currentRoute = null;
+
+        let currentStops = [];
+
+        let currentStopIndex = 0;
+
+        let audioguideMap = null;
+
+        let userLocation = null;
+
+        let userMarker = null;
+
+        let stopMarkers = [];
+
+        let routePolyline = null;
+
+        let radiusCircles = [];
+
+        let geolocationWatcher = null;
+
+        let currentAudio = null;
+
+        let isPlaying = false;
+
+        let autoPlayTriggered = {};
+
+        let lastTriggeredStop = null;
+
+        let locationEnabled = false;
+
+        let locationAccuracy = null;
+
+        let currentCardIndex = 0;
+
+        let totalCards = 0;
+
+
+
+        // Debug mode - set to true for debugging
+
+        const DEBUG_MODE = true;
+
+
+
+        document.addEventListener('DOMContentLoaded', function() {
+
+            initializeAudioguide();
+
+            if (DEBUG_MODE) {
+
+                document.getElementById('debug-panel').classList.add('show');
+
+            }
+
         });
-        
-        // Open popup for current marker
-        if (routeMarkers[index]) {
-            routeMarkers[index].openPopup();
-        }
-    }
-}
 
-function setupSwipeGestures() {
-    const container = document.getElementById('infoCardsContainer');
-    let startX = 0;
-    let startTime = 0;
 
-    container.addEventListener('touchstart', (e) => {
-        startX = e.touches[0].clientX;
-        startTime = Date.now();
-    }, { passive: true });
 
-    container.addEventListener('touchend', (e) => {
-        const endX = e.changedTouches[0].clientX;
-        const endTime = Date.now();
-        const deltaX = endX - startX;
-        const deltaTime = endTime - startTime;
+        async function initializeAudioguide() {
 
-        // Swipe detection (minimum distance and maximum time)
-        if (Math.abs(deltaX) > 50 && deltaTime < 500) {
-            if (deltaX > 0) {
-                // Swipe right - previous card
-                previousCard();
-            } else {
-                // Swipe left - next card
-                nextCard();
-            }
-        }
-    }, { passive: true });
+            try {
 
-    // Keyboard navigation
-    document.addEventListener('keydown', (e) => {
-        if (e.key === 'ArrowLeft') previousCard();
-        if (e.key === 'ArrowRight') nextCard();
-    });
-}
+                const urlParams = new URLSearchParams(window.location.search);
 
-function nextCard() {
-    if (currentCardIndex < currentRoute.points.length - 1) {
-        showCard(currentCardIndex + 1);
-    }
-}
+                const routeId = urlParams.get('route');
 
-function previousCard() {
-    if (currentCardIndex > 0) {
-        showCard(currentCardIndex - 1);
-    }
-}
-
-function initializeAudio() {
-    audioElement = document.getElementById('audioElement');
-    if (!audioElement) return;
-
-    // Audio event listeners
-    audioElement.addEventListener('loadedmetadata', updateTimeDisplay);
-    audioElement.addEventListener('timeupdate', () => {
-        updateTimeDisplay();
-        updateProgressBar();
-    });
-    audioElement.addEventListener('ended', handleAudioEnd);
-
-    // Control buttons
-    document.getElementById('playBtn').onclick = togglePlayPause;
-    document.getElementById('prevBtn').onclick = previousCard;
-    document.getElementById('nextBtn').onclick = nextCard;
-    document.getElementById('rewindBtn').onclick = () => {
-        if (audioElement) audioElement.currentTime = Math.max(0, audioElement.currentTime - 10);
-    };
-    document.getElementById('refreshBtn').onclick = requestUserLocation;
-
-    // Load first audio
-    if (currentRoute.points && currentRoute.points.length > 0) {
-        updateAudioForPoint(0);
-    }
-}
-
-function togglePlayPause() {
-    if (!audioElement) return;
-    
-    const playBtn = document.getElementById('playBtn');
-    
-    if (audioElement.paused) {
-        audioElement.play();
-        playBtn.textContent = '⏸';
-    } else {
-        audioElement.pause();
-        playBtn.textContent = '▶';
-    }
-}
-
-function updateTimeDisplay() {
-    if (!audioElement) return;
-    
-    document.getElementById('currentTime').textContent = formatTime(audioElement.currentTime);
-    document.getElementById('totalTime').textContent = formatTime(audioElement.duration || 0);
-}
-
-function updateProgressBar() {
-    if (!audioElement || !audioElement.duration) return;
-    
-    const progress = (audioElement.currentTime / audioElement.duration) * 100;
-    document.getElementById('progressFill').style.width = progress + '%';
-}
-
-function handleAudioEnd() {
-    // Auto-advance to next card
-    setTimeout(() => {
-        if (currentCardIndex < currentRoute.points.length - 1) {
-            nextCard();
-        }
-    }, 1500);
-}
-
-function requestUserLocation() {
-    if (!navigator.geolocation) return;
-    
-    navigator.geolocation.getCurrentPosition(
-        (position) => {
-            userLocation = {
-                lat: position.coords.latitude,
-                lng: position.coords.longitude
-            };
-            
-            // Show user location popup
-            const popup = document.getElementById('userLocationPopup');
-            popup.style.display = 'block';
-            setTimeout(() => popup.style.display = 'none', 3000);
-            
-            // Add user marker to map
-            if (map) {
-                if (window.userMarker) {
-                    map.removeLayer(window.userMarker);
-                }
                 
-                window.userMarker = L.marker([userLocation.lat, userLocation.lng], {
-                    icon: L.divIcon({
-                        className: 'user-marker',
-                        html: '',
-                        iconSize: [16, 16]
-                    })
-                }).addTo(map);
+
+                if (!routeId) {
+
+                    showError('No route selected');
+
+                    return;
+
+                }
+
+
+
+                await loadRouteData(routeId);
+
+                initializeMap();
+
+                setupCards();
+
+                setupAudio();
+
+                
+
+            } catch (error) {
+
+                console.error('Failed to initialize audioguide:', error);
+
+                showError('Failed to load audio tour: ' + error.message);
+
             }
-        },
-        (error) => console.error("Location error:", error),
-        { enableHighAccuracy: true, timeout: 10000 }
-    );
+
+        }
+
+
+
+        async function loadRouteData(routeId) {
+
+            try {
+
+                let apiUrl;
+
+                if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+
+                    apiUrl = 'http://localhost:3001/api/app/routes';
+
+                } else {
+
+                    apiUrl = `${window.location.origin}/api/app/routes`;
+
+                }
+
+
+
+                const response = await fetch(apiUrl);
+
+                if (!response.ok) {
+
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+
+                }
+
+
+
+                const routes = await response.json();
+
+                currentRoute = routes.find(route => route.id === routeId);
+
+                
+
+                if (!currentRoute) {
+
+                    throw new Error('Route not found');
+
+                }
+
+
+
+                currentStops = currentRoute.points || [];
+
+                document.getElementById('route-title').textContent = currentRoute.name;
+
+                
+
+                debugLog(`Route loaded: ${currentRoute.name} with ${currentStops.length} stops`);
+
+                
+
+            } catch (error) {
+
+                console.error('Error loading route data:', error);
+
+                throw error;
+
+            }
+
+        }
+
+
+
+        function initializeMap() {
+
+            if (audioguideMap) {
+
+                audioguideMap.remove();
+
+            }
+
+
+
+            let center = [45.4642, 9.1900];
+
+            
+
+            if (currentStops.length > 0 && currentStops[0].coordinates) {
+
+                center = [currentStops[0].coordinates[1], currentStops[0].coordinates[0]];
+
+            }
+
+
+
+            audioguideMap = L.map('audioguide-map', {
+
+                zoomControl: false,
+
+                attributionControl: false
+
+            }).setView(center, 15);
+
+
+
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(audioguideMap);
+
+            updateMapVisualization();
+
+        }
+
+
+
+        function updateMapVisualization() {
+
+            if (!audioguideMap || currentStops.length === 0) return;
+
+
+
+            stopMarkers.forEach(marker => audioguideMap.removeLayer(marker));
+
+            radiusCircles.forEach(circle => audioguideMap.removeLayer(circle));
+
+            stopMarkers = [];
+
+            radiusCircles = [];
+
+
+
+            if (routePolyline) {
+
+                audioguideMap.removeLayer(routePolyline);
+
+            }
+
+
+
+            const validStops = currentStops.filter(stop => stop.coordinates);
+
+            if (validStops.length === 0) return;
+
+
+
+            if (validStops.length > 1) {
+
+                const latlngs = validStops.map(stop => [stop.coordinates[1], stop.coordinates[0]]);
+
+                routePolyline = L.polyline(latlngs, {
+
+                    color: '#FFD700',
+
+                    weight: 3,
+
+                    opacity: 0.8,
+
+                    dashArray: '10, 10'
+
+                }).addTo(audioguideMap);
+
+            }
+
+
+
+            validStops.forEach((stop, index) => {
+
+                const [lng, lat] = stop.coordinates;
+
+                const isStart = index === 0;
+
+                const isCurrent = index === currentStopIndex;
+
+                const radius = stop.radius || 50;
+
+                
+
+                const marker = L.circleMarker([lat, lng], {
+
+                    radius: isCurrent ? 12 : 10,
+
+                    fillColor: isCurrent ? '#FFD700' : (isStart ? '#FF5722' : '#4CAF50'),
+
+                    color: '#fff',
+
+                    weight: 3,
+
+                    opacity: 1,
+
+                    fillOpacity: 0.9,
+
+                    className: `stop-marker ${isCurrent ? 'current' : (isStart ? 'start' : 'regular')}`
+
+                }).addTo(audioguideMap);
+
+
+
+                const radiusCircle = L.circle([lat, lng], {
+
+                    radius: radius,
+
+                    fillColor: isCurrent ? '#FFD700' : (isStart ? '#FF5722' : '#4CAF50'),
+
+                    fillOpacity: 0.15,
+
+                    color: isCurrent ? '#FFD700' : (isStart ? '#FF5722' : '#4CAF50'),
+
+                    weight: 2,
+
+                    opacity: 0.6,
+
+                    dashArray: '5, 5'
+
+                }).addTo(audioguideMap);
+
+
+
+                stopMarkers.push(marker);
+
+                radiusCircles.push(radiusCircle);
+
+            });
+
+
+
+            if (stopMarkers.length > 0) {
+
+                const group = new L.featureGroup(stopMarkers);
+
+                audioguideMap.fitBounds(group.getBounds().pad(0.2));
+
+            }
+
+        }
+
+
+
+        function setupCards() {
+
+            const cardsTrack = document.getElementById('cards-track');
+
+            
+
+            if (currentStops.length === 0) {
+
+                cardsTrack.innerHTML = `
+
+                    <div class="stop-card">
+
+                        <div class="loading-card">No stops found in this route</div>
+
+                    </div>
+
+                `;
+
+                return;
+
+            }
+
+
+
+            document.documentElement.style.setProperty('--total-cards', currentStops.length);
+
+
+
+            cardsTrack.innerHTML = currentStops.map((stop, index) => {
+
+                const nextStop = index < currentStops.length - 1 ? currentStops[index + 1] : null;
+
+                
+
+                return `
+
+                    <div class="stop-card" data-stop-index="${index}">
+
+                        <div class="distance-badge" id="distance-${index}">--</div>
+
+                        <div class="auto-play-indicator" id="auto-indicator-${index}">
+
+                            Audio started automatically - you're in range!
+
+                        </div>
+
+                        
+
+                        <div class="current-stop-header">
+
+                            Current Stop
+
+                        </div>
+
+                        
+
+                        <div class="stop-name">${stop.name || `Stop ${index + 1}`}</div>
+
+                        
+
+                        <div class="stop-description">
+
+                            ${stop.description || 'No description available'}
+
+                        </div>
+
+                        
+
+                        <div class="stop-meta">
+
+                            <div class="stop-progress">
+
+                                Stop ${index + 1} of ${currentStops.length}
+
+                            </div>
+
+                            <div class="next-stop">
+
+                                ${nextStop ? `Next: ${nextStop.name || `Stop ${index + 2}`}` : 'Final Stop'}
+
+                            </div>
+
+                        </div>
+
+                        
+
+                        ${stop.audioFile ? `
+
+                        <div class="audio-player">
+
+                            <div class="audio-title">Welcome to ${currentRoute.name}</div>
+
+                            <div class="audio-subtitle">${stop.name || `Stop ${index + 1}`}</div>
+
+                            
+
+                            <div class="audio-controls">
+
+                                <button class="control-btn" onclick="rewind()">âª</button>
+
+                                <button class="control-btn" onclick="previousTrack()">â®</button>
+
+                                <button class="control-btn play-btn" id="play-btn-${index}" onclick="togglePlayback(${index})">â–¶</button>
+
+                                <button class="control-btn" onclick="nextTrack()">â­</button>
+
+                                <button class="control-btn" onclick="forward()">â©</button>
+
+                            </div>
+
+                            
+
+                            <div class="progress-section">
+
+                                <div class="progress-bar" onclick="seekAudio(event, ${index})">
+
+                                    <div class="progress-fill" id="progress-${index}"></div>
+
+                                </div>
+
+                                <div class="time-display">
+
+                                    <span id="current-time-${index}">0:00</span>
+
+                                    <span id="total-time-${index}">0:00</span>
+
+                                </div>
+
+                            </div>
+
+                        </div>
+
+                        ` : `
+
+                        <div class="audio-player">
+
+                            <div class="audio-title">No Audio Available</div>
+
+                            <div class="audio-subtitle">This stop has no audio guide</div>
+
+                        </div>
+
+                        `}
+
+                    </div>
+
+                `;
+
+            }).join('');
+
+
+
+            setupSwipeNavigation();
+
+            totalCards = currentStops.length;
+
+            if (currentStops.length > 0) {
+
+                selectStop(0);
+
+            }
+
+        }
+
+
+
+        function setupAudio() {
+
+            currentAudio = document.getElementById('audio-element');
+
+            
+
+            currentAudio.addEventListener('loadedmetadata', () => {
+
+                debugLog(`Audio metadata loaded: duration ${formatTime(currentAudio.duration)}`);
+
+                updateTimeDisplay(currentStopIndex);
+
+            });
+
+            
+
+            currentAudio.addEventListener('timeupdate', () => {
+
+                updateProgress(currentStopIndex);
+
+            });
+
+            
+
+            currentAudio.addEventListener('ended', () => {
+
+                isPlaying = false;
+
+                updatePlayButton(currentStopIndex);
+
+                debugLog('Audio ended');
+
+                if (currentStopIndex < currentStops.length - 1) {
+
+                    setTimeout(() => goToCard(currentStopIndex + 1), 1000);
+
+                }
+
+            });
+
+
+
+            currentAudio.addEventListener('play', () => {
+
+                isPlaying = true;
+
+                updatePlayButton(currentStopIndex);
+
+                debugLog('Audio started playing');
+
+            });
+
+
+
+            currentAudio.addEventListener('pause', () => {
+
+                isPlaying = false;
+
+                updatePlayButton(currentStopIndex);
+
+                debugLog('Audio paused');
+
+            });
+
+
+
+            currentAudio.addEventListener('error', (e) => {
+
+                console.error('Audio error:', e);
+
+                debugLog(`Audio error: ${e.type}`);
+
+            });
+
+        }
+
+
+
+        function setupSwipeNavigation() {
+
+            const wrapper = document.getElementById('cards-wrapper');
+
+            let startX = 0;
+
+            let currentX = 0;
+
+            let isDragging = false;
+
+
+
+            wrapper.addEventListener('touchstart', (e) => {
+
+                startX = e.touches[0].clientX;
+
+                isDragging = true;
+
+            });
+
+
+
+            wrapper.addEventListener('touchmove', (e) => {
+
+                if (!isDragging) return;
+
+                currentX = e.touches[0].clientX;
+
+                e.preventDefault();
+
+            });
+
+
+
+            wrapper.addEventListener('touchend', () => {
+
+                if (!isDragging) return;
+
+                isDragging = false;
+
+                
+
+                const diffX = startX - currentX;
+
+                const threshold = 50;
+
+                
+
+                if (Math.abs(diffX) > threshold) {
+
+                    if (diffX > 0 && currentCardIndex < totalCards - 1) {
+
+                        goToCard(currentCardIndex + 1);
+
+                    } else if (diffX < 0 && currentCardIndex > 0) {
+
+                        goToCard(currentCardIndex - 1);
+
+                    }
+
+                }
+
+            });
+
+        }
+
+
+
+        function goToCard(index) {
+
+            if (index < 0 || index >= totalCards) return;
+
+            
+
+            currentCardIndex = index;
+
+            currentStopIndex = index;
+
+            
+
+            const track = document.getElementById('cards-track');
+
+            const offsetX = index * 90;
+
+            track.style.transform = `translateX(-${offsetX}vw)`;
+
+            
+
+            selectStop(index);
+
+        }
+
+
+
+        function selectStop(index) {
+
+            currentStopIndex = index;
+
+            const stop = currentStops[index];
+
+            
+
+            updateMapVisualization();
+
+            
+
+            if (stop.coordinates && audioguideMap) {
+
+                audioguideMap.setView([stop.coordinates[1], stop.coordinates[0]], 17);
+
+            }
+
+            
+
+            if (stop.audioFile) {
+
+                loadAudio(stop.audioFile, index);
+
+            }
+
+        }
+
+
+
+        function loadAudio(audioFile, stopIndex) {
+
+            if (!currentAudio) {
+
+                debugLog('No audio element available');
+
+                return;
+
+            }
+
+
+
+            // Determine the correct audio URL
+
+            let audioUrl;
+
+            if (audioFile.startsWith('http')) {
+
+                audioUrl = audioFile;
+
+            } else if (audioFile.startsWith('/')) {
+
+                audioUrl = audioFile;
+
+            } else {
+
+                audioUrl = `/uploads/audio/${audioFile}`;
+
+            }
+
+            
+
+            debugLog(`Loading audio: ${audioUrl}`);
+
+            
+
+            // Test if the audio file exists first
+
+            fetch(audioUrl, { method: 'HEAD' })
+
+                .then(response => {
+
+                    if (response.ok) {
+
+                        currentAudio.src = audioUrl;
+
+                        debugLog(`Audio file found: ${response.status}`);
+
+                    } else {
+
+                        debugLog(`Audio file not found: ${response.status}`);
+
+                        // Try alternative paths
+
+                        const altUrl = audioFile.startsWith('/uploads/') ? audioFile : `/uploads/audio/${audioFile.split('/').pop()}`;
+
+                        debugLog(`Trying alternative URL: ${altUrl}`);
+
+                        currentAudio.src = altUrl;
+
+                    }
+
+                })
+
+                .catch(error => {
+
+                    debugLog(`Error checking audio file: ${error.message}`);
+
+                    currentAudio.src = audioUrl; // Try loading anyway
+
+                });
+
+        }
+
+
+
+        function togglePlayback(stopIndex) {
+
+            if (!currentAudio) {
+
+                debugLog('No audio element available for playback');
+
+                return;
+
+            }
+
+            
+
+            debugLog(`Toggle playback for stop ${stopIndex}, current playing: ${isPlaying}`);
+
+            
+
+            if (isPlaying) {
+
+                currentAudio.pause();
+
+            } else {
+
+                // Ensure we have the right audio loaded
+
+                const stop = currentStops[stopIndex];
+
+                if (stop.audioFile && currentAudio.src.indexOf(stop.audioFile) === -1) {
+
+                    loadAudio(stop.audioFile, stopIndex);
+
+                    setTimeout(() => {
+
+                        currentAudio.play().catch(error => {
+
+                            console.error('Play error:', error);
+
+                            debugLog(`Play error: ${error.message}`);
+
+                        });
+
+                    }, 500);
+
+                } else {
+
+                    currentAudio.play().catch(error => {
+
+                        console.error('Play error:', error);
+
+                        debugLog(`Play error: ${error.message}`);
+
+                    });
+
+                }
+
+            }
+
+        }
+
+
+
+        function updatePlayButton(stopIndex) {
+
+            const playBtn = document.getElementById(`play-btn-${stopIndex}`);
+
+            if (playBtn) {
+
+                playBtn.innerHTML = isPlaying ? 'â¸' : 'â–¶';
+
+            }
+
+        }
+
+
+
+        function updateProgress(stopIndex) {
+
+            if (!currentAudio) return;
+
+            
+
+            const progress = (currentAudio.currentTime / currentAudio.duration) * 100;
+
+            const progressBar = document.getElementById(`progress-${stopIndex}`);
+
+            if (progressBar) {
+
+                progressBar.style.width = progress + '%';
+
+            }
+
+            updateTimeDisplay(stopIndex);
+
+        }
+
+
+
+        function updateTimeDisplay(stopIndex) {
+
+            if (!currentAudio) return;
+
+            
+
+            const current = formatTime(currentAudio.currentTime);
+
+            const duration = formatTime(currentAudio.duration || 0);
+
+            
+
+            const currentTimeEl = document.getElementById(`current-time-${stopIndex}`);
+
+            const totalTimeEl = document.getElementById(`total-time-${stopIndex}`);
+
+            
+
+            if (currentTimeEl) currentTimeEl.textContent = current;
+
+            if (totalTimeEl) totalTimeEl.textContent = duration;
+
+        }
+
+
+
+        function formatTime(seconds) {
+
+            if (isNaN(seconds)) return '0:00';
+
+            const minutes = Math.floor(seconds / 60);
+
+            const remainingSeconds = Math.floor(seconds % 60);
+
+            return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+
+        }
+
+
+
+        function seekAudio(event, stopIndex) {
+
+            if (!currentAudio) return;
+
+            
+
+            const progressBar = event.currentTarget;
+
+            const rect = progressBar.getBoundingClientRect();
+
+            const clickX = event.clientX - rect.left;
+
+            const width = rect.width;
+
+            const clickRatio = clickX / width;
+
+            
+
+            currentAudio.currentTime = clickRatio * currentAudio.duration;
+
+        }
+
+
+
+        function previousTrack() {
+
+            if (currentCardIndex > 0) {
+
+                goToCard(currentCardIndex - 1);
+
+            }
+
+        }
+
+
+
+        function nextTrack() {
+
+            if (currentCardIndex < totalCards - 1) {
+
+                goToCard(currentCardIndex + 1);
+
+            }
+
+        }
+
+
+
+        function rewind() {
+
+            if (currentAudio) {
+
+                currentAudio.currentTime = Math.max(0, currentAudio.currentTime - 10);
+
+            }
+
+        }
+
+
+
+        function forward() {
+
+            if (currentAudio) {
+
+                currentAudio.currentTime = Math.min(currentAudio.duration, currentAudio.currentTime + 10);
+
+            }
+
+        }
+
+
+
+        // Location Functions
+
+        function toggleLocation() {
+
+            if (!navigator.geolocation) {
+
+                updateLocationIndicator('unsupported');
+
+                return;
+
+            }
+
+
+
+            if (locationEnabled) {
+
+                stopLocationTracking();
+
+            } else {
+
+                requestLocation();
+
+            }
+
+        }
+
+
+
+        function stopLocationTracking() {
+
+            if (geolocationWatcher) {
+
+                navigator.geolocation.clearWatch(geolocationWatcher);
+
+                geolocationWatcher = null;
+
+            }
+
+            if (userMarker) {
+
+                audioguideMap.removeLayer(userMarker);
+
+                userMarker = null;
+
+            }
+
+            locationEnabled = false;
+
+            userLocation = null;
+
+            updateLocationIndicator('disabled');
+
+            debugLog('Location tracking stopped');
+
+        }
+
+
+
+        function requestLocation() {
+
+            updateLocationIndicator('requesting');
+
+            debugLog('Requesting location permission...');
+
+
+
+            const options = {
+
+                enableHighAccuracy: true,
+
+                timeout: 10000,
+
+                maximumAge: 30000
+
+            };
+
+
+
+            navigator.geolocation.getCurrentPosition(
+
+                (position) => {
+
+                    locationEnabled = true;
+
+                    updateUserLocation(position);
+
+                    startLocationTracking();
+
+                    updateLocationIndicator('active');
+
+                    debugLog(`Location obtained: ${position.coords.latitude}, ${position.coords.longitude}`);
+
+                },
+
+                (error) => {
+
+                    console.error('Geolocation error:', error);
+
+                    updateLocationIndicator('error');
+
+                    debugLog(`Location error: ${error.message}`);
+
+                },
+
+                options
+
+            );
+
+        }
+
+
+
+        function startLocationTracking() {
+
+            if (geolocationWatcher) {
+
+                navigator.geolocation.clearWatch(geolocationWatcher);
+
+            }
+
+
+
+            const options = {
+
+                enableHighAccuracy: true,
+
+                timeout: 5000,
+
+                maximumAge: 10000
+
+            };
+
+
+
+            geolocationWatcher = navigator.geolocation.watchPosition(
+
+                updateUserLocation,
+
+                (error) => {
+
+                    console.error('Location tracking error:', error);
+
+                    debugLog(`Tracking error: ${error.message}`);
+
+                },
+
+                options
+
+            );
+
+
+
+            debugLog('Location tracking started');
+
+        }
+
+
+
+        function updateUserLocation(position) {
+
+            const { latitude, longitude, accuracy } = position.coords;
+
+            userLocation = { lat: latitude, lng: longitude };
+
+            locationAccuracy = accuracy;
+
+
+
+            debugLog(`Location updated: ${latitude.toFixed(6)}, ${longitude.toFixed(6)} (Â±${accuracy}m)`);
+
+
+
+            if (audioguideMap) {
+
+                // Remove existing user marker (no accuracy circle)
+
+                if (userMarker) {
+
+                    audioguideMap.removeLayer(userMarker);
+
+                }
+
+
+
+                // Add single user marker - NO ACCURACY CIRCLE
+
+                userMarker = L.circleMarker([latitude, longitude], {
+
+                    radius: 8,
+
+                    fillColor: '#2196F3',
+
+                    color: '#fff',
+
+                    weight: 2,
+
+                    opacity: 1,
+
+                    fillOpacity: 1,
+
+                    className: 'user-location-marker'
+
+                }).addTo(audioguideMap);
+
+            }
+
+
+
+            checkStopProximity();
+
+            updateStopDistances();
+
+        }
+
+
+
+        function checkStopProximity() {
+
+            if (!userLocation) return;
+
+
+
+            let proximityInfo = [];
+
+
+
+            currentStops.forEach((stop, index) => {
+
+                if (!stop.coordinates) return;
+
+
+
+                const distance = calculateDistance(
+
+                    userLocation.lat, userLocation.lng,
+
+                    stop.coordinates[1], stop.coordinates[0]
+
+                );
+
+
+
+                const radius = stop.radius || 50;
+
+                const isInRange = distance <= radius;
+
+                
+
+                proximityInfo.push(`Stop ${index + 1}: ${Math.round(distance)}m ${isInRange ? '(IN RANGE)' : ''}`);
+
+
+
+                const badge = document.getElementById(`distance-${index}`);
+
+                if (badge) {
+
+                    badge.classList.toggle('in-range', isInRange);
+
+                }
+
+
+
+                // Auto-play logic
+
+                if (isInRange && !autoPlayTriggered[index]) {
+
+                    debugLog(`ENTERING RANGE: Stop ${index + 1} - ${stop.name}`);
+
+                    autoPlayTriggered[index] = true;
+
+                    lastTriggeredStop = index;
+
+                    
+
+                    showAutoPlayIndicator(index);
+
+                    goToCard(index);
+
+                    
+
+                    if (stop.audioFile && !isPlaying) {
+
+                        debugLog(`AUTO-PLAY: Starting audio for ${stop.name}`);
+
+                        setTimeout(() => {
+
+                            loadAudio(stop.audioFile, index);
+
+                            setTimeout(() => {
+
+                                togglePlayback(index);
+
+                            }, 1000);
+
+                        }, 500);
+
+                    }
+
+                    
+
+                    // Reset other triggers
+
+                    Object.keys(autoPlayTriggered).forEach(key => {
+
+                        if (parseInt(key) !== index) {
+
+                            autoPlayTriggered[key] = false;
+
+                        }
+
+                    });
+
+                } else if (!isInRange && distance > radius + 20) {
+
+                    // Reset trigger when far enough away
+
+                    if (autoPlayTriggered[index]) {
+
+                        debugLog(`LEFT RANGE: Stop ${index + 1} - resetting trigger`);
+
+                        autoPlayTriggered[index] = false;
+
+                    }
+
+                }
+
+            });
+
+
+
+            updateDebugProximity(proximityInfo.join('; '));
+
+        }
+
+
+
+        function updateStopDistances() {
+
+            if (!userLocation) return;
+
+
+
+            currentStops.forEach((stop, index) => {
+
+                if (!stop.coordinates) return;
+
+
+
+                const distance = calculateDistance(
+
+                    userLocation.lat, userLocation.lng,
+
+                    stop.coordinates[1], stop.coordinates[0]
+
+                );
+
+
+
+                const distanceElement = document.getElementById(`distance-${index}`);
+
+                if (distanceElement) {
+
+                    if (distance < 1000) {
+
+                        distanceElement.textContent = Math.round(distance) + 'm';
+
+                    } else {
+
+                        distanceElement.textContent = (distance / 1000).toFixed(1) + 'km';
+
+                    }
+
+                }
+
+            });
+
+        }
+
+
+
+        function calculateDistance(lat1, lon1, lat2, lon2) {
+    const R = 6371e3; // metres
+
+    const phi1 = lat1 * Math.PI / 180;
+    const phi2 = lat2 * Math.PI / 180;
+    const deltaPhi = (lat2 - lat1) * Math.PI / 180;
+    const deltaLambda = (lon2 - lon1) * Math.PI / 180;
+
+    const a = Math.sin(deltaPhi / 2) * Math.sin(deltaPhi / 2) +
+              Math.cos(phi1) * Math.cos(phi2) *
+              Math.sin(deltaLambda / 2) * Math.sin(deltaLambda / 2);
+
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+    return R * c; // in metres
 }
 
-function goBack() {
-    window.location.href = 'dashboard.html';
-}
 
-console.log("Audio guide interface loaded");
-</script>
+
+
+        function showAutoPlayIndicator(index) {
+
+            const indicator = document.getElementById(`auto-indicator-${index}`);
+
+            if (indicator) {
+
+                indicator.classList.add('show');
+
+                setTimeout(() => {
+
+                    indicator.classList.remove('show');
+
+                }, 3000);
+
+            }
+
+        }
+
+
+
+        function updateLocationIndicator(status) {
+
+            const indicator = document.getElementById('location-indicator');
+
+            
+
+            indicator.className = 'location-indicator';
+
+            
+
+            switch (status) {
+
+                case 'requesting':
+
+                    indicator.textContent = 'Getting location...';
+
+                    break;
+
+                case 'active':
+
+                    indicator.classList.add('active');
+
+                    indicator.textContent = `Active (Â±${Math.round(locationAccuracy)}m)`;
+
+                    break;
+
+                case 'disabled':
+
+                    indicator.textContent = 'Enable Location';
+
+                    break;
+
+                case 'error':
+
+                    indicator.classList.add('disabled');
+
+                    indicator.textContent = 'Location denied';
+
+                    break;
+
+                case 'unsupported':
+
+                    indicator.classList.add('disabled');
+
+                    indicator.textContent = 'Not supported';
+
+                    break;
+
+            }
+
+        }
+
+
+
+        function goBack() {
+
+            if (geolocationWatcher) {
+
+                navigator.geolocation.clearWatch(geolocationWatcher);
+
+            }
+
+            if (currentAudio) {
+
+                currentAudio.pause();
+
+            }
+
+            window.history.back();
+
+        }
+
+
+
+        function showError(message) {
+
+            const cardsTrack = document.getElementById('cards-track');
+
+            cardsTrack.innerHTML = `
+
+                <div class="stop-card">
+
+                    <div class="loading-card">
+
+                        <div style="color: #ff6b6b; text-align: center;">
+
+                            <h3>Error</h3>
+
+                            <p>${message}</p>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            `;
+
+        }
+
+
+
+        // Debug functions
+
+        function debugLog(message) {
+
+            if (DEBUG_MODE) {
+
+                console.log(`[DEBUG] ${message}`);
+
+                updateDebugAudio(message);
+
+            }
+
+        }
+
+
+
+        function updateDebugLocation(message) {
+
+            if (DEBUG_MODE) {
+
+                const el = document.getElementById('debug-location');
+
+                if (el) el.textContent = `Location: ${message}`;
+
+            }
+
+        }
+
+
+
+        function updateDebugAudio(message) {
+
+            if (DEBUG_MODE) {
+
+                const el = document.getElementById('debug-audio');
+
+                if (el) el.textContent = `Audio: ${message}`;
+
+            }
+
+        }
+
+
+
+        function updateDebugProximity(message) {
+
+            if (DEBUG_MODE) {
+
+                const el = document.getElementById('debug-proximity');
+
+                if (el) el.textContent = `Proximity: ${message}`;
+
+            }
+
+        }
+
+
+
+        // Test function for manual debugging
+
+        function testAudio(stopIndex = 0) {
+
+            const stop = currentStops[stopIndex];
+
+            if (!stop || !stop.audioFile) {
+
+                debugLog('No audio file for this stop');
+
+                return;
+
+            }
+
+            
+
+            debugLog(`Testing audio for stop ${stopIndex}: ${stop.name}`);
+
+            loadAudio(stop.audioFile, stopIndex);
+
+            setTimeout(() => togglePlayback(stopIndex), 1000);
+
+        }
+
+
+
+        window.addEventListener('beforeunload', () => {
+
+            if (geolocationWatcher) {
+
+                navigator.geolocation.clearWatch(geolocationWatcher);
+
+            }
+
+            if (currentAudio) {
+
+                currentAudio.pause();
+
+            }
+
+        });
+
+
+
+        // Make test function available globally
+
+        window.testAudio = testAudio;
+
+        window.debugLog = debugLog;
+
+    </script>
 
 </body>
+
 </html>
