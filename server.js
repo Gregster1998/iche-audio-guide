@@ -10,7 +10,7 @@ const PORT = process.env.PORT || 3001;
 
 // Supabase configuration
 const supabaseUrl = process.env.SUPABASE_URL;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_KEY;
+const supabaseServiceKey = process.env.SERVICE_ROLE_KEY;
 
 console.log('=== SERVER STARTUP ===');
 console.log('Node ENV:', process.env.NODE_ENV || 'development');
