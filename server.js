@@ -22,7 +22,7 @@ if (!supabaseUrl || !supabaseServiceKey) {
     console.error('❌ MISSING SUPABASE CONFIGURATION');
     console.error('Please set these environment variables in Render:');
     console.error('- SUPABASE_URL: Your Supabase project URL');
-    console.error('- SUPABASE_SERVICE_KEY: Your Supabase service role key');
+    console.error('- SERVICE_ROLE_KEY: Your Supabase service role key');
     process.exit(1);
 }
 
