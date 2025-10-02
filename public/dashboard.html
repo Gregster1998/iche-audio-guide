@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ICHE - Dashboard</title>
   <link rel="stylesheet" href="css/dashboard.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 </head>
 <body>
 
@@ -23,10 +24,10 @@
 
   <!-- Tram Line Selection -->
   <div class="tram-line-section">
-    <h3>Select Route</h3>
+    <h3>Select Tram Line</h3>
     <div class="dropdown-container">
       <select id="tramLineSelect" class="tram-line-dropdown">
-        <option value="">Choose a route</option>
+        <option value="">Choose a tram line</option>
       </select>
     </div>
   </div>
@@ -41,53 +42,6 @@
     <div class="progress-percentage">
       <span id="progressPercent">0%</span>
       <span class="complete-text">Complete</span>
-    </div>
-  </div>
-
-  <!-- Detailed Route View (Hidden by default) -->
-  <div class="detailed-route-view" id="detailedRouteView" style="display: none;">
-    <div class="detailed-route-card">
-      <div class="detailed-route-image" id="detailedRouteImage"></div>
-      <div class="detailed-route-content">
-        <h2 class="detailed-route-name" id="detailedRouteName">Route Name</h2>
-        <p class="detailed-route-description" id="detailedRouteDescription">Route description goes here...</p>
-        
-        <div class="detailed-route-stats">
-          <div class="route-stat">
-            <span class="stat-icon">📏</span>
-            <span class="stat-text" id="detailedRouteDistance">-</span>
-          </div>
-          <div class="route-stat">
-            <span class="stat-icon">🕒</span>
-            <span class="stat-text" id="detailedRouteDuration">-</span>
-          </div>
-          <div class="route-stat">
-            <span class="stat-icon">🎯</span>
-            <span class="stat-text" id="detailedRouteDifficulty">-</span>
-          </div>
-          <div class="route-stat">
-            <span class="stat-icon">📍</span>
-            <span class="stat-text" id="detailedRouteStops">- points</span>
-          </div>
-        </div>
-
-        <div class="route-map-preview">
-          <div class="preview-container">
-            <div class="preview-points">
-              <div class="preview-point point-1"></div>
-              <div class="preview-point point-2"></div>
-              <div class="preview-point point-3"></div>
-              <div class="preview-point point-4"></div>
-            </div>
-            <div class="preview-arrow">✈️</div>
-          </div>
-          <p class="preview-text">Route Map Preview</p>
-        </div>
-
-        <button class="start-audio-button" id="startAudioButton">
-          🎧 Start Audio Tour
-        </button>
-      </div>
     </div>
   </div>
 
@@ -119,8 +73,91 @@
 
 </div>
 
-<!-- Scripts loaded in order: routes first, then dashboard -->
-<script src="JS/routes.js"></script>
+<!-- Detailed Route View Modal (Hidden by default) -->
+<div class="detailed-route-modal" id="detailedRouteModal" style="display: none;">
+  <div class="modal-header">
+    <button class="back-button" onclick="closeDetailedView()">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+        <path d="M15 18L9 12L15 6" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </button>
+    <h2 class="modal-title">Route Details</h2>
+    <div style="width: 24px;"></div>
+  </div>
+
+  <div class="modal-content-scroll">
+    <div class="detailed-route-image-container">
+      <img id="detailedRouteImage" src="" alt="Route" class="detailed-route-image">
+    </div>
+
+    <div class="detailed-route-info">
+      <h1 class="route-title" id="detailedRouteName">Route Name</h1>
+      
+      <p class="route-description" id="detailedRouteDescription">
+        Route description goes here...
+      </p>
+      
+      <div class="route-meta-info">
+        <div class="meta-item">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+            <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="#FFD700" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M2 17L12 22L22 17" stroke="#FFD700" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M2 12L12 17L22 12" stroke="#FFD700" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <span id="detailedRouteStops">8 stops</span>
+        </div>
+        <div class="meta-item">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+            <circle cx="12" cy="12" r="10" stroke="#FFD700" stroke-width="2"/>
+            <path d="M12 6V12L16 14" stroke="#FFD700" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+          <span id="detailedRouteDuration">2.5 hours</span>
+        </div>
+        <div class="meta-item">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+            <path d="M17 21V19C17 17.9391 16.5786 16.9217 15.8284 16.1716C15.0783 15.4214 14.0609 15 13 15H5C3.93913 15 2.92172 15.4214 2.17157 16.1716C1.42143 16.9217 1 17.9391 1 19V21" stroke="#FFD700" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <circle cx="9" cy="7" r="4" stroke="#FFD700" stroke-width="2"/>
+            <path d="M23 21V19C22.9993 18.1137 22.7044 17.2528 22.1614 16.5523C21.6184 15.8519 20.8581 15.3516 20 15.13" stroke="#FFD700" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M16 3.13C16.8604 3.35031 17.623 3.85071 18.1676 4.55232C18.7122 5.25392 19.0078 6.11683 19.0078 7.005C19.0078 7.89318 18.7122 8.75608 18.1676 9.45769C17.623 10.1593 16.8604 10.6597 16 10.88" stroke="#FFD700" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <span>Audio guide</span>
+        </div>
+      </div>
+
+      <div class="rating-section">
+        <div class="rating-label">Rate this route:</div>
+        <div class="rating-stars" id="ratingStars">
+          <span class="star" data-rating="1">☆</span>
+          <span class="star" data-rating="2">☆</span>
+          <span class="star" data-rating="3">☆</span>
+          <span class="star" data-rating="4">☆</span>
+          <span class="star" data-rating="5">☆</span>
+        </div>
+      </div>
+
+      <button class="add-note-btn">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+          <path d="M11 4H4C3.46957 4 2.96086 4.21071 2.58579 4.58579C2.21071 4.96086 2 5.46957 2 6V20C2 20.5304 2.21071 21.0391 2.58579 21.4142C2.96086 21.7893 3.46957 22 4 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V13" stroke="#FFD700" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M18.5 2.50001C18.8978 2.10219 19.4374 1.87869 20 1.87869C20.5626 1.87869 21.1022 2.10219 21.5 2.50001C21.8978 2.89784 22.1213 3.4374 22.1213 4.00001C22.1213 4.56262 21.8978 5.10219 21.5 5.50001L12 15L8 16L9 12L18.5 2.50001Z" stroke="#FFD700" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        Add a note
+      </button>
+
+      <div class="map-preview-container">
+        <div id="routePreviewMap" class="route-preview-map"></div>
+        <p class="map-preview-label">Route Map Preview</p>
+      </div>
+
+      <button class="start-tour-btn" id="startAudioButton">
+        🎧 Start Audio Tour
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Scripts -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="JS/dashboard.js"></script>
+
 </body>
 </html>
